@@ -1,0 +1,192 @@
+---
+title: "Mac-seq PMC228 QC (VCFG)"
+output: html_document
+date: "2024-08-07"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+library(tidyverse)
+library(Seurat)
+library(gtools)
+library(tidyseurat)
+library(Seurat)
+library(DESeq2)
+library(edgeR)
+library(RUVSeq)
+library(variancePartition)
+library(reshape2)
+library(gridExtra)
+library(ggrepel)
+library(gg.layers)
+library(platetools)
+library(ggplot2)
+library(ggpubr)
+```
+
+## Filtering data
+```{r, echo=TRUE}
+
+#import metadata
+metadata<-read.csv("/Volumes/bioinf/home/ndalvi/MACseq_PMC228/metadata/PMC228.csv",header=T, check.names = FALSE) %>%
+  arrange("Barcode") %>%
+  mutate(id=gsub("Plate","",Plate_ID)) %>%
+  mutate(Treatment_conc=paste0(Treatment_1,"_",Concentration_1))
+
+head(metadata)
+
+#load in count data 
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/MACseq_PMC228/raw/PMC228/starsolo/SA_PMC228-null.Solo.out/Gene/raw')
+
+#filter by cpm>10 in at least 2 samples
+keep <- rowSums(cpm(raw_counts)>10) >= 3
+raw_counts <- raw_counts[keep,]
+```
+
+## QC Plots
+```{r}
+#filter for the minimum number of reads per gene per sample, as per edgeR
+row.names(metadata)<-metadata$Barcode
+
+mac <- CreateSeuratObject(counts = raw_counts,
+                          project = 'PMC228',
+                          min.cells = 1,
+                          min.features = 1)
+
+#for humans: MT, and ribosomal protein: RP. if MT> 30 then most likely dead cells
+mac[["percent.mt"]]<-PercentageFeatureSet(mac, pattern = "^MT-")
+mac[["percent.rp"]]<-PercentageFeatureSet(mac, pattern = "^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA")
+
+#add location metadata
+mac<- mac %>%
+  inner_join(metadata,by=c(".cell"="Barcode"))
+```
+
+
+### Plate QC {.tabset}
+```{r}
+#facet by Organoid:
+grid  <- raw_map(data = mac$nCount_RNA, well = mac$Well_ID, plate = 384) +
+  theme_minimal() +
+  facet_wrap(~mac$Organoid)+
+  scale_fill_viridis_c()
+
+g1 = ggplotGrob(grid)
+```
+
+#### Entire plate
+```{r}
+entire_plate <- raw_map(data = mac$nCount_RNA, well = mac$Well_ID, plate = 384) +
+  ggtitle("Entire Plate (PMC228)") +
+  theme_minimal() +
+  scale_fill_viridis_c()
+
+entire_plate
+```
+
+#### ORG49
+```{r}
+g1_org49 = g1[-c(9,10),-c(11)]
+g1_org49
+```
+
+#### ORG38
+```{r}
+g1_org38 = g1[-c(14,15),-c(7)]
+g1_org38
+```
+
+#### ORG66
+```{r}
+g1_org66 = g1[-c(9,10),-c(7)]
+g1_org66
+```
+
+### PCA Plots {.tabset}
+
+#### Entire plate
+```{r, fig.height=12, fig.width=16, fig.align='left'}
+
+#Function for plotting
+pca_plots <- function(df, type){
+  if (type=='all'){
+    seurat_object <-df %>%
+      subset(., Cell_type != "")
+  } else {
+    seurat_object <-df %>%
+      subset(., Organoid == type)
+  }
+  
+  seurat_object<- seurat_object %>%
+    SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+    FindVariableFeatures(verbose = FALSE) %>%
+    RunPCA(npcs = ncol(seurat_object)-1) %>%
+    FindNeighbors(verbose = FALSE) %>% 
+    FindClusters(method = "igraph", verbose = FALSE)
+
+  p1<-FeaturePlot(seurat_object, features = 'nCount_RNA',pt.size = 2)
+  p2<-FeaturePlot(seurat_object, features = 'percent.mt',pt.size = 2)
+  p3<-FeaturePlot(seurat_object, features = 'percent.rp',pt.size = 2)
+  p4<-DimPlot(seurat_object, group.by= 'Row',pt.size = 2)
+  p5<-DimPlot(seurat_object, group.by= 'Column',pt.size = 2)
+  p6<-DimPlot(seurat_object, group.by= 'Organoid',pt.size = 2)
+  p7<-DimPlot(seurat_object, group.by= 'Cell_type',pt.size = 2)
+  p8 <- DimPlot(seurat_object, group.by = 'Treatment_1',pt.size = 2)
+  p9 <- DimPlot(seurat_object, group.by = 'seurat_clusters',pt.size = 2)
+  ggarrange(p1,p2,p3,p4,p5,p6,p7,p8,p9, nrow=3, ncol=3)
+}
+
+pca_plots(mac, 'all')
+```
+
+#### ORG49
+```{r, fig.height=12, fig.width=16, fig.align='left'}
+
+#Function for plotting
+pca_plots <- function(df, type){
+   if (type=='all'){
+    seurat_object <-df %>%
+      subset(., Cell_type != "")
+  } else {
+    seurat_object <-df %>%
+      subset(., Organoid == type)
+  }
+  seurat_object<- seurat_object %>%
+    SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+    FindVariableFeatures(verbose = FALSE) %>%
+    RunPCA(npcs = ncol(seurat_object)-1) %>%
+    FindNeighbors(verbose = FALSE) %>% 
+    FindClusters(method = "igraph", verbose = FALSE)
+
+  p1<-FeaturePlot(seurat_object, features = 'nCount_RNA',pt.size = 2)
+  p2<-FeaturePlot(seurat_object, features = 'percent.mt',pt.size = 2)
+  p3<-FeaturePlot(seurat_object, features = 'percent.rp',pt.size = 2)
+  p4<-DimPlot(seurat_object, group.by= 'Row',pt.size = 2)
+  p5<-DimPlot(seurat_object, group.by= 'Column',pt.size = 2)
+  p6<-DimPlot(seurat_object, group.by= 'Time',pt.size = 2)
+  p7<-DimPlot(seurat_object, group.by= 'Cell_type',pt.size = 2)
+  p8 <- DimPlot(seurat_object, group.by = 'Treatment_1',pt.size = 2)
+  p9 <- DimPlot(seurat_object, group.by = 'seurat_clusters',pt.size = 2)
+  ggarrange(p1,p2,p3,p4,p5,p6,p7,p8,p9, nrow=3, ncol=3)
+}
+
+pca_plots(mac, 'ORG49')
+
+```
+
+#### ORG38
+```{r, fig.height=12, fig.width=16, fig.align='left'}
+pca_plots(mac, 'ORG38')
+```
+
+#### ORG66
+```{r, fig.height=12, fig.width=16, fig.align='left'}
+pca_plots(mac, 'ORG66')
+```
+
+### Sample Type Distribution
+
+### Gene Expression
+
+

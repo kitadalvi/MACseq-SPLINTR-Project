@@ -1,0 +1,103 @@
+---
+title: "QC Analysis"
+output: html_document
+date: "2024-08-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(Seurat)
+library(gtools)
+library(tidyseurat)
+library(DESeq2)
+library(edgeR)
+library(RUVSeq)
+library(variancePartition)
+library(reshape2)
+library(gridExtra)
+library(ggrepel)
+library(gg.layers)
+```
+
+## Filtering data
+```{r, echo=TRUE}
+
+#import metadata
+metadata<-read.csv("/Volumes/bioinf/home/ndalvi/MACseq_PMC228/metadata/PMC228.csv",header=T) %>%
+  arrange("Barcode") %>%
+  mutate(id=gsub("Plate","",Plate_ID)) %>%
+  mutate(Treatment_conc=paste0(Treatment_1,"_",Concentration_1))
+
+head(metadata)
+
+#load in count data 
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/MACseq_PMC228/raw/PMC228/starsolo/SA_PMC228-null.Solo.out/Gene/raw')
+
+#filter by cpm>10 in at least 2 samples
+keep <- rowSums(cpm(raw_counts)>10) >= 2
+raw_counts <- raw_counts[keep,]
+dim(raw_counts)
+```
+
+
+## QC Plots
+### Volcano plot
+```{r, echo=FALSE}
+#filter for the minimum number of reads per gene per sample, as per edgeR
+row.names(metadata)<-metadata$Barcode
+
+mac <- CreateSeuratObject(counts = raw_counts,
+                          project = 'PMC228',
+                          min.cells = 1,
+                          min.features = 1)
+
+#for humans: MT, and ribosomal protein: RP. if MT> 30 then most likely dead cells
+mac[["percent.mt"]]<-PercentageFeatureSet(mac, pattern = "^MT-")
+
+#add location metadata
+mac<- mac %>%
+  inner_join(metadata,by=c(".cell"="Barcode"))
+
+VlnPlot(mac, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+```
+
+### Plate QC
+```{r}
+#function for plotting QC
+plot_QC<-function(data,feature_type,treatment){
+  #col_sym<-rlang::sym(feature_type)
+  data<-data %>%
+    select(Well_ID,Row,Column,Plate_ID,{{feature_type}},{{treatment}}) %>%
+    mutate(Column=as.character(Column)) %>%
+    mutate(Column=factor(Column,levels=mixedsort(unique(Column)))) %>%
+    mutate(median_value=median(!!rlang::sym(feature_type))) %>%
+    mutate(max_value=max(!!rlang::sym(feature_type))) %>%
+    mutate(min_value=min(!!rlang::sym(feature_type)))
+  p<-ggplot(data, aes(Column,
+                      fct_rev(as_factor(Row)),
+                      fill=!!rlang::sym(feature_type),
+  )
+  ) +
+    geom_tile() +
+    facet_wrap(~Plate_ID,ncol = 1) +
+    scale_x_discrete(position = "top") +
+    #scale_fill_continuous(trans="log10") +
+    scale_fill_gradient2(low = "deepskyblue3",
+                         mid = "white",
+                         high = "red",
+                         midpoint = unique(data$median_value),
+                         name = "RNA read counts") +
+    theme(
+      panel.grid = element_blank(),
+      axis.title.y = element_blank(),
+      axis.title.x = element_blank()
+    ) +
+    geom_text(aes(label=!!rlang::sym(treatment)),size=2)
+  p
+}
+p<-plot_QC(mac,"nCount_RNA","Treatment_1")
+print(p)
+
+```
