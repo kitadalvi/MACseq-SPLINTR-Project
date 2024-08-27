@@ -11,5 +11,8 @@ editor_options:
 Welcome to my research website.
 
 [MAC-seq PMC228 QC (Nenad)](QC_Analysis.html)
+
 [MAC-seq PMC228 QC (VCFG)](QC_VCFG.html)
+
+[Differential Gene Expression](differential_expression.html)
 

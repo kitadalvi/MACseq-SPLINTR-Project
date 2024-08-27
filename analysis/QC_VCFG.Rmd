@@ -34,14 +34,14 @@ metadata<-read.csv("/Volumes/bioinf/home/ndalvi/MACseq_PMC228/metadata/PMC228.cs
   mutate(id=gsub("Plate","",Plate_ID)) %>%
   mutate(Treatment_conc=paste0(Treatment_1,"_",Concentration_1))
 
-head(metadata)
-
 #load in count data 
 raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/MACseq_PMC228/raw/PMC228/starsolo/SA_PMC228-null.Solo.out/Gene/raw')
+
 
 #filter by cpm>10 in at least 2 samples
 keep <- rowSums(cpm(raw_counts)>10) >= 3
 raw_counts <- raw_counts[keep,]
+
 ```
 
 ## QC Plots
@@ -53,6 +53,7 @@ mac <- CreateSeuratObject(counts = raw_counts,
                           project = 'PMC228',
                           min.cells = 1,
                           min.features = 1)
+
 
 #for humans: MT, and ribosomal protein: RP. if MT> 30 then most likely dead cells
 mac[["percent.mt"]]<-PercentageFeatureSet(mac, pattern = "^MT-")
