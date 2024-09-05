@@ -4,7 +4,7 @@ output: html_document
 date: "2024-08-15"
 ---
 
-```{r setup, include=FALSE, warning=FALSE, message=FALSE, echo=FALSE}
+```{r setup, include=FALSE, warning=FALSE, message=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 library(tidyverse)
 library(Seurat)
@@ -28,6 +28,7 @@ library(dplyr)
 
 ```{r, warning=FALSE}
 #import metadata
+
 metadata<-read.csv("/Volumes/bioinf/home/ndalvi/MACseq_PMC228/metadata/PMC228.csv",header=T) %>%
   arrange("Barcode") %>%
   mutate(id=gsub("Plate","",Plate_ID)) %>%
@@ -154,6 +155,7 @@ coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
 plot_volcano(DEgenes)  + ggtitle("ORG38 Paclitaxel IC12.5 VS DMSO")
 DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
+
 ```
 
 In summary: 4974 genes differentially expressed between Paclitaxel IC12.5 and DMSO at 48H:
@@ -169,6 +171,9 @@ coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
 plot_volcano(DEgenes)  + ggtitle("ORG38 Paclitaxel IC25 VS DMSO")
 DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
+
+DEgenes['genes']<- rownames(DEgenes)
+write.table(DEgenes,row.names = F, quote=F, col.names=T, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG38/PAC_IC25_48H.txt', sep='\t')
 ```
 
 
@@ -180,7 +185,6 @@ datatable(DEgenes)
 Enriched pathways for differentially expressed genes:
 ```{r}
 # ##enrichment analysis
-# DEgenes['genes']<- rownames(DEgenes)
 # gene_list <- DEgenes[,c(1)]
 # names(gene_list) <- DEgenes$genes
 # gene_list = sort(gene_list, decreasing = TRUE)
@@ -196,6 +200,9 @@ Enriched pathways for differentially expressed genes:
 #              OrgDb = "org.Hs.eg.db",
 #              pAdjustMethod = "none")
 # 
+# saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG38/PAC_25_48H_gse.rds')
+# 
+# 
 # output <- as.data.frame(gse@result)
 # output <- output[order(output$pvalue),]
 # rownames(output)<- NULL
@@ -203,7 +210,6 @@ Enriched pathways for differentially expressed genes:
 
 output <- read.delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/enrichedPathways/ORG38/PAC_IC25_48H.txt', header = TRUE)
 datatable(output[,c(3,4,5,7,12)])
-
 ```
 
 #### Paclitaxel IC50 48H -DMSO 48H
@@ -214,6 +220,9 @@ coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
 plot_volcano(DEgenes)  + ggtitle("ORG38 Paclitaxel IC50 VS DMSO")
 DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
+
+DEgenes['genes']<- rownames(DEgenes)
+write.table(DEgenes,row.names = F, quote=F, col.names=T, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG38/PAC_IC50_48H.txt', sep='\t')
 ```
 
 In summary: 4810 genes differentially expressed between Paclitaxel IC50 and DMSO at 48H:
@@ -223,12 +232,11 @@ datatable(DEgenes)
 
 Enriched pathways for differentially expressed genes:
 ```{r}
-##enrichment analysis
-DEgenes['genes']<- rownames(DEgenes)
-gene_list <- DEgenes[,c(1)]
-names(gene_list) <- DEgenes$genes
-gene_list = sort(gene_list, decreasing = TRUE)
-
+# ##enrichment analysis
+# gene_list <- DEgenes[,c(1)]
+# names(gene_list) <- DEgenes$genes
+# gene_list = sort(gene_list, decreasing = TRUE)
+# 
 # gse <- gseGO(geneList=gene_list,
 #              ont ="ALL",
 #              keyType = "ALIAS",
@@ -239,6 +247,8 @@ gene_list = sort(gene_list, decreasing = TRUE)
 #              verbose = TRUE,
 #              OrgDb = "org.Hs.eg.db",
 #              pAdjustMethod = "none")
+# 
+# saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG38/PAC_50_48H_gse.rds')
 # 
 # output <- as.data.frame(gse@result)
 # output <- output[order(output$pvalue),]
@@ -258,6 +268,7 @@ coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
 plot_volcano(DEgenes)  + ggtitle("ORG38 SN38 IC12.5 VS DMSO")
 DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
+
 ```
 
 In summary: 828 genes differentially expressed between SN38 IC12.5 and DMSO at 48H:
@@ -273,7 +284,10 @@ treatment_2<-"ORG38.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
 plot_volcano(DEgenes)  + ggtitle("ORG38 SN38 IC25 VS DMSO")
-DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
+DEgenes<- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
+
+DEgenes['genes']<- rownames(DEgenes)
+write.table(DEgenes,row.names = F, quote=F, col.names=T, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG38/SN38_IC25_48H.txt', sep='\t')
 ```
 
 In summary: 1213 genes differentially expressed between SN38 IC25 and DMSO at 48H:
@@ -284,7 +298,6 @@ datatable(DEgenes)
 Enriched pathways for differentially expressed genes:
 ```{r}
 # ##enrichment analysis
-# DEgenes['genes']<- rownames(DEgenes)
 # gene_list <- DEgenes[,c(1)]
 # names(gene_list) <- DEgenes$genes
 # gene_list = sort(gene_list, decreasing = TRUE)
@@ -299,6 +312,8 @@ Enriched pathways for differentially expressed genes:
 #              verbose = TRUE,
 #              OrgDb = "org.Hs.eg.db",
 #              pAdjustMethod = "none")
+# 
+# saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG38/SN38_25_48H_gse.rds')
 # 
 # output <- as.data.frame(gse@result)
 # output <- output[order(output$pvalue),]
@@ -318,6 +333,9 @@ coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
 plot_volcano(DEgenes)  + ggtitle("ORG38 SN38 IC50 VS DMSO")
 DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
+
+DEgenes['genes']<- rownames(DEgenes)
+write.table(DEgenes,row.names = F, quote=F, col.names=T, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG38/SN38_IC50_48H.txt', sep='\t')
 ```
 
 In summary: 1213 genes differentially expressed between SN38 IC50 and DMSO at 48H:
@@ -328,7 +346,6 @@ datatable(DEgenes)
 Enriched pathways for differentially expressed genes:
 ```{r}
 # ##enrichment analysis
-# DEgenes['genes']<- rownames(DEgenes)
 # gene_list <- DEgenes[,c(1)]
 # names(gene_list) <- DEgenes$genes
 # gene_list = sort(gene_list, decreasing = TRUE)
@@ -343,6 +360,7 @@ Enriched pathways for differentially expressed genes:
 #              verbose = TRUE,
 #              OrgDb = "org.Hs.eg.db",
 #              pAdjustMethod = "none")
+# saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG38/SN38_50_48H_gse.rds')
 # 
 # output <- as.data.frame(gse@result)
 # output <- output[order(output$pvalue),]
@@ -353,7 +371,9 @@ output <- read.delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project
 datatable(output[,c(3,4,5,7,12)])
 
 ```
+
 ### {-}
+
 
 ### ORG49 {.tabset}
 
@@ -380,6 +400,9 @@ coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
 plot_volcano(DEgenes)  + ggtitle("ORG49 Paclitaxel IC25 VS DMSO")
 DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
+
+DEgenes['genes']<- rownames(DEgenes)
+write.table(DEgenes,row.names = F, quote=F, col.names=T, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG49/PAC_IC25_48H.txt', sep='\t')
 ```
 
 In summary: 27 genes differentially expressed between Paclitaxel IC25 and DMSO at 48H:
@@ -389,8 +412,7 @@ datatable(DEgenes)
 
 Enriched pathways for differentially expressed genes:
 ```{r}
-# ##enrichment analysis
-# DEgenes['genes']<- rownames(DEgenes)
+# #enrichment analysis
 # gene_list <- DEgenes[,c(1)]
 # names(gene_list) <- DEgenes$genes
 # gene_list = sort(gene_list, decreasing = TRUE)
@@ -405,6 +427,7 @@ Enriched pathways for differentially expressed genes:
 #              verbose = TRUE,
 #              OrgDb = "org.Hs.eg.db",
 #              pAdjustMethod = "none")
+# saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG49/PAC_25_48H_gse.rds')
 # 
 # output <- as.data.frame(gse@result)
 # output <- output[order(output$pvalue),]
@@ -424,6 +447,9 @@ coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
 plot_volcano(DEgenes)  + ggtitle("ORG49 Paclitaxel IC50 VS DMSO")
 DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
+
+DEgenes['genes']<- rownames(DEgenes)
+write.table(DEgenes,row.names = F, quote=F, col.names=T, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG49/PAC_IC50_48H.txt', sep='\t')
 ```
 
 In summary: 108 genes differentially expressed between Paclitaxel IC50 and DMSO at 48H:
@@ -433,8 +459,7 @@ datatable(DEgenes)
 
 Enriched pathways for differentially expressed genes:
 ```{r}
-# ##enrichment analysis
-# DEgenes['genes']<- rownames(DEgenes)
+# #enrichment analysis
 # gene_list <- DEgenes[,c(1)]
 # names(gene_list) <- DEgenes$genes
 # gene_list = sort(gene_list, decreasing = TRUE)
@@ -449,7 +474,7 @@ Enriched pathways for differentially expressed genes:
 #              verbose = TRUE,
 #              OrgDb = "org.Hs.eg.db",
 #              pAdjustMethod = "none")
-# 
+# saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG49/PAC_50_48H_gse.rds')
 # output <- as.data.frame(gse@result)
 # output <- output[order(output$pvalue),]
 # rownames(output)<- NULL
@@ -467,6 +492,7 @@ coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
 plot_volcano(DEgenes)  + ggtitle("ORG49 SN38 IC12.5 VS DMSO")
 DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
+
 ```
 
 In summary: 4 genes differentially expressed between SN38 IC12.5 and DMSO at 48H:
@@ -482,6 +508,9 @@ coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
 plot_volcano(DEgenes)  + ggtitle("ORG49 SN38 IC25 VS DMSO")
 DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
+
+DEgenes['genes']<- rownames(DEgenes)
+write.table(DEgenes,row.names = F, quote=F, col.names=T, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG49/SN38_IC25_48H.txt', sep='\t')
 ```
 
 In summary: 173 genes differentially expressed between SN38 IC25 and DMSO at 48H:
@@ -491,8 +520,7 @@ datatable(DEgenes)
 
 Enriched pathways for differentially expressed genes:
 ```{r}
-# ##enrichment analysis
-# DEgenes['genes']<- rownames(DEgenes)
+# #enrichment analysis
 # gene_list <- DEgenes[,c(1)]
 # names(gene_list) <- DEgenes$genes
 # gene_list = sort(gene_list, decreasing = TRUE)
@@ -507,6 +535,8 @@ Enriched pathways for differentially expressed genes:
 #              verbose = TRUE,
 #              OrgDb = "org.Hs.eg.db",
 #              pAdjustMethod = "none")
+# 
+# saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG49/SN38_25_48H_gse.rds')
 # 
 # output <- as.data.frame(gse@result)
 # output <- output[order(output$pvalue),]
@@ -525,6 +555,9 @@ coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
 plot_volcano(DEgenes)  + ggtitle("ORG49 SN38 IC50 VS DMSO")
 DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
+
+DEgenes['genes']<- rownames(DEgenes)
+write.table(DEgenes,row.names = F, quote=F, col.names=T, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG49/SN38_IC50_48H.txt', sep='\t')
 ```
 
 In summary: 472 genes differentially expressed between SN38 IC50 and DMSO at 48H:
@@ -534,8 +567,7 @@ datatable(DEgenes)
 
 Enriched pathways for differentially expressed genes:
 ```{r}
-# ##enrichment analysis
-# DEgenes['genes']<- rownames(DEgenes)
+# #enrichment analysis
 # gene_list <- DEgenes[,c(1)]
 # names(gene_list) <- DEgenes$genes
 # gene_list = sort(gene_list, decreasing = TRUE)
@@ -551,6 +583,8 @@ Enriched pathways for differentially expressed genes:
 #              OrgDb = "org.Hs.eg.db",
 #              pAdjustMethod = "none")
 # 
+# saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG49/SN38_50_48H_gse.rds')
+# 
 # output <- as.data.frame(gse@result)
 # output <- output[order(output$pvalue),]
 # rownames(output)<- NULL
@@ -561,7 +595,6 @@ datatable(output[,c(3,4,5,7,12)])
 ```
 
 ### {-}
-
 
 ### ORG66 {.tabset}
 
@@ -588,6 +621,9 @@ coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
 plot_volcano(DEgenes)  + ggtitle("ORG66 Paclitaxel IC25 VS DMSO")
 DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
+
+DEgenes['genes']<- rownames(DEgenes)
+write.table(DEgenes,row.names = F, quote=F, col.names=T, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG66/PAC_IC25_48H.txt', sep='\t')
 ```
 
 In summary: 1460 genes differentially expressed between Paclitaxel IC25 and DMSO at 48H:
@@ -598,7 +634,6 @@ datatable(DEgenes)
 Enriched pathways for differentially expressed genes:
 ```{r}
 # #enrichment analysis
-# DEgenes['genes']<- rownames(DEgenes)
 # gene_list <- DEgenes[,c(1)]
 # names(gene_list) <- DEgenes$genes
 # gene_list = sort(gene_list, decreasing = TRUE)
@@ -613,7 +648,7 @@ Enriched pathways for differentially expressed genes:
 #              verbose = TRUE,
 #              OrgDb = "org.Hs.eg.db",
 #              pAdjustMethod = "none")
-# 
+# saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG66/PAC_25_48H_gse.rds')
 # output <- as.data.frame(gse@result)
 # output <- output[order(output$pvalue),]
 # rownames(output)<- NULL
@@ -631,6 +666,9 @@ coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
 plot_volcano(DEgenes)  + ggtitle("ORG66 Paclitaxel IC50 VS DMSO")
 DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
+
+DEgenes['genes']<- rownames(DEgenes)
+write.table(DEgenes,row.names = F, quote=F, col.names=T, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG66/PAC_IC50_48H.txt', sep='\t')
 ```
 
 In summary: 1137 genes differentially expressed between Paclitaxel IC50 and DMSO at 48H:
@@ -640,8 +678,7 @@ datatable(DEgenes)
 
 Enriched pathways for differentially expressed genes:
 ```{r}
-# #enrichment analysis# 
-# DEgenes['genes']<- rownames(DEgenes)
+# #enrichment analysis#
 # gene_list <- DEgenes[,c(1)]
 # names(gene_list) <- DEgenes$genes
 # gene_list = sort(gene_list, decreasing = TRUE)
@@ -656,7 +693,7 @@ Enriched pathways for differentially expressed genes:
 #              verbose = TRUE,
 #              OrgDb = "org.Hs.eg.db",
 #              pAdjustMethod = "none")
-# 
+# saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG66/PAC_50_48H_gse.rds')
 # output <- as.data.frame(gse@result)
 # output <- output[order(output$pvalue),]
 # rownames(output)<- NULL
@@ -690,6 +727,9 @@ coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
 plot_volcano(DEgenes)  + ggtitle("ORG66 SN38 IC25 VS DMSO")
 DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
+
+DEgenes['genes']<- rownames(DEgenes)
+write.table(DEgenes,row.names = F, quote=F, col.names=T, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG66/SN38_IC25_48H.txt', sep='\t')
 ```
 
 In summary: 351 genes differentially expressed between SN38 IC25 and DMSO at 48H:
@@ -699,51 +739,7 @@ datatable(DEgenes)
 
 Enriched pathways for differentially expressed genes:
 ```{r}
-##enrichment analysis
-DEgenes['genes']<- rownames(DEgenes)
-gene_list <- DEgenes[,c(1)]
-names(gene_list) <- DEgenes$genes
-gene_list = sort(gene_list, decreasing = TRUE)
-
-gse <- gseGO(geneList=gene_list,
-             ont ="ALL",
-             keyType = "ALIAS",
-             nPerm = 10000,
-             minGSSize = 3,
-             maxGSSize = 800,
-             pvalueCutoff = 0.05,
-             verbose = TRUE,
-             OrgDb = "org.Hs.eg.db",
-             pAdjustMethod = "none")
-
-output <- as.data.frame(gse@result)
-output <- output[order(output$pvalue),]
-rownames(output)<- NULL
-write.table(output, row.names = FALSE, quote=FALSE, col.names = TRUE, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/enrichedPathways/ORG66/SN38_IC25_48H.txt', sep='\t')
-
-output <- read.delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/enrichedPathways/ORG66/SN38_IC25_48H.txt', header = TRUE)
-datatable(output[,c(3,4,5,7,12)])
-```
-
-#### SN38 IC50 48H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
-treatment_1<-"ORG66.SN38_IC50.48H"
-treatment_2<-"ORG66.DMSO.48H"
-coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
-DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
-plot_volcano(DEgenes)  + ggtitle("ORG66 SN38 IC50 VS DMSO")
-DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
-```
-
-In summary: 336 genes differentially expressed between SN38 IC50 and DMSO at 48H:
-```{r}
-datatable(DEgenes)
-```
-
-Enriched pathways for differentially expressed genes:
-```{r}
-#enrichment analysis
-# DEgenes['genes']<- rownames(DEgenes)
+# ##enrichment analysis
 # gene_list <- DEgenes[,c(1)]
 # names(gene_list) <- DEgenes$genes
 # gene_list = sort(gene_list, decreasing = TRUE)
@@ -758,7 +754,52 @@ Enriched pathways for differentially expressed genes:
 #              verbose = TRUE,
 #              OrgDb = "org.Hs.eg.db",
 #              pAdjustMethod = "none")
+# saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG66/SN38_25_48H_gse.rds')
+# output <- as.data.frame(gse@result)
+# output <- output[order(output$pvalue),]
+# rownames(output)<- NULL
+# write.table(output, row.names = FALSE, quote=FALSE, col.names = TRUE, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/enrichedPathways/ORG66/SN38_IC25_48H.txt', sep='\t')
+
+output <- read.delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/enrichedPathways/ORG66/SN38_IC25_48H.txt', header = TRUE)
+datatable(output[,c(3,4,5,7,12)])
+```
+
+#### SN38 IC50 48H -DMSO 48H
+```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+treatment_1<-"ORG66.SN38_IC50.48H"
+treatment_2<-"ORG66.DMSO.48H"
+coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
+DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
+plot_volcano(DEgenes)  + ggtitle("ORG66 SN38 IC50 VS DMSO")
+DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
+
+DEgenes['genes']<- rownames(DEgenes)
+write.table(DEgenes,row.names = F, quote=F, col.names=T, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG66/SN38_IC50_48H.txt', sep='\t')
+```
+
+In summary: 336 genes differentially expressed between SN38 IC50 and DMSO at 48H:
+```{r}
+datatable(DEgenes)
+```
+
+Enriched pathways for differentially expressed genes:
+```{r}
+# #enrichment analysis
+# gene_list <- DEgenes[,c(1)]
+# names(gene_list) <- DEgenes$genes
+# gene_list = sort(gene_list, decreasing = TRUE)
 # 
+# gse <- gseGO(geneList=gene_list,
+#              ont ="ALL",
+#              keyType = "ALIAS",
+#              nPerm = 10000,
+#              minGSSize = 3,
+#              maxGSSize = 800,
+#              pvalueCutoff = 0.05,
+#              verbose = TRUE,
+#              OrgDb = "org.Hs.eg.db",
+#              pAdjustMethod = "none")
+# saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG66/SN38_50_48H_gse.rds')
 # output <- as.data.frame(gse@result)
 # output <- output[order(output$pvalue),]
 # rownames(output)<- NULL

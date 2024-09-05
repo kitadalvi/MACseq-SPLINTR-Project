@@ -1,5 +1,5 @@
 name: "MACseq SPLINTR Analysis"
-output_dir: ../docs
+output_dir: ../docs/
 navbar:
   title: "MACseq SPLINTR Analysis"
   left:
@@ -9,9 +9,19 @@ navbar:
     href: about.html
   - text: License
     href: license.html
+  - text: Differential Expression
+    menu:
+    - text: Differential Expression (24H)
+      href: differential_expression_24H.html
+    - text: Differential Expression (48H)
+      href: differential_expression.html
+  - text: Pathway Enrichment
+    menu:
+    - text: Pathway Enrichment
+      href: DGE_VPathwaysEnrichment.html
 output:
   workflowr::wflow_html:
     toc: yes
     toc_float: yes
-    theme: cosmo
+    theme: sandstone
     highlight: textmate
