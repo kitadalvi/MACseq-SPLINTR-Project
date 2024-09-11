@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+<meta name="date" content="2024-09-10" />
+
+<title>SPLINTR Plate 1 QC</title>
+
+<script src="site_libs/header-attrs-2.27/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/sandstone.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/htmltools-fill-0.5.8.1/fill.css" rel="stylesheet" />
+<script src="site_libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
+<link href="site_libs/datatables-css-0.0.0/datatables-crosstalk.css" rel="stylesheet" />
+<script src="site_libs/datatables-binding-0.33/datatables.js"></script>
+<link href="site_libs/dt-core-1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" />
+<link href="site_libs/dt-core-1.13.6/css/jquery.dataTables.extra.css" rel="stylesheet" />
+<script src="site_libs/dt-core-1.13.6/js/jquery.dataTables.min.js"></script>
+<link href="site_libs/crosstalk-1.2.1/css/crosstalk.min.css" rel="stylesheet" />
+<script src="site_libs/crosstalk-1.2.1/js/crosstalk.min.js"></script>
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/main/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">MACseq SPLINTR Analysis</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    Differential Expression
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="differential_expression_24H.html">Differential Expression (24H)</a>
+    </li>
+    <li>
+      <a href="differential_expression.html">Differential Expression (48H)</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    Pathway Enrichment
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="DGE_VPathwaysEnrichment.html">Pathway Enrichment</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    SPLINTR
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="Untitled.html">QC</a>
+    </li>
+    <li>
+      <a href="org38_SPLINTR.html">ORG38</a>
+    </li>
+    <li>
+      <a href="org49_SPLINTR.html">ORG49</a>
+    </li>
+    <li>
+      <a href="org66_SPLINTR.html">ORG66</a>
+    </li>
+  </ul>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">SPLINTR Plate 1 QC</h1>
+<h4 class="date">2024-09-10</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span
+class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> </a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2024-09-11
+</p>
+<p>
+<strong>Checks:</strong> <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> 1
+</p>
+<p>
+<strong>Knit directory:</strong> <code>MACseq-SPLINTR-Project/</code>
+<span class="glyphicon glyphicon-question-sign" aria-hidden="true"
+title="This is the local directory in which the code in this file was executed.">
+</span>
+</p>
+<p>
+This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a>
+analysis was created with <a
+  href="https://github.com/workflowr/workflowr">workflowr</a> (version
+1.7.1). The <em>Checks</em> tab describes the reproducibility checks
+that were applied when the results were created. The <em>Past
+versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges">
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted
+changes </a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguncommittedchanges"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>The R Markdown is untracked by Git. To know which version of the R
+Markdown file created these results, you’ll want to first commit it to
+the Git repo. If you’re still working on the analysis, you can ignore
+this warning. When you’re finished, you can run
+<code>wflow_publish</code> to commit the R Markdown file and build the
+HTML.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the
+global environment can affect the analysis in your R Markdown file in
+unknown ways. For reproduciblity it’s best to always run the code in an
+empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20240802code">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Seed:</strong>
+<code>set.seed(20240802)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20240802code"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20240802)</code> was run prior to running
+the code in the R Markdown file. Setting a seed ensures that any results
+that rely on randomness, e.g. subsampling or permutations, are
+reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Session information:</strong>
+recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package
+versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be
+confident that you successfully produced the results during this
+run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr
+project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomkitadalviMACseqSPLINTRProjecttreecbf5e6f33e75709424ebce18740657259cc50aaatargetblankcbf5e6fa">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Repository version:</strong>
+<a href="https://github.com/kitadalvi/MACseq-SPLINTR-Project/tree/cbf5e6f33e75709424ebce18740657259cc50aaa" target="_blank">cbf5e6f</a>
+</a>
+</p>
+</div>
+<div
+id="strongRepositoryversionstrongahrefhttpsgithubcomkitadalviMACseqSPLINTRProjecttreecbf5e6f33e75709424ebce18740657259cc50aaatargetblankcbf5e6fa"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development
+and connecting the code version to the results is critical for
+reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version
+<a href="https://github.com/kitadalvi/MACseq-SPLINTR-Project/tree/cbf5e6f33e75709424ebce18740657259cc50aaa" target="_blank">cbf5e6f</a>.
+See the <em>Past versions</em> tab to see a history of the changes made
+to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for
+the analysis have been committed to Git prior to generating the results
+(you can use <code>wflow_publish</code> or
+<code>wflow_git_commit</code>). workflowr only checks the R Markdown
+file, but you know if there are other scripts or data files that it
+depends on. Below is the status of the Git repository when the results
+were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    .Rhistory
+    Ignored:    .Rproj.user/
+    Ignored:    data/.DS_Store
+    Ignored:    data/DEgenes/
+    Ignored:    data/enrichedPathways/
+    Ignored:    data/rObjects/
+
+Untracked files:
+    Untracked:  analysis/Untitled.Rmd
+    Untracked:  analysis/org38_SPLINTR.Rmd
+    Untracked:  analysis/org49_SPLINTR.Rmd
+    Untracked:  analysis/org66_SPLINTR.Rmd
+
+Unstaged changes:
+    Modified:   analysis/DGE_VPathwaysEnrichment.Rmd
+    Modified:   analysis/_site.yml
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not
+included in this status report because it is ok for generated content to
+have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+<p>
+There are no past versions. Publish this analysis with
+<code>wflow_publish()</code> to start tracking its development.
+</p>
+<hr>
+</div>
+</div>
+</div>
+<pre class="r"><code>knitr::opts_chunk$set(echo = TRUE)
+
+library(bartools)</code></pre>
+<pre><code>Loading required package: edgeR</code></pre>
+<pre><code>Warning: package &#39;edgeR&#39; was built under R version 4.4.1</code></pre>
+<pre><code>Loading required package: limma</code></pre>
+<pre><code>Warning: package &#39;limma&#39; was built under R version 4.4.1</code></pre>
+<pre><code>Loading required package: ggplot2</code></pre>
+<pre class="r"><code>library(Seurat)</code></pre>
+<pre><code>Loading required package: SeuratObject</code></pre>
+<pre><code>Loading required package: sp</code></pre>
+<pre><code>
+Attaching package: &#39;SeuratObject&#39;</code></pre>
+<pre><code>The following objects are masked from &#39;package:base&#39;:
+
+    intersect, t</code></pre>
+<pre class="r"><code>library(SingleCellExperiment)</code></pre>
+<pre><code>Warning: package &#39;SingleCellExperiment&#39; was built under R version 4.4.1</code></pre>
+<pre><code>Loading required package: SummarizedExperiment</code></pre>
+<pre><code>Warning: package &#39;SummarizedExperiment&#39; was built under R version 4.4.1</code></pre>
+<pre><code>Loading required package: MatrixGenerics</code></pre>
+<pre><code>Loading required package: matrixStats</code></pre>
+<pre><code>
+Attaching package: &#39;MatrixGenerics&#39;</code></pre>
+<pre><code>The following objects are masked from &#39;package:matrixStats&#39;:
+
+    colAlls, colAnyNAs, colAnys, colAvgsPerRowSet, colCollapse,
+    colCounts, colCummaxs, colCummins, colCumprods, colCumsums,
+    colDiffs, colIQRDiffs, colIQRs, colLogSumExps, colMadDiffs,
+    colMads, colMaxs, colMeans2, colMedians, colMins, colOrderStats,
+    colProds, colQuantiles, colRanges, colRanks, colSdDiffs, colSds,
+    colSums2, colTabulates, colVarDiffs, colVars, colWeightedMads,
+    colWeightedMeans, colWeightedMedians, colWeightedSds,
+    colWeightedVars, rowAlls, rowAnyNAs, rowAnys, rowAvgsPerColSet,
+    rowCollapse, rowCounts, rowCummaxs, rowCummins, rowCumprods,
+    rowCumsums, rowDiffs, rowIQRDiffs, rowIQRs, rowLogSumExps,
+    rowMadDiffs, rowMads, rowMaxs, rowMeans2, rowMedians, rowMins,
+    rowOrderStats, rowProds, rowQuantiles, rowRanges, rowRanks,
+    rowSdDiffs, rowSds, rowSums2, rowTabulates, rowVarDiffs, rowVars,
+    rowWeightedMads, rowWeightedMeans, rowWeightedMedians,
+    rowWeightedSds, rowWeightedVars</code></pre>
+<pre><code>Loading required package: GenomicRanges</code></pre>
+<pre><code>Warning: package &#39;GenomicRanges&#39; was built under R version 4.4.1</code></pre>
+<pre><code>Loading required package: stats4</code></pre>
+<pre><code>Loading required package: BiocGenerics</code></pre>
+<pre><code>
+Attaching package: &#39;BiocGenerics&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:SeuratObject&#39;:
+
+    intersect</code></pre>
+<pre><code>The following object is masked from &#39;package:limma&#39;:
+
+    plotMA</code></pre>
+<pre><code>The following objects are masked from &#39;package:stats&#39;:
+
+    IQR, mad, sd, var, xtabs</code></pre>
+<pre><code>The following objects are masked from &#39;package:base&#39;:
+
+    anyDuplicated, aperm, append, as.data.frame, basename, cbind,
+    colnames, dirname, do.call, duplicated, eval, evalq, Filter, Find,
+    get, grep, grepl, intersect, is.unsorted, lapply, Map, mapply,
+    match, mget, order, paste, pmax, pmax.int, pmin, pmin.int,
+    Position, rank, rbind, Reduce, rownames, sapply, setdiff, table,
+    tapply, union, unique, unsplit, which.max, which.min</code></pre>
+<pre><code>Loading required package: S4Vectors</code></pre>
+<pre><code>Warning: package &#39;S4Vectors&#39; was built under R version 4.4.1</code></pre>
+<pre><code>
+Attaching package: &#39;S4Vectors&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:utils&#39;:
+
+    findMatches</code></pre>
+<pre><code>The following objects are masked from &#39;package:base&#39;:
+
+    expand.grid, I, unname</code></pre>
+<pre><code>Loading required package: IRanges</code></pre>
+<pre><code>Warning: package &#39;IRanges&#39; was built under R version 4.4.1</code></pre>
+<pre><code>
+Attaching package: &#39;IRanges&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:sp&#39;:
+
+    %over%</code></pre>
+<pre><code>Loading required package: GenomeInfoDb</code></pre>
+<pre><code>Warning: package &#39;GenomeInfoDb&#39; was built under R version 4.4.1</code></pre>
+<pre><code>Loading required package: Biobase</code></pre>
+<pre><code>Welcome to Bioconductor
+
+    Vignettes contain introductory material; view with
+    &#39;browseVignettes()&#39;. To cite Bioconductor, see
+    &#39;citation(&quot;Biobase&quot;)&#39;, and for packages &#39;citation(&quot;pkgname&quot;)&#39;.</code></pre>
+<pre><code>
+Attaching package: &#39;Biobase&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:MatrixGenerics&#39;:
+
+    rowMedians</code></pre>
+<pre><code>The following objects are masked from &#39;package:matrixStats&#39;:
+
+    anyMissing, rowMedians</code></pre>
+<pre><code>
+Attaching package: &#39;SummarizedExperiment&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:Seurat&#39;:
+
+    Assays</code></pre>
+<pre><code>The following object is masked from &#39;package:SeuratObject&#39;:
+
+    Assays</code></pre>
+<pre><code>
+Attaching package: &#39;SingleCellExperiment&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:edgeR&#39;:
+
+    cpm</code></pre>
+<pre class="r"><code>library(dplyr)</code></pre>
+<pre><code>
+Attaching package: &#39;dplyr&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:Biobase&#39;:
+
+    combine</code></pre>
+<pre><code>The following objects are masked from &#39;package:GenomicRanges&#39;:
+
+    intersect, setdiff, union</code></pre>
+<pre><code>The following object is masked from &#39;package:GenomeInfoDb&#39;:
+
+    intersect</code></pre>
+<pre><code>The following objects are masked from &#39;package:IRanges&#39;:
+
+    collapse, desc, intersect, setdiff, slice, union</code></pre>
+<pre><code>The following objects are masked from &#39;package:S4Vectors&#39;:
+
+    first, intersect, rename, setdiff, setequal, union</code></pre>
+<pre><code>The following objects are masked from &#39;package:BiocGenerics&#39;:
+
+    combine, intersect, setdiff, union</code></pre>
+<pre><code>The following object is masked from &#39;package:matrixStats&#39;:
+
+    count</code></pre>
+<pre><code>The following objects are masked from &#39;package:stats&#39;:
+
+    filter, lag</code></pre>
+<pre><code>The following objects are masked from &#39;package:base&#39;:
+
+    intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>library(reshape2)
+library(tidyr)</code></pre>
+<pre><code>
+Attaching package: &#39;tidyr&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:reshape2&#39;:
+
+    smiths</code></pre>
+<pre><code>The following object is masked from &#39;package:S4Vectors&#39;:
+
+    expand</code></pre>
+<pre class="r"><code>library(DT)</code></pre>
+<pre><code>
+Attaching package: &#39;DT&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:Seurat&#39;:
+
+    JS</code></pre>
+<pre><code>The following object is masked from &#39;package:SeuratObject&#39;:
+
+    JS</code></pre>
+<pre class="r"><code>library(ggplot2)
+library(ggpubr)</code></pre>
+<p>##Loading data</p>
+<pre class="r"><code>counts_path &lt;- &quot;/Volumes/bioinf/home/ndalvi/MACseq_PMC228/results/splintr/MGC-SA-7209-full/counts/MGC-SA-7209_S1.counts.tsv&quot;
+counts &lt;- readBartabCounts(counts_path)
+
+#changing BC names to make them shorter
+counts$barcode &lt;- sub(&#39;SPLINTR_mCHERRY_V2_Barcode&#39;,&#39;BC&#39;,counts$barcode)
+
+head(counts)</code></pre>
+<pre><code>      cellid    barcode bc.umi.count
+1 ACTTGTAAGG BC_1001456            2
+2 ATCAGCGAGG BC_1006414            3
+3 AGGTCACCAA BC_1006414            2
+4 AGGTCACCAA BC_1012715            3
+5 ATCAGCACTT BC_1012715            2
+6 GTAACCTTGG BC_1018095            1</code></pre>
+<div id="qc-and-filter-barcodes" class="section level2">
+<h2>QC and filter barcodes</h2>
+<p>To assess quality of data, we can look at the number of barcodes
+detected per cell and the number of UMIs supporting the most frequent
+barcode:</p>
+<pre class="r"><code>plotBarcodesPerCell(counts)</code></pre>
+<p><img src="figure/Untitled.Rmd/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plotUmiPerBarcode(counts)</code></pre>
+<p><img src="figure/Untitled.Rmd/unnamed-chunk-2-2.png" width="672" style="display: block; margin: auto;" /></p>
+<p>In order to find suitable threshold for filtering, we can plot
+cumulative sum of how many cells would pass each threshold:</p>
+<pre class="r"><code>plotUmiFilterThresholds(counts)</code></pre>
+<p><img src="figure/Untitled.Rmd/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" />
+We can also filter by removing minor barcodes from cells. A minor
+barcode is defined as a barcode that has less than half the number of
+supporting UMIs than the major barcode in the cell:</p>
+<pre class="r"><code>counts_filtered &lt;- filterBarcodes(counts, umiCountFilter = 25, umiFractionFilter = 0.5)
+
+plotBarcodesPerCell(counts_filtered)</code></pre>
+<p><img src="figure/Untitled.Rmd/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" />
+As any given well will have multiple barcodes, we can aggregare barcodes
+per well by concatenating barcodes and UMIs with ‘;’ :</p>
+<pre class="r"><code>counts_agg &lt;- aggregateBarcodes(counts)
+head(counts_agg) </code></pre>
+<pre><code>      cellid                       barcode bc.umi.count
+1 AACAGGCAAT BC_205886;BC_677122;BC_807090        1;1;1
+2 AACCAGCCAG                     BC_807090            1
+3 AACCAGTTGA                    BC_2329183            1
+4 AACCGGCGTA                    BC_1117812            1
+5 AACCTAGTCC   BC_1030757;BC_672;BC_807090        1;1;1
+6 AACTCTACAC BC_807090;BC_903239;BC_957100        1;2;1</code></pre>
+</div>
+<div id="adding-barcode-data-to-seurat-object" class="section level2">
+<h2>Adding barcode Data to Seurat object</h2>
+<pre class="r"><code>#Setting up Seurat object
+expression.data &lt;-
+  Read10X(data.dir = &quot;/Volumes/bioinf/home/ndalvi/MACseq_PMC228/raw/PMC228/starsolo/SA_PMC228-null.Solo.out/Gene/raw&quot;, strip.suffix = T)
+
+sc &lt;- CreateSeuratObject(
+  counts = expression.data,
+  min.cells = 3,
+  min.features = 200,
+  project = &quot;PMC228&quot;
+)</code></pre>
+<pre><code>Warning: Feature names cannot have underscores (&#39;_&#39;), replacing with dashes
+(&#39;-&#39;)</code></pre>
+<p>We can import SPLINTR barcode annotation information to the metadata,
+making sure the barcodes match the respective well/treatments they come
+from:</p>
+<pre class="r"><code>#import metadata
+metadata&lt;-read.csv(&quot;/Volumes/bioinf/home/ndalvi/MACseq_PMC228/metadata/PMC228.csv&quot;,header=T) %&gt;%
+  arrange(&quot;Barcode&quot;) %&gt;%
+  mutate(id=gsub(&quot;Plate&quot;,&quot;&quot;,Plate_ID)) %&gt;%
+  mutate(analysis_condition=paste0(Organoid,&quot;.&quot;,Treatment_1,&quot;.&quot;,Time))
+
+metadata&lt;- metadata %&gt;%
+  left_join(counts_agg,by=c(&quot;Barcode&quot;=&quot;cellid&quot;))
+
+rownames(metadata) &lt;- metadata$Barcode
+
+datatable(metadata)</code></pre>
+<div class="datatables html-widget html-fill-item" id="htmlwidget-75b99c84154391187ade" style="width:100%;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-75b99c84154391187ade">{"x":{"filter":"none","vertical":false,"data":[["AACAAGGTAC","AACACCTAGT","AATCCTACCA","AATGAACACG","ACGCCTTCGT","ACGGTCCGTT","AGGAGGCATA","AGGTATCCTC","ATGGACCAAC","ATGGTGAGCG","CCATTCAGCG","CCGAACCTAA","CGCTTACTAA","CGGAAGCTGT","CTGTCGCTTC","CTGTGCAACA","GCAATGTAAG","GCACTCGGAA","GGTTATGGCG","GGTTGTGCAA","TAGCGAACGC","TAGGACGCCT","TGAACTAACC","TGAAGATCCA","AACAATCAGG","AACAGGCAAT","AATCGTCCGC","AATGACCTTC","ACGCTGGATA","ACGTAGGCAC","AGGCGTCTGT","AGGTCACCAA","ATGGTCTTAG","ATGTGGAAGC","CCGAACAAGC","CCGAAGACCT","CGCTTCTTGG","CGGAATACAC","CTGTCTGTGT","CTTATGTTGC","GCACACTATA","GCACTGCGTT","GGTTCACTGG","GTAACCAGTA","TAGCGCCAAC","TAGGTTGCAA","TGAAGAAGGT","TGACCTGAGA","AACATGGAGA","AACCAGCCAG","AATGAGAGCA","AATTAGGCCG","ACGTGCTGAT","ACTGGCGCAT","AGTAACTCAC","AGTCCACGTA","ATTATCGGAC","CAACAATCCA","CCGAATAGTG","CCGATCCACT","CGGAGATTGG","CGGATCGGTA","CTTCATATCG","CTTGGATCTT","GCACTTAATC","GCAGTACTGG","GTAACCTTGG","GTAAGGCTCC","TAGTAGTCTC","TAGTGGAACT","TGAGCGTTCC","TGCGCTCATT","AACATTACCG","AACCAGTTGA","AATGTCAGTG","AATTGCGATG","ACTCCAAGCC","ACTGGCTTCC","AGTAAGCGTT","AGTCTCGGCA","ATTCGGAACA","CAAGAAGCAT","CCGACTTCTC","CCGATGATAC","CGGAGCTCAA","CGGATTCTAG","CTTGCTGACG","GAAGAGTTCT","GCAGGAGATG","GCATATGAGT","GTAAGAACCT","GTAATCCACG","TAGTCCGCTG","TATCATGCAG","TGAGTACGTA","TGCGTGCTCA","AACCGCGACT","AACCGGCGTA","ACAACAGTCG","ACAACGGAGC","ACTTAACTGC","ACTTCGTTGA","AGTCTGTACG","ATAACGCCTC","CAAGATGAGG","CAAGTGGATC","CCGCGTTATG","CCGGAGTATC","CGGCAACTTA","CGGTCGTATT","GAAGGATTAG","GAATCTTCTC","GCATCCGATC","GCCACGATTC","GTATTGTGGA","GTCCTTCGGT","TATCGTTACG","TCACAGATAC","TGGAATGGAG","TGTGACGTGC","AACCGGAAGG","AACCTAGTCC","ACAACCATAC","ACAAGCGCGA","ACTTCATCAC","ACTTCTCCTG","AGTGCAATGT","ATAAGAGGTC","CAAGCCAACG","CACAGTTCAT","CCGCTAGCTT","CCGGCCAATT","CGGCTCATCA","CGGTGACATC","GAATCGAGCC","GAATTACGGC","GCCAAGTACA","GCCATAGGTT","GTCCGCATCA","GTCGCTCTCT","TCAAGTGCAG","TCACCGCCTA","TGTCATTCGC","TGTGCACTAA","AACCTCATAG","AACTCTACAC","ACACAATCTC","ACACCGAATT","ACTTGAGGAA","AGAACCACGG","ATAAGGTGCA","ATACCTCCGG","CACGAGTCTG","CACTGAGCAC","CCGGTCTCTA","CCGTCAGAAC","CGTAACGGAT","CGTACTGTAA","GACCATCTAA","GAGAACGAAG","GCCATATCGA","GCCTGGACAT","GTCGGTGACA","GTCTCTTAAG","TCACGCCACT","TCATTGTCCA","TGTGCTTCAG","TGTTGTGACT","AACGTAAGCT","AACTGTGTCA","ACACAGTGAA","ACACGCAGTA","ACTTGTAAGG","AGAAGCAATC","ATACACGACA","ATAGCAGTGC","CACGCTCCAA","CAGATCAATG","CCGTACGATG","CCTAGACACG","CGTAAGATTC","CGTAGAAGAC","GACGACCACA","GAGACAAGGC","GCCGTCAATA","GCGTAATTAC","GTCTCGAGTG","GTCTTCCGAG","TCACGTTGGC","TCCACACTAG","TGTTCAGGAT","TTAACGCTGA","AAGACGGATT","AAGATGTCCA","ACACGGTCCT","ACAGTGCCAA","AGACCGTTAT","AGAGATGCAG","ATAGGCCATT","ATCAGCACTT","CAGTGCTCTT","CATAGCTATC","CCTAGTTGAG","CCTCAACCGA","CGTCCTAGGA","CGTGAGTTAT","GAGACATCTT","GAGTAGACCA","GCTATTATCC","GCTGCTTATA","GTGACTATAC","GTGTGCCTGT","TCCACGGTCA","TCCGACTAAC","TTACACACGT","TTATAGGAGG","AAGATCGGCG","AAGCATATGG","ACACTTGCTG","ACATGTGTGC","AGACTAGCAT","AGAGCTTACA","ATATCCGCAT","ATCAGCGAGG","CAGTTAAGCA","CATCACCACC","CCTATTCTGT","CCTCCATAAG","CGTCGGCAAT","CGTGTCAAGC","GAGCGAGTCA","GATACGCTTA","GCTCAGTAAT","GGAATAAGCA","GTGGTTAATG","GTGTGTGTCC","TCCACTCGCT","TCCGTTATCT","TTACTGTGAC","TTATCGCGTT","AAGCGATGTT","AAGCTCACCT","ACCAGGACCA","ACCGAACCGT","AGAGTGTAAC","AGATAGTGCT","ATCCAATACG","ATCCGTCCAT","CATGTACGCC","CATTCGACGA","CCTGATGCCA","CCTTGTATTC","CTAACTTCAG","CTACACCAGG","GATAGACTGT","GATAGGTCAA","GGACGATGCT","GGCATTATTG","GTTCATTGCC","GTTCGTCGAA","TCCTAAGAGA","TCGAAGCATT","TTATGCCGCG","TTCAGGAGTA","AAGCGTTCAG","AAGGCATGCG","ACCATAACAC","ACCGAGAGTC","AGAGTTCTGC","AGCAATGCGC","ATCCGCTGTG","ATCGACGGCT","CATTACACTG","CCAACTATGG","CCTGCAATAC","CGAGATCTCT","CTAATAGCGT","CTAGCACAAT","GATAGAGGCG","GATATCAGGA","GGCATCGTGA","GGCCGAGATT","GTTCCGGTGA","GTTGAATTGG","TCCTCTAGTA","TCGAGAGAGC","TTCACGGAAG","TTCCATCGAG","AAGGTCTGGA","AAGTTCCTTG","ACCGGTACAG","ACCTCCGACA","AGCATGTCAT","AGCCAGAATA","ATCGCGATTA","ATCTAAGGAG","CCAAGGAGTT","CCACAAGTGC","CGAGGAACAA","CGATCCTGTG","CTATGAACGG","CTCACCTGTC","GATCTCATTC","GATGAGTGAC","GGCGCTATAA","GGCTATTGAT","GTTGATCCGC","TAACCGTAGC","TCGCACTTGA","TCGCGTAGCA","TTCGAGTGAT","TTGGCAATTC","AAGTTAGCGC","AATACCGGTA","ACCGTACTTC","ACCTCTCTCC","AGCCACTAGC","AGCCAGCTCT","ATCGGTAGGC","ATGACGGTAA","CCAATTGTTC","CCAGCTTAGT","CGATAACCGC","CGCCAACCAT","CTCAAGGACC","CTCCTATTGT","GATCTGGTCG","GATGGATACA","GGCGTTAAGT","GGCTGCTACT","GTTGTATGCT","TAACGTCGAT","TCGCCTACTG","TCGGCGTTAA","TTCTGTACCT","TTGGCTCCAC","AATAGCCACA","AATCCATCTG","ACCTGTCCGA","ACGAATGACA","AGCGATAACG","AGCTATTCCA","ATGACTCAGT","ATGCGGACTG","CCATAACTTG","CCATAGATCA","CGCCAGTGTT","CGCGGATTCA","CTCGCAACGT","CTGGATTGAC","GATGTGACAG","GATTGCACGC","GGTAATGTGT","GGTGTTCACC","TAAGGTACGG","TACTACCGCC","TCTACATCCG","TCTCTCCTAT","TTGGTAACAG","TTGTCGGCCA","AATCACGCGA","AATCCGCTCC","ACCTTATGTG","ACGCCTCAAC","AGCGTACAAT","AGCTCCTCAG","ATGCACCGGA","ATGCTTCCTA","CCATACTGAC","CCATGTGCTT","CGCCTTGTAC","CGCTTAAGGC","CTCGTGCCTA","CTGTAGTCAG","GATTAAGTCC","GCAAGCGAAT","GGTGGTTGGA","GGTTAGATCT","TACGGACATA","TACTGTCAAG","TCTCCACATT","TCTTGCTCGG","TTGGTCAGTA","TTGTGTTCGA"],["PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018"],["A01","A02","A03","A04","A05","A06","A07","A08","A09","A10","A11","A12","A13","A14","A15","A16","A17","A18","A19","A20","A21","A22","A23","A24","B01","B02","B03","B04","B05","B06","B07","B08","B09","B10","B11","B12","B13","B14","B15","B16","B17","B18","B19","B20","B21","B22","B23","B24","C01","C02","C03","C04","C05","C06","C07","C08","C09","C10","C11","C12","C13","C14","C15","C16","C17","C18","C19","C20","C21","C22","C23","C24","D01","D02","D03","D04","D05","D06","D07","D08","D09","D10","D11","D12","D13","D14","D15","D16","D17","D18","D19","D20","D21","D22","D23","D24","E01","E02","E03","E04","E05","E06","E07","E08","E09","E10","E11","E12","E13","E14","E15","E16","E17","E18","E19","E20","E21","E22","E23","E24","F01","F02","F03","F04","F05","F06","F07","F08","F09","F10","F11","F12","F13","F14","F15","F16","F17","F18","F19","F20","F21","F22","F23","F24","G01","G02","G03","G04","G05","G06","G07","G08","G09","G10","G11","G12","G13","G14","G15","G16","G17","G18","G19","G20","G21","G22","G23","G24","H01","H02","H03","H04","H05","H06","H07","H08","H09","H10","H11","H12","H13","H14","H15","H16","H17","H18","H19","H20","H21","H22","H23","H24","I01","I02","I03","I04","I05","I06","I07","I08","I09","I10","I11","I12","I13","I14","I15","I16","I17","I18","I19","I20","I21","I22","I23","I24","J01","J02","J03","J04","J05","J06","J07","J08","J09","J10","J11","J12","J13","J14","J15","J16","J17","J18","J19","J20","J21","J22","J23","J24","K01","K02","K03","K04","K05","K06","K07","K08","K09","K10","K11","K12","K13","K14","K15","K16","K17","K18","K19","K20","K21","K22","K23","K24","L01","L02","L03","L04","L05","L06","L07","L08","L09","L10","L11","L12","L13","L14","L15","L16","L17","L18","L19","L20","L21","L22","L23","L24","M01","M02","M03","M04","M05","M06","M07","M08","M09","M10","M11","M12","M13","M14","M15","M16","M17","M18","M19","M20","M21","M22","M23","M24","N01","N02","N03","N04","N05","N06","N07","N08","N09","N10","N11","N12","N13","N14","N15","N16","N17","N18","N19","N20","N21","N22","N23","N24","O01","O02","O03","O04","O05","O06","O07","O08","O09","O10","O11","O12","O13","O14","O15","O16","O17","O18","O19","O20","O21","O22","O23","O24","P01","P02","P03","P04","P05","P06","P07","P08","P09","P10","P11","P12","P13","P14","P15","P16","P17","P18","P19","P20","P21","P22","P23","P24"],["A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","B","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","C","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","D","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","F","G","G","G","G","G","G","G","G","G","G","G","G","G","G","G","G","G","G","G","G","G","G","G","G","H","H","H","H","H","H","H","H","H","H","H","H","H","H","H","H","H","H","H","H","H","H","H","H","I","I","I","I","I","I","I","I","I","I","I","I","I","I","I","I","I","I","I","I","I","I","I","I","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","M","M","M","M","M","M","M","M","M","M","M","M","M","M","M","M","M","M","M","M","M","M","M","M","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","N","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P","P"],[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24],["Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human","Human"],["","","","","","","","","","","","","","","","","","","","","","","","","","org49 unlabelled","org49 unlabelled","org49 unlabelled","org49 splintr rep 1","org49 splintr rep 1","org49 splintr rep 2","org49 splintr rep 2","org38 unlabelled","org38 unlabelled","org38 unlabelled","org38 splintr rep 1","org38 splintr rep 1","org38 splintr rep 2","org38 splintr rep 2","org66 unlabelled","org66 unlabelled","org66 unlabelled","org66 splintr rep 1","org66 splintr rep 1","org66 splintr rep 2","org66 splintr rep 2","","","","org49 unlabelled","org49 unlabelled","org49 unlabelled","org49 splintr rep 1","org49 splintr rep 1","org49 splintr rep 2","org49 splintr rep 2","org38 unlabelled","org38 unlabelled","org38 unlabelled","org38 splintr rep 1","org38 splintr rep 1","org38 splintr rep 2","org38 splintr rep 2","org66 unlabelled","org66 unlabelled","org66 unlabelled","org66 splintr rep 1","org66 splintr rep 1","org66 splintr rep 2","org66 splintr rep 2","","","","org49 unlabelled","org49 unlabelled","org49 unlabelled","org49 splintr rep 1","org49 splintr rep 1","org49 splintr rep 2","org49 splintr rep 2","org38 unlabelled","org38 unlabelled","org38 unlabelled","org38 splintr rep 1","org38 splintr rep 1","org38 splintr rep 2","org38 splintr rep 2","org66 unlabelled","org66 unlabelled","org66 unlabelled","org66 splintr rep 1","org66 splintr rep 1","org66 splintr rep 2","org66 splintr rep 2","","","","org49 unlabelled","org49 unlabelled","org49 unlabelled","org49 splintr rep 1","org49 splintr rep 1","org49 splintr rep 2","org49 splintr rep 2","org38 unlabelled","org38 unlabelled","org38 unlabelled","org38 splintr rep 1","org38 splintr rep 1","org38 splintr rep 2","org38 splintr rep 2","org66 unlabelled","org66 unlabelled","org66 unlabelled","org66 splintr rep 1","org66 splintr rep 1","org66 splintr rep 2","org66 splintr rep 2","","","","org49 unlabelled","org49 unlabelled","org49 unlabelled","org49 splintr rep 1","org49 splintr rep 1","org49 splintr rep 2","org49 splintr rep 2","org38 unlabelled","org38 unlabelled","org38 unlabelled","org38 splintr rep 1","org38 splintr rep 1","org38 splintr rep 2","org38 splintr rep 2","org66 unlabelled","org66 unlabelled","org66 unlabelled","org66 splintr rep 1","org66 splintr rep 1","org66 splintr rep 2","org66 splintr rep 2","","","","org49 unlabelled","org49 unlabelled","org49 unlabelled","org49 splintr rep 1","org49 splintr rep 1","org49 splintr rep 2","org49 splintr rep 2","org38 unlabelled","org38 unlabelled","org38 unlabelled","org38 splintr rep 1","org38 splintr rep 1","org38 splintr rep 2","org38 splintr rep 2","org66 unlabelled","org66 unlabelled","org66 unlabelled","org66 splintr rep 1","org66 splintr rep 1","org66 splintr rep 2","org66 splintr rep 2","","","","org49 unlabelled","org49 unlabelled","org49 unlabelled","org49 splintr rep 1","org49 splintr rep 1","org49 splintr rep 2","org49 splintr rep 2","org38 unlabelled","org38 unlabelled","org38 unlabelled","org38 splintr rep 1","org38 splintr rep 1","org38 splintr rep 2","org38 splintr rep 2","org66 unlabelled","org66 unlabelled","org66 unlabelled","org66 splintr rep 1","org66 splintr rep 1","org66 splintr rep 2","org66 splintr rep 2","","","","org49 unlabelled","org49 unlabelled","org49 unlabelled","org49 splintr rep 1","org49 splintr rep 1","org49 splintr rep 2","org49 splintr rep 2","org38 unlabelled","org38 unlabelled","org38 unlabelled","org38 splintr rep 1","org38 splintr rep 1","org38 splintr rep 2","org38 splintr rep 2","org66 unlabelled","org66 unlabelled","org66 unlabelled","org66 splintr rep 1","org66 splintr rep 1","org66 splintr rep 2","org66 splintr rep 2","","","","org49 unlabelled","org49 unlabelled","org49 unlabelled","org49 splintr rep 1","org49 splintr rep 1","org49 splintr rep 2","org49 splintr rep 2","org38 unlabelled","org38 unlabelled","org38 unlabelled","org38 splintr rep 1","org38 splintr rep 1","org38 splintr rep 2","org38 splintr rep 2","org66 unlabelled","org66 unlabelled","org66 unlabelled","org66 splintr rep 1","org66 splintr rep 1","org66 splintr rep 2","org66 splintr rep 2","","","","org49 unlabelled","org49 unlabelled","org49 unlabelled","org49 splintr rep 1","org49 splintr rep 1","org49 splintr rep 2","org49 splintr rep 2","org38 unlabelled","org38 unlabelled","org38 unlabelled","org38 splintr rep 1","org38 splintr rep 1","org38 splintr rep 2","org38 splintr rep 2","org66 unlabelled","org66 unlabelled","org66 unlabelled","org66 splintr rep 1","org66 splintr rep 1","org66 splintr rep 2","org66 splintr rep 2","","","","org49 unlabelled","org49 unlabelled","org49 unlabelled","org49 splintr rep 1","org49 splintr rep 1","org49 splintr rep 2","org49 splintr rep 2","org38 unlabelled","org38 unlabelled","org38 unlabelled","org38 splintr rep 1","org38 splintr rep 1","org38 splintr rep 2","org38 splintr rep 2","org66 unlabelled","org66 unlabelled","org66 unlabelled","org66 splintr rep 1","org66 splintr rep 1","org66 splintr rep 2","org66 splintr rep 2","","","","org49 unlabelled","org49 unlabelled","org49 unlabelled","org49 splintr rep 1","org49 splintr rep 1","org49 splintr rep 2","org49 splintr rep 2","org38 unlabelled","org38 unlabelled","org38 unlabelled","org38 splintr rep 1","org38 splintr rep 1","org38 splintr rep 2","org38 splintr rep 2","org66 unlabelled","org66 unlabelled","org66 unlabelled","org66 splintr rep 1","org66 splintr rep 1","org66 splintr rep 2","org66 splintr rep 2","","","","org49 unlabelled","org49 unlabelled","org49 unlabelled","org49 splintr rep 1","org49 splintr rep 1","org49 splintr rep 2","org49 splintr rep 2","org38 unlabelled","org38 unlabelled","org38 unlabelled","org38 splintr rep 1","org38 splintr rep 1","org38 splintr rep 2","org38 splintr rep 2","org66 unlabelled","org66 unlabelled","org66 unlabelled","org66 splintr rep 1","org66 splintr rep 1","org66 splintr rep 2","org66 splintr rep 2","","","","org49 unlabelled","org49 unlabelled","org49 unlabelled","org49 splintr rep 1","org49 splintr rep 1","org49 splintr rep 2","org49 splintr rep 2","org38 unlabelled","org38 unlabelled","org38 unlabelled","org38 splintr rep 1","org38 splintr rep 1","org38 splintr rep 2","org38 splintr rep 2","org66 unlabelled","org66 unlabelled","org66 unlabelled","org66 splintr rep 1","org66 splintr rep 1","org66 splintr rep 2","org66 splintr rep 2","","","","","","","","","","","","","","","","","","","","","","","","","",""],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],["","","","","","","","","","","","","","","","","","","","","","","","","","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","","","","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","","","","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","","","","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","","","","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","","","","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","","","","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","","","","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","","","","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","","","","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","","","","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","","","","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","","","","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","24H","","","","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","48H","","","","","","","","","","","","","","","","","","","","","","","","","",""],["","","","","","","","","","","","","","","","","","","","","","","","","","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","","","","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","","","","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","","","","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","","","","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","","","","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","","","","%","%","%","%","%","%","%","%","%","%","%","%","%","%","%","%","%","%","%","%","%","","","","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","","","","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","","","","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","","","","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","","","","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","","","","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","","","","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","uM","","","","","","","","","","","","","","","","","","","","","","","","","",""],["","","","","","","","","","","","","","","","","","","","","","","","","","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","","","","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","","","","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","","","","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","Paclitaxel_IC12.5","","","","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","Paclitaxel_IC25","","","","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","Paclitaxel_IC50","","","","DMSO","DMSO","DMSO","DMSO","DMSO","DMSO","DMSO","DMSO","DMSO","DMSO","DMSO","DMSO","DMSO","DMSO","DMSO","DMSO","DMSO","DMSO","DMSO","DMSO","DMSO","","","","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","","","","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","","","","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","","","","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","SN38_IC12.5","","","","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","SN38_IC25","","","","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","SN38_IC50","","","","STAUR","STAUR","STAUR","STAUR","STAUR","STAUR","STAUR","STAUR","STAUR","STAUR","STAUR","STAUR","STAUR","STAUR","STAUR","STAUR","STAUR","STAUR","STAUR","STAUR","STAUR","","","","","","","","","","","","","","","","","","","","","","","","","",""],["","","","","","","","","","","","","","","","","","","","","","","","","","0.000644375","0.000644375","0.000644375","0.000644375","0.000644375","0.000644375","0.000644375","0.38725","0.38725","0.38725","0.38725","0.38725","0.38725","0.38725","0.4015","0.4015","0.4015","0.4015","0.4015","0.4015","0.4015","x","x","x","0.00128875","0.00128875","0.00128875","0.00128875","0.00128875","0.00128875","0.00128875","0.7745","0.7745","0.7745","0.7745","0.7745","0.7745","0.7745","0.803","0.803","0.803","0.803","0.803","0.803","0.803","x","x","x","0.0025775","0.0025775","0.0025775","0.0025775","0.0025775","0.0025775","0.0025775","1.549","1.549","1.549","1.549","1.549","1.549","1.549","1.606","1.606","1.606","1.606","1.606","1.606","1.606","","","","0.000644375","0.000644375","0.000644375","0.000644375","0.000644375","0.000644375","0.000644375","0.38725","0.38725","0.38725","0.38725","0.38725","0.38725","0.38725","0.4015","0.4015","0.4015","0.4015","0.4015","0.4015","0.4015","","","","0.00128875","0.00128875","0.00128875","0.00128875","0.00128875","0.00128875","0.00128875","0.7745","0.7745","0.7745","0.7745","0.7745","0.7745","0.7745","0.803","0.803","0.803","0.803","0.803","0.803","0.803","","","","0.0025775","0.0025775","0.0025775","0.0025775","0.0025775","0.0025775","0.0025775","1.549","1.549","1.549","1.549","1.549","1.549","1.549","1.606","1.606","1.606","1.606","1.606","1.606","1.606","","","","0.05","0.05","0.05","0.05","0.05","0.05","0.05","0.05","0.05","0.05","0.05","0.05","0.05","0.05","0.05","0.05","0.05","0.05","0.05","0.05","0.05","","","","0.0041675","0.0041675","0.0041675","0.0041675","0.0041675","0.0041675","0.0041675","0.124575","0.124575","0.124575","0.124575","0.124575","0.124575","0.124575","0.0047725","0.0047725","0.0047725","0.0047725","0.0047725","0.0047725","0.0047725","","","","0.008335","0.008335","0.008335","0.008335","0.008335","0.008335","0.008335","0.24915","0.24915","0.24915","0.24915","0.24915","0.24915","0.24915","0.009545","0.009545","0.009545","0.009545","0.009545","0.009545","0.009545","","","","0.01667","0.01667","0.01667","0.01667","0.01667","0.01667","0.01667","0.4983","0.4983","0.4983","0.4983","0.4983","0.4983","0.4983","0.01909","0.01909","0.01909","0.01909","0.01909","0.01909","0.01909","","","","0.0041675","0.0041675","0.0041675","0.0041675","0.0041675","0.0041675","0.0041675","0.124575","0.124575","0.124575","0.124575","0.124575","0.124575","0.124575","0.0047725","0.0047725","0.0047725","0.0047725","0.0047725","0.0047725","0.0047725","","","","0.008335","0.008335","0.008335","0.008335","0.008335","0.008335","0.008335","0.24915","0.24915","0.24915","0.24915","0.24915","0.24915","0.24915","0.009545","0.009545","0.009545","0.009545","0.009545","0.009545","0.009545","","","","0.01667","0.01667","0.01667","0.01667","0.01667","0.01667","0.01667","0.4983","0.4983","0.4983","0.4983","0.4983","0.4983","0.4983","0.01909","0.01909","0.01909","0.01909","0.01909","0.01909","0.01909","","","","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","","","","","","","","","","","","","","","","","","","","","","","","","",""],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],["","","","","","","","","","","","","","","","","","","","","","","","","","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","","","","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","","","","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","","","","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","","","","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","","","","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","","","","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","","","","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","","","","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","","","","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","","","","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","","","","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","","","","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","","","","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","3D","","","","","","","","","","","","","","","","","","","","","","","","","",""],["AACAAGGTAC","AACACCTAGT","AATCCTACCA","AATGAACACG","ACGCCTTCGT","ACGGTCCGTT","AGGAGGCATA","AGGTATCCTC","ATGGACCAAC","ATGGTGAGCG","CCATTCAGCG","CCGAACCTAA","CGCTTACTAA","CGGAAGCTGT","CTGTCGCTTC","CTGTGCAACA","GCAATGTAAG","GCACTCGGAA","GGTTATGGCG","GGTTGTGCAA","TAGCGAACGC","TAGGACGCCT","TGAACTAACC","TGAAGATCCA","AACAATCAGG","AACAGGCAAT","AATCGTCCGC","AATGACCTTC","ACGCTGGATA","ACGTAGGCAC","AGGCGTCTGT","AGGTCACCAA","ATGGTCTTAG","ATGTGGAAGC","CCGAACAAGC","CCGAAGACCT","CGCTTCTTGG","CGGAATACAC","CTGTCTGTGT","CTTATGTTGC","GCACACTATA","GCACTGCGTT","GGTTCACTGG","GTAACCAGTA","TAGCGCCAAC","TAGGTTGCAA","TGAAGAAGGT","TGACCTGAGA","AACATGGAGA","AACCAGCCAG","AATGAGAGCA","AATTAGGCCG","ACGTGCTGAT","ACTGGCGCAT","AGTAACTCAC","AGTCCACGTA","ATTATCGGAC","CAACAATCCA","CCGAATAGTG","CCGATCCACT","CGGAGATTGG","CGGATCGGTA","CTTCATATCG","CTTGGATCTT","GCACTTAATC","GCAGTACTGG","GTAACCTTGG","GTAAGGCTCC","TAGTAGTCTC","TAGTGGAACT","TGAGCGTTCC","TGCGCTCATT","AACATTACCG","AACCAGTTGA","AATGTCAGTG","AATTGCGATG","ACTCCAAGCC","ACTGGCTTCC","AGTAAGCGTT","AGTCTCGGCA","ATTCGGAACA","CAAGAAGCAT","CCGACTTCTC","CCGATGATAC","CGGAGCTCAA","CGGATTCTAG","CTTGCTGACG","GAAGAGTTCT","GCAGGAGATG","GCATATGAGT","GTAAGAACCT","GTAATCCACG","TAGTCCGCTG","TATCATGCAG","TGAGTACGTA","TGCGTGCTCA","AACCGCGACT","AACCGGCGTA","ACAACAGTCG","ACAACGGAGC","ACTTAACTGC","ACTTCGTTGA","AGTCTGTACG","ATAACGCCTC","CAAGATGAGG","CAAGTGGATC","CCGCGTTATG","CCGGAGTATC","CGGCAACTTA","CGGTCGTATT","GAAGGATTAG","GAATCTTCTC","GCATCCGATC","GCCACGATTC","GTATTGTGGA","GTCCTTCGGT","TATCGTTACG","TCACAGATAC","TGGAATGGAG","TGTGACGTGC","AACCGGAAGG","AACCTAGTCC","ACAACCATAC","ACAAGCGCGA","ACTTCATCAC","ACTTCTCCTG","AGTGCAATGT","ATAAGAGGTC","CAAGCCAACG","CACAGTTCAT","CCGCTAGCTT","CCGGCCAATT","CGGCTCATCA","CGGTGACATC","GAATCGAGCC","GAATTACGGC","GCCAAGTACA","GCCATAGGTT","GTCCGCATCA","GTCGCTCTCT","TCAAGTGCAG","TCACCGCCTA","TGTCATTCGC","TGTGCACTAA","AACCTCATAG","AACTCTACAC","ACACAATCTC","ACACCGAATT","ACTTGAGGAA","AGAACCACGG","ATAAGGTGCA","ATACCTCCGG","CACGAGTCTG","CACTGAGCAC","CCGGTCTCTA","CCGTCAGAAC","CGTAACGGAT","CGTACTGTAA","GACCATCTAA","GAGAACGAAG","GCCATATCGA","GCCTGGACAT","GTCGGTGACA","GTCTCTTAAG","TCACGCCACT","TCATTGTCCA","TGTGCTTCAG","TGTTGTGACT","AACGTAAGCT","AACTGTGTCA","ACACAGTGAA","ACACGCAGTA","ACTTGTAAGG","AGAAGCAATC","ATACACGACA","ATAGCAGTGC","CACGCTCCAA","CAGATCAATG","CCGTACGATG","CCTAGACACG","CGTAAGATTC","CGTAGAAGAC","GACGACCACA","GAGACAAGGC","GCCGTCAATA","GCGTAATTAC","GTCTCGAGTG","GTCTTCCGAG","TCACGTTGGC","TCCACACTAG","TGTTCAGGAT","TTAACGCTGA","AAGACGGATT","AAGATGTCCA","ACACGGTCCT","ACAGTGCCAA","AGACCGTTAT","AGAGATGCAG","ATAGGCCATT","ATCAGCACTT","CAGTGCTCTT","CATAGCTATC","CCTAGTTGAG","CCTCAACCGA","CGTCCTAGGA","CGTGAGTTAT","GAGACATCTT","GAGTAGACCA","GCTATTATCC","GCTGCTTATA","GTGACTATAC","GTGTGCCTGT","TCCACGGTCA","TCCGACTAAC","TTACACACGT","TTATAGGAGG","AAGATCGGCG","AAGCATATGG","ACACTTGCTG","ACATGTGTGC","AGACTAGCAT","AGAGCTTACA","ATATCCGCAT","ATCAGCGAGG","CAGTTAAGCA","CATCACCACC","CCTATTCTGT","CCTCCATAAG","CGTCGGCAAT","CGTGTCAAGC","GAGCGAGTCA","GATACGCTTA","GCTCAGTAAT","GGAATAAGCA","GTGGTTAATG","GTGTGTGTCC","TCCACTCGCT","TCCGTTATCT","TTACTGTGAC","TTATCGCGTT","AAGCGATGTT","AAGCTCACCT","ACCAGGACCA","ACCGAACCGT","AGAGTGTAAC","AGATAGTGCT","ATCCAATACG","ATCCGTCCAT","CATGTACGCC","CATTCGACGA","CCTGATGCCA","CCTTGTATTC","CTAACTTCAG","CTACACCAGG","GATAGACTGT","GATAGGTCAA","GGACGATGCT","GGCATTATTG","GTTCATTGCC","GTTCGTCGAA","TCCTAAGAGA","TCGAAGCATT","TTATGCCGCG","TTCAGGAGTA","AAGCGTTCAG","AAGGCATGCG","ACCATAACAC","ACCGAGAGTC","AGAGTTCTGC","AGCAATGCGC","ATCCGCTGTG","ATCGACGGCT","CATTACACTG","CCAACTATGG","CCTGCAATAC","CGAGATCTCT","CTAATAGCGT","CTAGCACAAT","GATAGAGGCG","GATATCAGGA","GGCATCGTGA","GGCCGAGATT","GTTCCGGTGA","GTTGAATTGG","TCCTCTAGTA","TCGAGAGAGC","TTCACGGAAG","TTCCATCGAG","AAGGTCTGGA","AAGTTCCTTG","ACCGGTACAG","ACCTCCGACA","AGCATGTCAT","AGCCAGAATA","ATCGCGATTA","ATCTAAGGAG","CCAAGGAGTT","CCACAAGTGC","CGAGGAACAA","CGATCCTGTG","CTATGAACGG","CTCACCTGTC","GATCTCATTC","GATGAGTGAC","GGCGCTATAA","GGCTATTGAT","GTTGATCCGC","TAACCGTAGC","TCGCACTTGA","TCGCGTAGCA","TTCGAGTGAT","TTGGCAATTC","AAGTTAGCGC","AATACCGGTA","ACCGTACTTC","ACCTCTCTCC","AGCCACTAGC","AGCCAGCTCT","ATCGGTAGGC","ATGACGGTAA","CCAATTGTTC","CCAGCTTAGT","CGATAACCGC","CGCCAACCAT","CTCAAGGACC","CTCCTATTGT","GATCTGGTCG","GATGGATACA","GGCGTTAAGT","GGCTGCTACT","GTTGTATGCT","TAACGTCGAT","TCGCCTACTG","TCGGCGTTAA","TTCTGTACCT","TTGGCTCCAC","AATAGCCACA","AATCCATCTG","ACCTGTCCGA","ACGAATGACA","AGCGATAACG","AGCTATTCCA","ATGACTCAGT","ATGCGGACTG","CCATAACTTG","CCATAGATCA","CGCCAGTGTT","CGCGGATTCA","CTCGCAACGT","CTGGATTGAC","GATGTGACAG","GATTGCACGC","GGTAATGTGT","GGTGTTCACC","TAAGGTACGG","TACTACCGCC","TCTACATCCG","TCTCTCCTAT","TTGGTAACAG","TTGTCGGCCA","AATCACGCGA","AATCCGCTCC","ACCTTATGTG","ACGCCTCAAC","AGCGTACAAT","AGCTCCTCAG","ATGCACCGGA","ATGCTTCCTA","CCATACTGAC","CCATGTGCTT","CGCCTTGTAC","CGCTTAAGGC","CTCGTGCCTA","CTGTAGTCAG","GATTAAGTCC","GCAAGCGAAT","GGTGGTTGGA","GGTTAGATCT","TACGGACATA","TACTGTCAAG","TCTCCACATT","TCTTGCTCGG","TTGGTCAGTA","TTGTGTTCGA"],["","","","","","","","","","","","","","","","","","","","","","","","","","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","","","","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","","","","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","","","","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","","","","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","","","","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","","","","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","","","","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","","","","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","","","","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","","","","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","","","","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","","","","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","","","","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG49","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG38","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","ORG66","","","","","","","","","","","","","","","","","","","","","","","","","",""],["","","","","","","","","","","","","","","","","","","","","","","","","","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","","","","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","","","","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","","","","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","","","","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","","","","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","","","","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","","","","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","","","","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","","","","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","","","","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","","","","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","","","","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","","","","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","unlabelled","unlabelled","unlabelled","SPLrep1","SPLrep1","SPLrep2","SPLrep2","","","","","","","","","","","","","","","","","","","","","","","","","",""],["PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018","PMMsq0018"],["..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","ORG49.Paclitaxel_IC12.5.48H","ORG49.Paclitaxel_IC12.5.48H","ORG49.Paclitaxel_IC12.5.48H","ORG49.Paclitaxel_IC12.5.48H","ORG49.Paclitaxel_IC12.5.48H","ORG49.Paclitaxel_IC12.5.48H","ORG49.Paclitaxel_IC12.5.48H","ORG38.Paclitaxel_IC12.5.48H","ORG38.Paclitaxel_IC12.5.48H","ORG38.Paclitaxel_IC12.5.48H","ORG38.Paclitaxel_IC12.5.48H","ORG38.Paclitaxel_IC12.5.48H","ORG38.Paclitaxel_IC12.5.48H","ORG38.Paclitaxel_IC12.5.48H","ORG66.Paclitaxel_IC12.5.48H","ORG66.Paclitaxel_IC12.5.48H","ORG66.Paclitaxel_IC12.5.48H","ORG66.Paclitaxel_IC12.5.48H","ORG66.Paclitaxel_IC12.5.48H","ORG66.Paclitaxel_IC12.5.48H","ORG66.Paclitaxel_IC12.5.48H","..","..","..","ORG49.Paclitaxel_IC25.48H","ORG49.Paclitaxel_IC25.48H","ORG49.Paclitaxel_IC25.48H","ORG49.Paclitaxel_IC25.48H","ORG49.Paclitaxel_IC25.48H","ORG49.Paclitaxel_IC25.48H","ORG49.Paclitaxel_IC25.48H","ORG38.Paclitaxel_IC25.48H","ORG38.Paclitaxel_IC25.48H","ORG38.Paclitaxel_IC25.48H","ORG38.Paclitaxel_IC25.48H","ORG38.Paclitaxel_IC25.48H","ORG38.Paclitaxel_IC25.48H","ORG38.Paclitaxel_IC25.48H","ORG66.Paclitaxel_IC25.48H","ORG66.Paclitaxel_IC25.48H","ORG66.Paclitaxel_IC25.48H","ORG66.Paclitaxel_IC25.48H","ORG66.Paclitaxel_IC25.48H","ORG66.Paclitaxel_IC25.48H","ORG66.Paclitaxel_IC25.48H","..","..","..","ORG49.Paclitaxel_IC50.48H","ORG49.Paclitaxel_IC50.48H","ORG49.Paclitaxel_IC50.48H","ORG49.Paclitaxel_IC50.48H","ORG49.Paclitaxel_IC50.48H","ORG49.Paclitaxel_IC50.48H","ORG49.Paclitaxel_IC50.48H","ORG38.Paclitaxel_IC50.48H","ORG38.Paclitaxel_IC50.48H","ORG38.Paclitaxel_IC50.48H","ORG38.Paclitaxel_IC50.48H","ORG38.Paclitaxel_IC50.48H","ORG38.Paclitaxel_IC50.48H","ORG38.Paclitaxel_IC50.48H","ORG66.Paclitaxel_IC50.48H","ORG66.Paclitaxel_IC50.48H","ORG66.Paclitaxel_IC50.48H","ORG66.Paclitaxel_IC50.48H","ORG66.Paclitaxel_IC50.48H","ORG66.Paclitaxel_IC50.48H","ORG66.Paclitaxel_IC50.48H","..","..","..","ORG49.Paclitaxel_IC12.5.24H","ORG49.Paclitaxel_IC12.5.24H","ORG49.Paclitaxel_IC12.5.24H","ORG49.Paclitaxel_IC12.5.24H","ORG49.Paclitaxel_IC12.5.24H","ORG49.Paclitaxel_IC12.5.24H","ORG49.Paclitaxel_IC12.5.24H","ORG38.Paclitaxel_IC12.5.24H","ORG38.Paclitaxel_IC12.5.24H","ORG38.Paclitaxel_IC12.5.24H","ORG38.Paclitaxel_IC12.5.24H","ORG38.Paclitaxel_IC12.5.24H","ORG38.Paclitaxel_IC12.5.24H","ORG38.Paclitaxel_IC12.5.24H","ORG66.Paclitaxel_IC12.5.24H","ORG66.Paclitaxel_IC12.5.24H","ORG66.Paclitaxel_IC12.5.24H","ORG66.Paclitaxel_IC12.5.24H","ORG66.Paclitaxel_IC12.5.24H","ORG66.Paclitaxel_IC12.5.24H","ORG66.Paclitaxel_IC12.5.24H","..","..","..","ORG49.Paclitaxel_IC25.24H","ORG49.Paclitaxel_IC25.24H","ORG49.Paclitaxel_IC25.24H","ORG49.Paclitaxel_IC25.24H","ORG49.Paclitaxel_IC25.24H","ORG49.Paclitaxel_IC25.24H","ORG49.Paclitaxel_IC25.24H","ORG38.Paclitaxel_IC25.24H","ORG38.Paclitaxel_IC25.24H","ORG38.Paclitaxel_IC25.24H","ORG38.Paclitaxel_IC25.24H","ORG38.Paclitaxel_IC25.24H","ORG38.Paclitaxel_IC25.24H","ORG38.Paclitaxel_IC25.24H","ORG66.Paclitaxel_IC25.24H","ORG66.Paclitaxel_IC25.24H","ORG66.Paclitaxel_IC25.24H","ORG66.Paclitaxel_IC25.24H","ORG66.Paclitaxel_IC25.24H","ORG66.Paclitaxel_IC25.24H","ORG66.Paclitaxel_IC25.24H","..","..","..","ORG49.Paclitaxel_IC50.24H","ORG49.Paclitaxel_IC50.24H","ORG49.Paclitaxel_IC50.24H","ORG49.Paclitaxel_IC50.24H","ORG49.Paclitaxel_IC50.24H","ORG49.Paclitaxel_IC50.24H","ORG49.Paclitaxel_IC50.24H","ORG38.Paclitaxel_IC50.24H","ORG38.Paclitaxel_IC50.24H","ORG38.Paclitaxel_IC50.24H","ORG38.Paclitaxel_IC50.24H","ORG38.Paclitaxel_IC50.24H","ORG38.Paclitaxel_IC50.24H","ORG38.Paclitaxel_IC50.24H","ORG66.Paclitaxel_IC50.24H","ORG66.Paclitaxel_IC50.24H","ORG66.Paclitaxel_IC50.24H","ORG66.Paclitaxel_IC50.24H","ORG66.Paclitaxel_IC50.24H","ORG66.Paclitaxel_IC50.24H","ORG66.Paclitaxel_IC50.24H","..","..","..","ORG49.DMSO.48H","ORG49.DMSO.48H","ORG49.DMSO.48H","ORG49.DMSO.48H","ORG49.DMSO.48H","ORG49.DMSO.48H","ORG49.DMSO.48H","ORG38.DMSO.48H","ORG38.DMSO.48H","ORG38.DMSO.48H","ORG38.DMSO.48H","ORG38.DMSO.48H","ORG38.DMSO.48H","ORG38.DMSO.48H","ORG66.DMSO.48H","ORG66.DMSO.48H","ORG66.DMSO.48H","ORG66.DMSO.48H","ORG66.DMSO.48H","ORG66.DMSO.48H","ORG66.DMSO.48H","..","..","..","ORG49.SN38_IC12.5.48H","ORG49.SN38_IC12.5.48H","ORG49.SN38_IC12.5.48H","ORG49.SN38_IC12.5.48H","ORG49.SN38_IC12.5.48H","ORG49.SN38_IC12.5.48H","ORG49.SN38_IC12.5.48H","ORG38.SN38_IC12.5.48H","ORG38.SN38_IC12.5.48H","ORG38.SN38_IC12.5.48H","ORG38.SN38_IC12.5.48H","ORG38.SN38_IC12.5.48H","ORG38.SN38_IC12.5.48H","ORG38.SN38_IC12.5.48H","ORG66.SN38_IC12.5.48H","ORG66.SN38_IC12.5.48H","ORG66.SN38_IC12.5.48H","ORG66.SN38_IC12.5.48H","ORG66.SN38_IC12.5.48H","ORG66.SN38_IC12.5.48H","ORG66.SN38_IC12.5.48H","..","..","..","ORG49.SN38_IC25.48H","ORG49.SN38_IC25.48H","ORG49.SN38_IC25.48H","ORG49.SN38_IC25.48H","ORG49.SN38_IC25.48H","ORG49.SN38_IC25.48H","ORG49.SN38_IC25.48H","ORG38.SN38_IC25.48H","ORG38.SN38_IC25.48H","ORG38.SN38_IC25.48H","ORG38.SN38_IC25.48H","ORG38.SN38_IC25.48H","ORG38.SN38_IC25.48H","ORG38.SN38_IC25.48H","ORG66.SN38_IC25.48H","ORG66.SN38_IC25.48H","ORG66.SN38_IC25.48H","ORG66.SN38_IC25.48H","ORG66.SN38_IC25.48H","ORG66.SN38_IC25.48H","ORG66.SN38_IC25.48H","..","..","..","ORG49.SN38_IC50.48H","ORG49.SN38_IC50.48H","ORG49.SN38_IC50.48H","ORG49.SN38_IC50.48H","ORG49.SN38_IC50.48H","ORG49.SN38_IC50.48H","ORG49.SN38_IC50.48H","ORG38.SN38_IC50.48H","ORG38.SN38_IC50.48H","ORG38.SN38_IC50.48H","ORG38.SN38_IC50.48H","ORG38.SN38_IC50.48H","ORG38.SN38_IC50.48H","ORG38.SN38_IC50.48H","ORG66.SN38_IC50.48H","ORG66.SN38_IC50.48H","ORG66.SN38_IC50.48H","ORG66.SN38_IC50.48H","ORG66.SN38_IC50.48H","ORG66.SN38_IC50.48H","ORG66.SN38_IC50.48H","..","..","..","ORG49.SN38_IC12.5.24H","ORG49.SN38_IC12.5.24H","ORG49.SN38_IC12.5.24H","ORG49.SN38_IC12.5.24H","ORG49.SN38_IC12.5.24H","ORG49.SN38_IC12.5.24H","ORG49.SN38_IC12.5.24H","ORG38.SN38_IC12.5.24H","ORG38.SN38_IC12.5.24H","ORG38.SN38_IC12.5.24H","ORG38.SN38_IC12.5.24H","ORG38.SN38_IC12.5.24H","ORG38.SN38_IC12.5.24H","ORG38.SN38_IC12.5.24H","ORG66.SN38_IC12.5.24H","ORG66.SN38_IC12.5.24H","ORG66.SN38_IC12.5.24H","ORG66.SN38_IC12.5.24H","ORG66.SN38_IC12.5.24H","ORG66.SN38_IC12.5.24H","ORG66.SN38_IC12.5.24H","..","..","..","ORG49.SN38_IC25.24H","ORG49.SN38_IC25.24H","ORG49.SN38_IC25.24H","ORG49.SN38_IC25.24H","ORG49.SN38_IC25.24H","ORG49.SN38_IC25.24H","ORG49.SN38_IC25.24H","ORG38.SN38_IC25.24H","ORG38.SN38_IC25.24H","ORG38.SN38_IC25.24H","ORG38.SN38_IC25.24H","ORG38.SN38_IC25.24H","ORG38.SN38_IC25.24H","ORG38.SN38_IC25.24H","ORG66.SN38_IC25.24H","ORG66.SN38_IC25.24H","ORG66.SN38_IC25.24H","ORG66.SN38_IC25.24H","ORG66.SN38_IC25.24H","ORG66.SN38_IC25.24H","ORG66.SN38_IC25.24H","..","..","..","ORG49.SN38_IC50.24H","ORG49.SN38_IC50.24H","ORG49.SN38_IC50.24H","ORG49.SN38_IC50.24H","ORG49.SN38_IC50.24H","ORG49.SN38_IC50.24H","ORG49.SN38_IC50.24H","ORG38.SN38_IC50.24H","ORG38.SN38_IC50.24H","ORG38.SN38_IC50.24H","ORG38.SN38_IC50.24H","ORG38.SN38_IC50.24H","ORG38.SN38_IC50.24H","ORG38.SN38_IC50.24H","ORG66.SN38_IC50.24H","ORG66.SN38_IC50.24H","ORG66.SN38_IC50.24H","ORG66.SN38_IC50.24H","ORG66.SN38_IC50.24H","ORG66.SN38_IC50.24H","ORG66.SN38_IC50.24H","..","..","..","ORG49.STAUR.48H","ORG49.STAUR.48H","ORG49.STAUR.48H","ORG49.STAUR.48H","ORG49.STAUR.48H","ORG49.STAUR.48H","ORG49.STAUR.48H","ORG38.STAUR.48H","ORG38.STAUR.48H","ORG38.STAUR.48H","ORG38.STAUR.48H","ORG38.STAUR.48H","ORG38.STAUR.48H","ORG38.STAUR.48H","ORG66.STAUR.48H","ORG66.STAUR.48H","ORG66.STAUR.48H","ORG66.STAUR.48H","ORG66.STAUR.48H","ORG66.STAUR.48H","ORG66.STAUR.48H","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..","..",".."],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,"BC_205886;BC_677122;BC_807090","BC_890411","BC_1149725;BC_903239","BC_1030757;BC_110331;BC_1117812;BC_1148834;BC_1159473;BC_1213834;BC_1234598;BC_1401656;BC_142517;BC_15047;BC_1624431;BC_1671665;BC_168056;BC_1716111;BC_178301;BC_1789932;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_205886;BC_2149136;BC_21632;BC_2323409;BC_2431038;BC_345633;BC_38673;BC_475236;BC_47903;BC_525322;BC_547591;BC_558160;BC_558530;BC_57477;BC_577148;BC_761053;BC_836110;BC_840029;BC_87546;BC_896145;BC_957100","BC_1086022;BC_110331;BC_1129411;BC_1148834;BC_1159473;BC_1213834;BC_1234598;BC_1401656;BC_142517;BC_1671665;BC_1779851;BC_178301;BC_1789932;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_1939755;BC_205886;BC_2323409;BC_27043;BC_345633;BC_469304;BC_475236;BC_525322;BC_557799;BC_558160;BC_558530;BC_57477;BC_577148;BC_65124;BC_807090;BC_836110;BC_840029;BC_957100;BC_96331","BC_1213834;BC_1401656;BC_142517;BC_1789932;BC_1886895;BC_1893064;BC_18987;BC_1931510;BC_205886;BC_2323409;BC_2329183;BC_2485611;BC_345633;BC_370518;BC_558530;BC_57477;BC_577148;BC_751383;BC_806919;BC_836110;BC_840029;BC_87546;BC_903239;BC_957100","BC_1006414;BC_1012715;BC_1030757;BC_1080172;BC_1080789;BC_1086022;BC_110331;BC_1148834;BC_1213834;BC_1234598;BC_1401656;BC_1789932;BC_189072;BC_1893064;BC_18987;BC_1931510;BC_205886;BC_21632;BC_2279834;BC_2323409;BC_272174;BC_4776;BC_547591;BC_558160;BC_558530;BC_57477;BC_57772;BC_654042;BC_806919;BC_836110;BC_840029;BC_87546;BC_957100","BC_807090",null,null,"BC_106068;BC_1078058;BC_1123764;BC_1191243;BC_1362159;BC_1598285;BC_1819135;BC_274290;BC_315496;BC_347495;BC_409821;BC_448316;BC_450659;BC_4776;BC_502950;BC_557526;BC_586820;BC_592418;BC_672;BC_677122;BC_773694;BC_864093;BC_890411","BC_106068;BC_1078058;BC_1106269;BC_1123764;BC_1191243;BC_1362159;BC_138112;BC_1421907;BC_1624431;BC_1641760;BC_1819135;BC_315496;BC_347495;BC_37395;BC_384993;BC_450659;BC_4776;BC_481088;BC_490546;BC_53115;BC_586820;BC_672;BC_677122;BC_691501;BC_773776;BC_879574;BC_890411;BC_962108","BC_106068;BC_1078058;BC_1106269;BC_1191243;BC_136550;BC_144682;BC_1530115;BC_1598023;BC_1624431;BC_175849;BC_1779851;BC_1819135;BC_274290;BC_313204;BC_4776;BC_51548;BC_53115;BC_557526;BC_586820;BC_59209;BC_607501;BC_677122;BC_7205;BC_773776;BC_807090;BC_910","BC_104940;BC_106068;BC_1078058;BC_109430;BC_1191243;BC_1362159;BC_1364952;BC_142517;BC_1598285;BC_1624431;BC_2025991;BC_274290;BC_315496;BC_37395;BC_387377;BC_428945;BC_448316;BC_4776;BC_51548;BC_53115;BC_557526;BC_586820;BC_672;BC_677122;BC_776659;BC_890411;BC_903239;BC_925985;BC_99398",null,null,null,"BC_128384;BC_1787099;BC_238363;BC_644424;BC_807090;BC_84285;BC_903239","BC_131867;BC_1787099;BC_644424;BC_807090;BC_903239;BC_962108","BC_110564;BC_131867;BC_644424;BC_807090;BC_84285;BC_903239","BC_110564;BC_1260918;BC_131867;BC_1364952;BC_2149136;BC_238363;BC_644424;BC_807090;BC_84285;BC_903239;BC_962108",null,null,null,"BC_807090","BC_18987","BC_644424","BC_106279;BC_1085024;BC_1086022;BC_1117812;BC_1159473;BC_1213834;BC_1234598;BC_1401656;BC_142517;BC_15047;BC_1789932;BC_1886895;BC_1893064;BC_18987;BC_205886;BC_2124613;BC_21632;BC_2323409;BC_2334986;BC_2431038;BC_247236;BC_345633;BC_38673;BC_558160;BC_558530;BC_57477;BC_738113;BC_761053;BC_806919;BC_807090;BC_840029;BC_87546;BC_896145;BC_957100;BC_996119","BC_1035827;BC_1086022;BC_110331;BC_1149725;BC_1213834;BC_1234598;BC_1401656;BC_1789932;BC_189072;BC_1893064;BC_18987;BC_1931510;BC_205886;BC_2149136;BC_21632;BC_22965;BC_2323409;BC_2329183;BC_2334986;BC_345633;BC_38673;BC_4144;BC_459360;BC_525322;BC_557799;BC_558160;BC_558530;BC_57477;BC_738113;BC_807090;BC_840029;BC_87546;BC_957100;BC_996119","BC_1080789;BC_1083610;BC_1148834;BC_1159473;BC_1213834;BC_1401656;BC_142517;BC_1671665;BC_168056;BC_17085;BC_1789932;BC_189072;BC_1893064;BC_18987;BC_205886;BC_21632;BC_2279834;BC_2323409;BC_272617;BC_525322;BC_558160;BC_558530;BC_57477;BC_806919;BC_836110;BC_840029;BC_957100","BC_1117812;BC_1213834;BC_127281;BC_1401656;BC_1763813;BC_189072;BC_18987;BC_205886;BC_2124613;BC_22965;BC_2323409;BC_345633;BC_360543;BC_447033;BC_47903;BC_492019;BC_525322;BC_558160;BC_57477;BC_761053;BC_836110;BC_840029;BC_957100;BC_996119","BC_996119","BC_345633;BC_4776;BC_856001",null,"BC_104940;BC_1078058;BC_1123764;BC_1364952;BC_1624431;BC_2458620;BC_276740;BC_315496;BC_37395;BC_387377;BC_440337;BC_448316;BC_450659;BC_4776;BC_53115;BC_586820;BC_788994;BC_890411;BC_910;BC_921347;BC_9216;BC_939263","BC_106068;BC_1078058;BC_1106269;BC_1123764;BC_1191243;BC_1347033;BC_1362159;BC_136550;BC_138112;BC_1598285;BC_1779851;BC_2025991;BC_315496;BC_384993;BC_428945;BC_448316;BC_450659;BC_459236;BC_4776;BC_481088;BC_502950;BC_560755;BC_560996;BC_58392;BC_586820;BC_592418;BC_672;BC_677122;BC_789772;BC_890411;BC_99398","BC_104940;BC_106068;BC_1078058;BC_1362159;BC_1364952;BC_2127747;BC_274290;BC_315496;BC_387377;BC_409821;BC_448316;BC_450659;BC_4776;BC_48206;BC_492351;BC_53115;BC_586820;BC_592418;BC_607501;BC_672;BC_890411;BC_925985","BC_106068;BC_1078058;BC_1191243;BC_1362159;BC_1598285;BC_2025991;BC_2100115;BC_2458620;BC_274290;BC_315496;BC_347495;BC_37395;BC_440337;BC_450659;BC_4776;BC_48206;BC_48720;BC_490546;BC_492351;BC_51548;BC_541661;BC_557526;BC_578418;BC_586820;BC_592418;BC_597321;BC_672;BC_864093;BC_879574;BC_910;BC_921347",null,null,null,"BC_1018095;BC_1191243;BC_123586;BC_131867;BC_644424;BC_807090;BC_903239;BC_962108","BC_131867;BC_1787099;BC_644424;BC_807090;BC_84285;BC_903239","BC_131867;BC_1403466;BC_238363;BC_644424;BC_807090;BC_903239;BC_962108","BC_110564;BC_1403466;BC_1787099;BC_644424;BC_807090;BC_903239",null,null,null,"BC_2329183","BC_475236;BC_957100","BC_903239","BC_1030757;BC_1080172;BC_1085024;BC_110331;BC_1117812;BC_1149725;BC_1213834;BC_1234598;BC_1401656;BC_142517;BC_15047;BC_1789932;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_205886;BC_21632;BC_2323409;BC_2334986;BC_2485611;BC_250178;BC_345633;BC_38673;BC_469304;BC_558530;BC_57477;BC_577148;BC_57772;BC_807090;BC_836110;BC_840029;BC_856001;BC_87546;BC_957100;BC_996119","BC_1030757;BC_1117812;BC_1148834;BC_1213834;BC_1234598;BC_1401656;BC_142517;BC_17085;BC_1735;BC_1789932;BC_1886895;BC_1893064;BC_18987;BC_2323409;BC_2329183;BC_2431038;BC_345633;BC_475236;BC_492019;BC_558160;BC_558530;BC_57477;BC_577148;BC_57772;BC_761053;BC_836110;BC_840029;BC_856001;BC_957100;BC_97489;BC_996119","BC_1080789;BC_1085024;BC_1213834;BC_1234598;BC_1401656;BC_1763813;BC_1789932;BC_189072;BC_18987;BC_205886;BC_2124613;BC_2323409;BC_2329183;BC_247236;BC_345633;BC_38673;BC_558160;BC_558530;BC_57477;BC_65124;BC_840029;BC_896145;BC_957100;BC_996119","BC_1030757;BC_1080789;BC_1160432;BC_1213834;BC_1234598;BC_1401656;BC_168056;BC_17085;BC_1763813;BC_1886895;BC_189072;BC_205886;BC_2124613;BC_22965;BC_2485611;BC_27043;BC_345633;BC_47903;BC_547591;BC_558160;BC_558530;BC_57477;BC_577148;BC_65124;BC_715221;BC_836110;BC_957100;BC_996119",null,null,"BC_315496;BC_807090","BC_106068;BC_1078058;BC_1093488;BC_1123764;BC_1364952;BC_1779851;BC_216907;BC_2249544;BC_233344;BC_276740;BC_277245;BC_280881;BC_315496;BC_347495;BC_37395;BC_387377;BC_448316;BC_450659;BC_4776;BC_490546;BC_492351;BC_502950;BC_53115;BC_586820;BC_592418;BC_789772;BC_879574;BC_890411;BC_99398","BC_104940;BC_1078058;BC_1123764;BC_1191243;BC_1362159;BC_144682;BC_1507009;BC_1649762;BC_2025991;BC_315496;BC_448316;BC_4776;BC_490546;BC_492351;BC_53115;BC_557526;BC_578418;BC_586820;BC_592418;BC_597756;BC_672;BC_789772;BC_807915;BC_890411;BC_92466;BC_939263;BC_99398","BC_106068;BC_1078058;BC_1106269;BC_1123764;BC_1191243;BC_1287019;BC_1362159;BC_1779301;BC_1779851;BC_194897;BC_2277390;BC_232171;BC_274290;BC_315496;BC_334506;BC_387377;BC_454470;BC_4776;BC_492351;BC_51548;BC_557526;BC_586820;BC_592418;BC_677122;BC_691501;BC_773776;BC_789772;BC_807090;BC_890411;BC_99398","BC_104940;BC_1078058;BC_1191243;BC_1295631;BC_1306309;BC_1362159;BC_1364952;BC_144682;BC_1650810;BC_2185020;BC_274290;BC_315496;BC_384993;BC_387377;BC_450659;BC_4776;BC_48206;BC_502950;BC_51548;BC_557526;BC_58392;BC_586820;BC_672;BC_839068;BC_839556;BC_864093;BC_879574;BC_890411;BC_910;BC_921347",null,null,null,"BC_110564;BC_131867;BC_644424;BC_807090;BC_903239;BC_962108","BC_110564;BC_1313433;BC_131867;BC_1735;BC_1787099;BC_2421471;BC_644424;BC_807090;BC_84285;BC_903239;BC_962108","BC_110564;BC_123586;BC_1260918;BC_131867;BC_1423564;BC_1787099;BC_345287;BC_644424;BC_807090;BC_903239","BC_131867;BC_1461676;BC_1787099;BC_644424;BC_807090;BC_903239;BC_962108",null,null,null,"BC_1117812",null,"BC_2149136","BC_1042754;BC_110331;BC_1117812;BC_1148834;BC_1149725;BC_1157570;BC_1213834;BC_1234598;BC_1401656;BC_15047;BC_176445;BC_178301;BC_1789932;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_1931510;BC_205886;BC_2124613;BC_2149136;BC_2323409;BC_2329183;BC_2334986;BC_2431038;BC_345633;BC_462092;BC_525322;BC_547591;BC_558160;BC_558530;BC_57477;BC_577148;BC_692325;BC_738113;BC_807090;BC_836110;BC_840029;BC_856001;BC_87546;BC_957100;BC_996119","BC_1030757;BC_1086022;BC_1117812;BC_1148834;BC_1159473;BC_1213834;BC_1234598;BC_1401656;BC_142517;BC_15047;BC_151084;BC_1671665;BC_17085;BC_1716111;BC_176445;BC_1789932;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_205886;BC_2149136;BC_22965;BC_2323409;BC_2329183;BC_2334986;BC_2485611;BC_345633;BC_374724;BC_38673;BC_558530;BC_57477;BC_577148;BC_656962;BC_679386;BC_738113;BC_742000;BC_751383;BC_761053;BC_836110;BC_840029;BC_857182;BC_87546;BC_957100","BC_1117812;BC_1213834;BC_1401656;BC_1763813;BC_1861109;BC_1893064;BC_18987;BC_205886;BC_2279834;BC_22965;BC_2323409;BC_345633;BC_374724;BC_378145;BC_462092;BC_525322;BC_558160;BC_558530;BC_57477;BC_65124;BC_738113;BC_761053;BC_836110;BC_840029;BC_957100","BC_1030757;BC_110331;BC_1117812;BC_1149725;BC_1157570;BC_1213834;BC_1234598;BC_1401656;BC_142517;BC_168056;BC_1787099;BC_1886895;BC_189072;BC_1893064;BC_205886;BC_2149136;BC_22965;BC_2323409;BC_2329183;BC_239371;BC_2485611;BC_27043;BC_345633;BC_459360;BC_47903;BC_558530;BC_57477;BC_577148;BC_62428;BC_806919;BC_957100","BC_315496;BC_586820;BC_957100","BC_490546;BC_557526","BC_18987;BC_903239","BC_106068;BC_106599;BC_1078058;BC_110875;BC_1123764;BC_1191243;BC_1302483;BC_1362159;BC_1364952;BC_138112;BC_1416955;BC_1421907;BC_1521897;BC_1530115;BC_161832;BC_1660953;BC_1779851;BC_1819135;BC_2025991;BC_2249544;BC_2277390;BC_274290;BC_276740;BC_315496;BC_360785;BC_428945;BC_450659;BC_45455;BC_4776;BC_48206;BC_48720;BC_502950;BC_557526;BC_586820;BC_592418;BC_597321;BC_677122;BC_773776;BC_807090;BC_864093;BC_890411;BC_981320","BC_104940;BC_106068;BC_1078058;BC_1091885;BC_1123764;BC_116223;BC_1191243;BC_1295631;BC_131867;BC_133737;BC_1355538;BC_1362159;BC_1364952;BC_1401656;BC_144682;BC_1507009;BC_1598285;BC_1624431;BC_1649762;BC_1660953;BC_1779851;BC_2025991;BC_216907;BC_2185020;BC_2277390;BC_274290;BC_315496;BC_334506;BC_347495;BC_360785;BC_428945;BC_434701;BC_448316;BC_450659;BC_459236;BC_4776;BC_48206;BC_53115;BC_541661;BC_547591;BC_58392;BC_586820;BC_592418;BC_677122;BC_690075;BC_7205;BC_773776;BC_839068;BC_864093;BC_878455;BC_879574;BC_890411","BC_106068;BC_1068803;BC_1078058;BC_1123764;BC_1191243;BC_1287019;BC_1362159;BC_1364952;BC_1401656;BC_1409549;BC_141593;BC_1424017;BC_144682;BC_1598285;BC_1779301;BC_1779851;BC_194897;BC_205886;BC_2127747;BC_274290;BC_287881;BC_315496;BC_37395;BC_387377;BC_448316;BC_450659;BC_4776;BC_48206;BC_48720;BC_492351;BC_51548;BC_586820;BC_592418;BC_605204;BC_677122;BC_691501;BC_745085;BC_801081;BC_839556;BC_864093;BC_884722;BC_890411;BC_903239;BC_910;BC_921347;BC_981320","BC_104940;BC_106068;BC_1078058;BC_1123764;BC_1144927;BC_116223;BC_1191243;BC_1221112;BC_1337320;BC_1362159;BC_138112;BC_1402783;BC_1424017;BC_1624431;BC_1779851;BC_194897;BC_2025991;BC_241899;BC_276740;BC_287881;BC_315496;BC_387377;BC_409821;BC_448316;BC_450659;BC_4776;BC_490546;BC_492351;BC_51548;BC_523944;BC_53115;BC_541661;BC_557526;BC_586820;BC_592418;BC_7205;BC_773694;BC_807090;BC_890411;BC_910096;BC_921347","BC_807090","BC_903239",null,"BC_110564;BC_123586;BC_131867;BC_1787099;BC_644424;BC_807090;BC_903239","BC_110564;BC_1313433;BC_131867;BC_173121;BC_1735;BC_1787099;BC_2004073;BC_238363;BC_315496;BC_345287;BC_644424;BC_762832;BC_807090;BC_84285;BC_903239","BC_110564;BC_123586;BC_1260918;BC_131867;BC_1403466;BC_1787099;BC_2004073;BC_238363;BC_644424;BC_807090;BC_903239;BC_962108","BC_110564;BC_1191243;BC_131867;BC_1787099;BC_387377;BC_644424;BC_807090;BC_840029;BC_84285;BC_903239;BC_962108",null,null,null,"BC_1030757;BC_672;BC_807090","BC_205886;BC_53115;BC_903239","BC_1163332;BC_807090","BC_1030757;BC_1086022;BC_1117812;BC_1148834;BC_1149725;BC_1159473;BC_1213834;BC_1234598;BC_1401656;BC_142517;BC_15047;BC_1671665;BC_168056;BC_176445;BC_1789932;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_205886;BC_2149136;BC_2277390;BC_2323409;BC_2334986;BC_2485611;BC_27043;BC_345633;BC_4144;BC_447033;BC_462092;BC_558160;BC_57477;BC_577148;BC_57772;BC_761053;BC_806919;BC_836110;BC_840029;BC_856001;BC_957100;BC_996119","BC_1086022;BC_1117812;BC_1148834;BC_1213834;BC_1234598;BC_127281;BC_1401656;BC_142517;BC_1789932;BC_1865083;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_1931510;BC_1997956;BC_205886;BC_21632;BC_22965;BC_2323409;BC_27043;BC_284255;BC_345633;BC_38673;BC_475236;BC_558160;BC_558530;BC_57477;BC_65124;BC_742000;BC_761053;BC_836110;BC_840029;BC_856001;BC_896145;BC_903239;BC_957100","BC_1148834;BC_1213834;BC_1401656;BC_142517;BC_15047;BC_18987;BC_205886;BC_2323409;BC_239371;BC_280267;BC_345633;BC_462092;BC_57477;BC_577148;BC_57772;BC_742000;BC_751383;BC_836110;BC_840029;BC_957100","BC_1117812;BC_1149725;BC_1213834;BC_1234598;BC_127281;BC_1401656;BC_1470246;BC_176445;BC_1893064;BC_1939755;BC_1997956;BC_205886;BC_2149136;BC_228850;BC_22965;BC_2379703;BC_345633;BC_37580;BC_57477;BC_65124;BC_679386;BC_692325;BC_738113;BC_836110;BC_840029;BC_957100",null,"BC_1086022","BC_903239","BC_106068;BC_1078058;BC_1123764;BC_1191243;BC_1287019;BC_1355538;BC_1362159;BC_1364952;BC_144682;BC_161832;BC_1779851;BC_315496;BC_347495;BC_387377;BC_409821;BC_450659;BC_4776;BC_48206;BC_586820;BC_592418;BC_672;BC_677122;BC_830072;BC_864093;BC_89293;BC_910096","BC_106068;BC_1123764;BC_1355538;BC_1362159;BC_144682;BC_1624431;BC_1660953;BC_1779851;BC_2025991;BC_243041;BC_315496;BC_37395;BC_387377;BC_440337;BC_450659;BC_4776;BC_556514;BC_586820;BC_677122;BC_910;BC_981320;BC_99398","BC_106068;BC_1078058;BC_1098229;BC_1106269;BC_110875;BC_1122004;BC_1123764;BC_1191243;BC_1362159;BC_1364952;BC_138112;BC_1521897;BC_1598285;BC_1624431;BC_1650810;BC_1779851;BC_2127747;BC_2277390;BC_274290;BC_315496;BC_37395;BC_409821;BC_4776;BC_48206;BC_490546;BC_502950;BC_53115;BC_541661;BC_557526;BC_586820;BC_592418;BC_637598;BC_672;BC_677122;BC_879574;BC_890411;BC_89293;BC_905587","BC_1078058;BC_1106269;BC_1123764;BC_1191243;BC_1362159;BC_1364952;BC_1779301;BC_2025991;BC_2127747;BC_2428082;BC_274290;BC_315496;BC_37395;BC_387377;BC_409821;BC_434701;BC_448316;BC_4776;BC_48206;BC_53115;BC_557526;BC_56047;BC_586820;BC_592418;BC_597321;BC_677122;BC_691501;BC_7205;BC_745085;BC_773694;BC_839556;BC_890411;BC_910096;BC_99398","BC_644424",null,null,"BC_110564;BC_131867;BC_1787099;BC_345287;BC_644424;BC_762832;BC_807090;BC_84285;BC_903239;BC_962108","BC_110564;BC_1213834;BC_123586;BC_128384;BC_1313433;BC_131867;BC_1787099;BC_644424;BC_807090;BC_84285;BC_903239;BC_962108","BC_110564;BC_123586;BC_1260918;BC_131867;BC_1423564;BC_1787099;BC_2004073;BC_644424;BC_807090;BC_903239;BC_962108","BC_110564;BC_131867;BC_1423564;BC_1787099;BC_2004073;BC_279245;BC_439026;BC_448316;BC_644424;BC_673045;BC_807090;BC_903239;BC_962108",null,null,null,"BC_807090;BC_903239;BC_957100","BC_106068;BC_490546","BC_903239","BC_1086022;BC_110331;BC_1129411;BC_1144927;BC_1149725;BC_119490;BC_1213834;BC_1234598;BC_1401656;BC_142517;BC_17085;BC_1779851;BC_1789932;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_1997956;BC_205886;BC_21632;BC_2279834;BC_2323409;BC_2431038;BC_247236;BC_2485611;BC_311022;BC_345633;BC_38673;BC_462092;BC_475236;BC_4776;BC_492019;BC_547591;BC_558530;BC_57477;BC_577148;BC_57772;BC_586820;BC_65124;BC_738113;BC_742000;BC_761053;BC_836110;BC_840029;BC_896145;BC_903239;BC_957100;BC_96712;BC_996119","BC_1080789;BC_1083610;BC_1149725;BC_1213834;BC_1234598;BC_136550;BC_1423564;BC_164227;BC_17085;BC_1789932;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_205886;BC_2149136;BC_21632;BC_2279834;BC_2323409;BC_2334986;BC_2485611;BC_345633;BC_38673;BC_462092;BC_47903;BC_558160;BC_558530;BC_57477;BC_577148;BC_57772;BC_65124;BC_656962;BC_679386;BC_738113;BC_836110;BC_840029;BC_856001;BC_957100;BC_996119","BC_1213834;BC_1234598;BC_1401656;BC_17085;BC_1763813;BC_176445;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_205886;BC_2158654;BC_2323409;BC_2329183;BC_2334986;BC_311022;BC_345633;BC_558160;BC_558530;BC_57477;BC_577148;BC_656962;BC_712377;BC_806919;BC_836110;BC_840029;BC_957100","BC_1030757;BC_1117812;BC_1149725;BC_1157570;BC_1213834;BC_1234598;BC_1401656;BC_142517;BC_1470246;BC_17085;BC_1789932;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_205886;BC_2149136;BC_21632;BC_2323409;BC_2329183;BC_2334986;BC_239371;BC_2485611;BC_27043;BC_27365;BC_345633;BC_370518;BC_374460;BC_447033;BC_491837;BC_492351;BC_525322;BC_558160;BC_558530;BC_57477;BC_577148;BC_57772;BC_742000;BC_806919;BC_836110;BC_840029;BC_893487;BC_957100","BC_577148;BC_807090",null,null,"BC_1078058;BC_1091885;BC_1123764;BC_1163332;BC_1191243;BC_1362159;BC_1364952;BC_138112;BC_1624431;BC_1779851;BC_2458620;BC_274290;BC_315496;BC_37395;BC_387360;BC_440337;BC_450659;BC_4776;BC_492351;BC_53115;BC_586820;BC_592418;BC_672;BC_677122;BC_690075;BC_788994;BC_89293;BC_921347;BC_99398","BC_103645;BC_104940;BC_106068;BC_1078058;BC_1123764;BC_1191243;BC_1347033;BC_1362159;BC_1364952;BC_138112;BC_1779301;BC_1779851;BC_2127747;BC_233564;BC_243041;BC_315496;BC_360785;BC_439439;BC_440337;BC_450659;BC_459236;BC_4776;BC_48206;BC_490546;BC_53115;BC_541661;BC_556514;BC_586820;BC_597321;BC_672;BC_677122;BC_691501;BC_789772;BC_807090;BC_864093;BC_890411;BC_903239;BC_939263;BC_99398","BC_1057018;BC_106068;BC_1078058;BC_1123764;BC_1191243;BC_1249906;BC_1362159;BC_1364952;BC_136550;BC_138112;BC_1421907;BC_1650810;BC_274290;BC_315496;BC_347695;BC_37395;BC_387377;BC_409821;BC_428945;BC_439026;BC_448316;BC_450659;BC_454470;BC_4776;BC_48206;BC_492351;BC_51548;BC_53115;BC_556514;BC_586820;BC_592418;BC_597321;BC_672;BC_677122;BC_691501;BC_7205;BC_745085;BC_756491;BC_773776;BC_81824;BC_858097;BC_879574;BC_890411;BC_99398","BC_106068;BC_1078058;BC_110875;BC_1123764;BC_1191243;BC_1221112;BC_1364952;BC_144682;BC_1521897;BC_158317;BC_1598285;BC_1660953;BC_1772896;BC_1779851;BC_1787099;BC_1908692;BC_2025991;BC_2277390;BC_267248;BC_274290;BC_315496;BC_387377;BC_409821;BC_42118;BC_428945;BC_439026;BC_448316;BC_450659;BC_4776;BC_490546;BC_492351;BC_53115;BC_541661;BC_556514;BC_557526;BC_586820;BC_592418;BC_597321;BC_672;BC_677122;BC_691501;BC_745085;BC_879574;BC_890411;BC_99398","BC_1234598","BC_104940;BC_807090;BC_84285",null,"BC_110564;BC_123586;BC_1313433;BC_131867;BC_1787099;BC_2004073;BC_4776;BC_644424;BC_762832;BC_807090;BC_903239;BC_962108","BC_110564;BC_123586;BC_1313433;BC_131867;BC_133737;BC_1787099;BC_2004073;BC_345633;BC_644424;BC_807090;BC_84285;BC_903239;BC_962108","BC_110564;BC_123586;BC_1260918;BC_131867;BC_1787099;BC_644424;BC_673045;BC_807090;BC_903239;BC_962108","BC_123586;BC_128384;BC_1787099;BC_644424;BC_807090;BC_903239;BC_962108",null,null,null,"BC_110564;BC_1364952;BC_606133","BC_903239","BC_205886;BC_896145;BC_903239","BC_1001456;BC_1117812;BC_1148834;BC_1213834;BC_1234598;BC_127281;BC_1401656;BC_142517;BC_17085;BC_1763813;BC_176445;BC_1789932;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_205886;BC_2149136;BC_2323409;BC_2431038;BC_2485611;BC_345633;BC_374724;BC_447033;BC_462092;BC_47903;BC_558530;BC_57477;BC_577148;BC_65124;BC_692325;BC_761053;BC_807090;BC_840029;BC_857182;BC_903239;BC_957100;BC_996119","BC_106279;BC_1086022;BC_1117812;BC_1148834;BC_1149725;BC_1213834;BC_1234598;BC_1401656;BC_142517;BC_15047;BC_1647027;BC_168056;BC_17085;BC_176445;BC_178301;BC_1789932;BC_1865083;BC_1886895;BC_1893064;BC_18987;BC_205886;BC_2149136;BC_21632;BC_22965;BC_2323409;BC_2334986;BC_2431038;BC_2485611;BC_311022;BC_345633;BC_370518;BC_374460;BC_47903;BC_525322;BC_558160;BC_558530;BC_57477;BC_577148;BC_644424;BC_65124;BC_656962;BC_692325;BC_761053;BC_806919;BC_813722;BC_840029;BC_87546;BC_957100","BC_1083610;BC_1117812;BC_1213834;BC_1234598;BC_1401656;BC_17085;BC_1763813;BC_1886895;BC_1893064;BC_18987;BC_1931510;BC_205886;BC_2149136;BC_21632;BC_22965;BC_2323409;BC_2431038;BC_2485611;BC_272617;BC_345633;BC_378145;BC_38673;BC_4144;BC_447033;BC_558530;BC_57477;BC_65124;BC_742000;BC_761053;BC_806919;BC_836110;BC_840029;BC_896145;BC_957100;BC_996119","BC_1030757;BC_1085024;BC_1086022;BC_1117812;BC_1213834;BC_1234598;BC_1401656;BC_176445;BC_1789932;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_1931510;BC_205886;BC_2149136;BC_21632;BC_22965;BC_2323409;BC_239371;BC_27043;BC_302564;BC_345633;BC_378145;BC_38673;BC_4144;BC_447033;BC_547591;BC_558160;BC_558530;BC_57477;BC_65124;BC_712377;BC_738113;BC_77025;BC_836110;BC_840029;BC_896145;BC_903239;BC_957100","BC_106068;BC_110564","BC_1423564;BC_345633;BC_558530;BC_592418;BC_957100","BC_1117812;BC_903239","BC_103645;BC_106068;BC_1078058;BC_110564;BC_1117812;BC_1123764;BC_1178981;BC_1191243;BC_1362159;BC_1364952;BC_138112;BC_1402783;BC_144682;BC_1624431;BC_1650810;BC_1779851;BC_1943848;BC_2025991;BC_2277390;BC_274290;BC_315496;BC_347495;BC_360785;BC_409821;BC_428945;BC_448316;BC_450659;BC_4776;BC_481088;BC_48206;BC_502950;BC_53115;BC_557526;BC_578418;BC_586820;BC_592418;BC_607501;BC_677122;BC_773776;BC_789772;BC_84111;BC_846473;BC_879574;BC_890411;BC_937809","BC_106068;BC_1078058;BC_1123764;BC_1191243;BC_133737;BC_1362159;BC_1364952;BC_138112;BC_1421907;BC_1521897;BC_161832;BC_1624431;BC_1779851;BC_1877610;BC_2025991;BC_2127747;BC_243041;BC_243181;BC_274290;BC_315496;BC_347495;BC_360785;BC_409821;BC_448316;BC_4776;BC_481088;BC_48206;BC_502950;BC_53115;BC_531895;BC_541661;BC_557526;BC_586820;BC_592418;BC_672;BC_677122;BC_691501;BC_773776;BC_789772;BC_807090;BC_81824;BC_890411;BC_89293;BC_935822","BC_106068;BC_1078058;BC_110875;BC_1123764;BC_1191243;BC_1287019;BC_1295631;BC_1364952;BC_136550;BC_138112;BC_144682;BC_148936;BC_1521897;BC_1661269;BC_1879455;BC_2025991;BC_274290;BC_315496;BC_37395;BC_384993;BC_387377;BC_409821;BC_42118;BC_428945;BC_439026;BC_4776;BC_48206;BC_492351;BC_51548;BC_53115;BC_541661;BC_557526;BC_577148;BC_586820;BC_592418;BC_655058;BC_672;BC_677122;BC_691501;BC_773694;BC_839068;BC_846473;BC_864093;BC_878455;BC_879574;BC_890411;BC_939263","BC_106068;BC_1068803;BC_1123764;BC_1191243;BC_1362159;BC_1364952;BC_1424017;BC_1598285;BC_1624431;BC_1779851;BC_2025991;BC_2377300;BC_274290;BC_277245;BC_315496;BC_347495;BC_349666;BC_387377;BC_409821;BC_450659;BC_4776;BC_481088;BC_48206;BC_502950;BC_53115;BC_541661;BC_551950;BC_557526;BC_56047;BC_586820;BC_592418;BC_597321;BC_672;BC_677122;BC_745085;BC_764256;BC_830072;BC_890411;BC_910;BC_921347;BC_975538;BC_981320;BC_99398",null,null,null,"BC_110564;BC_1313433;BC_131867;BC_1403466;BC_2004073;BC_345287;BC_644424;BC_807090;BC_84285;BC_903239;BC_962108","BC_110564;BC_123586;BC_128384;BC_1313433;BC_131867;BC_1423564;BC_173121;BC_1787099;BC_2004073;BC_345287;BC_4776;BC_644424;BC_807090;BC_84285;BC_903239;BC_962108","BC_110564;BC_1191243;BC_123586;BC_1313433;BC_131867;BC_1787099;BC_644424;BC_807090;BC_84285;BC_903239;BC_962108","BC_110564;BC_123586;BC_131867;BC_1423564;BC_173121;BC_238363;BC_345287;BC_644424;BC_807090;BC_903239",null,null,null,"BC_903239;BC_97489","BC_106068;BC_57477;BC_903239","BC_903239","BC_1030757;BC_110331;BC_1117812;BC_1213834;BC_1234598;BC_1401656;BC_142517;BC_1671665;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_205886;BC_21632;BC_2323409;BC_2431038;BC_345633;BC_4144;BC_469304;BC_475236;BC_4776;BC_47903;BC_558160;BC_558530;BC_57477;BC_577148;BC_656962;BC_715221;BC_720645;BC_742000;BC_761053;BC_807090;BC_840029;BC_856001;BC_957100","BC_1148834;BC_1213834;BC_1234598;BC_1401656;BC_142517;BC_17085;BC_1717922;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_205886;BC_2124613;BC_2149136;BC_2323409;BC_2329183;BC_27043;BC_345633;BC_4776;BC_491837;BC_558160;BC_558530;BC_57477;BC_577148;BC_65124;BC_751383;BC_761053;BC_806919;BC_836110;BC_840029;BC_87546;BC_957100;BC_96712;BC_97489;BC_996119","BC_1080172;BC_1213834;BC_1234598;BC_1401656;BC_142517;BC_15047;BC_1650649;BC_1763813;BC_176445;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_205886;BC_2124613;BC_2149136;BC_2323409;BC_2334986;BC_345633;BC_462092;BC_47903;BC_558160;BC_57477;BC_606133;BC_677122;BC_712377;BC_742000;BC_761053;BC_806919;BC_807090;BC_836110;BC_840029;BC_957100;BC_996119","BC_1012715;BC_1030757;BC_1148834;BC_1213834;BC_1234598;BC_1401656;BC_1763813;BC_18258;BC_189072;BC_18987;BC_205886;BC_2149136;BC_21632;BC_2279834;BC_2284773;BC_2323409;BC_2329183;BC_2334986;BC_345633;BC_475236;BC_558160;BC_558530;BC_57477;BC_742000;BC_806919;BC_836110;BC_840029;BC_957100","BC_138112","BC_205886","BC_1078058;BC_1123764;BC_1779851;BC_38673;BC_807090","BC_104940;BC_1078058;BC_110875;BC_1123764;BC_1191243;BC_1338788;BC_1362159;BC_1364952;BC_1521897;BC_1598285;BC_163967;BC_1779851;BC_1828463;BC_2025991;BC_2428082;BC_315496;BC_37395;BC_384993;BC_42118;BC_428945;BC_450659;BC_4776;BC_492351;BC_541661;BC_556514;BC_557526;BC_58392;BC_586820;BC_592418;BC_597321;BC_672;BC_677122;BC_691501;BC_7205;BC_839556;BC_864093;BC_878455;BC_890411;BC_89293;BC_903239;BC_910;BC_99398","BC_106068;BC_1078058;BC_1123764;BC_1191243;BC_1295631;BC_1347033;BC_1362159;BC_1364952;BC_138112;BC_1779851;BC_2127747;BC_2458620;BC_274290;BC_315496;BC_37395;BC_387360;BC_409821;BC_42118;BC_448316;BC_450659;BC_4776;BC_48206;BC_490546;BC_53115;BC_557526;BC_57772;BC_578418;BC_586820;BC_592418;BC_60177;BC_677122;BC_691501;BC_839068;BC_890411","BC_106068;BC_1078058;BC_1123764;BC_1191243;BC_1362159;BC_1364952;BC_136550;BC_138112;BC_1779851;BC_2025991;BC_2428082;BC_274290;BC_315496;BC_450659;BC_4776;BC_490546;BC_492351;BC_53115;BC_541661;BC_586820;BC_592418;BC_597321;BC_645340;BC_677122;BC_7205;BC_745085;BC_770881;BC_789772;BC_839556;BC_864093;BC_890411;BC_910096;BC_939263;BC_99398","BC_104940;BC_106068;BC_1078058;BC_1106269;BC_1123764;BC_1191243;BC_1295631;BC_1362159;BC_136550;BC_1436415;BC_1521897;BC_1779851;BC_1789932;BC_1828463;BC_274290;BC_315496;BC_387377;BC_409821;BC_450659;BC_462987;BC_4776;BC_48206;BC_492351;BC_502950;BC_53115;BC_541661;BC_557526;BC_56047;BC_578418;BC_586820;BC_592418;BC_703587;BC_839556;BC_879574;BC_890411;BC_910;BC_981320",null,"BC_962108","BC_903239;BC_910","BC_110564;BC_123586;BC_128384;BC_1313433;BC_131867;BC_173121;BC_2004073;BC_644424;BC_807090;BC_903239;BC_962108","BC_110564;BC_123586;BC_131867;BC_1423564;BC_1787099;BC_2004073;BC_644424;BC_807090;BC_903239","BC_110564;BC_131867;BC_1423564;BC_1787099;BC_238363;BC_448316;BC_644424;BC_807090;BC_903239;BC_962108","BC_110564;BC_1260918;BC_131867;BC_1787099;BC_644424;BC_807090;BC_903239;BC_962108",null,null,null,null,"BC_106068;BC_807090;BC_903239",null,"BC_1080172;BC_1117812;BC_1159473;BC_1213834;BC_1234598;BC_1401656;BC_142517;BC_1470246;BC_151084;BC_1671665;BC_1886895;BC_189072;BC_1893064;BC_205886;BC_2149136;BC_21632;BC_2323409;BC_2431038;BC_378145;BC_491837;BC_547591;BC_57477;BC_577148;BC_65124;BC_738113;BC_761053;BC_840029;BC_957100;BC_962108","BC_110331;BC_1117812;BC_1149725;BC_1159473;BC_1213834;BC_1234598;BC_1401656;BC_142517;BC_164227;BC_1671665;BC_17085;BC_1763813;BC_1789932;BC_1886895;BC_1893064;BC_205886;BC_2124613;BC_2279834;BC_2323409;BC_27043;BC_311022;BC_345633;BC_459360;BC_475236;BC_547591;BC_558160;BC_558530;BC_57477;BC_577148;BC_806919;BC_836110;BC_840029;BC_87546;BC_957100;BC_996119","BC_1030757;BC_110331;BC_1213834;BC_1234598;BC_1401656;BC_17085;BC_189072;BC_18987;BC_205886;BC_2124613;BC_2323409;BC_2431038;BC_27043;BC_345633;BC_370518;BC_475236;BC_558160;BC_558530;BC_57477;BC_644424;BC_742000;BC_761053;BC_806919;BC_836110;BC_840029;BC_957100","BC_1006414;BC_1030757;BC_1117812;BC_1213834;BC_1401656;BC_142517;BC_176445;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_205886;BC_2323409;BC_345633;BC_447033;BC_558160;BC_558530;BC_57477;BC_742000;BC_761053;BC_836110;BC_840029;BC_957100","BC_807090","BC_807090;BC_903239","BC_53115","BC_106068;BC_1078058;BC_1093488;BC_1123764;BC_116223;BC_1191243;BC_1295631;BC_133737;BC_1362159;BC_1364952;BC_136550;BC_1598285;BC_1624431;BC_1660953;BC_1779851;BC_1819135;BC_315496;BC_360785;BC_384993;BC_387360;BC_387377;BC_448316;BC_4776;BC_48206;BC_492351;BC_502950;BC_53115;BC_541661;BC_58392;BC_672;BC_764256;BC_839556;BC_864093;BC_878455;BC_890411;BC_89293;BC_903239","BC_106068;BC_1078058;BC_1106269;BC_1123764;BC_1191243;BC_1287019;BC_1362159;BC_1364952;BC_1402783;BC_1507009;BC_1624431;BC_1650810;BC_1779851;BC_1877610;BC_2127747;BC_2185020;BC_2458620;BC_267248;BC_274290;BC_276740;BC_315496;BC_37395;BC_387377;BC_409821;BC_439439;BC_450659;BC_4776;BC_481088;BC_48206;BC_490546;BC_492351;BC_53115;BC_557526;BC_586820;BC_592418;BC_677122;BC_789772;BC_830072;BC_839068;BC_839556;BC_864093;BC_879574;BC_890411;BC_981320","BC_106068;BC_1078058;BC_1123764;BC_116223;BC_1163332;BC_1191243;BC_1310866;BC_1364952;BC_144682;BC_1507009;BC_1598285;BC_1624431;BC_1779851;BC_194897;BC_2025991;BC_2185020;BC_274290;BC_315496;BC_387377;BC_409960;BC_439026;BC_450659;BC_4776;BC_492351;BC_51548;BC_557526;BC_586820;BC_592418;BC_677122;BC_690075;BC_745085;BC_773694;BC_773776;BC_890411;BC_905587;BC_99398","BC_106068;BC_1078058;BC_110875;BC_1123764;BC_116223;BC_1191243;BC_1295631;BC_1362159;BC_1364952;BC_1421907;BC_1521897;BC_1624431;BC_1660953;BC_1908692;BC_1943848;BC_2025991;BC_2127747;BC_276740;BC_315496;BC_409821;BC_440337;BC_450659;BC_4776;BC_48206;BC_490546;BC_492351;BC_502950;BC_541661;BC_557526;BC_586820;BC_592418;BC_606929;BC_691501;BC_839556;BC_864093;BC_890411;BC_89293;BC_910;BC_921347;BC_939263;BC_981320",null,"BC_890411",null,"BC_110564;BC_131867;BC_1364952;BC_1787099;BC_2004073;BC_279245;BC_644424;BC_768169;BC_807090;BC_903239;BC_962108","BC_110564;BC_123586;BC_131867;BC_1401656;BC_644424;BC_807090;BC_84285;BC_903239;BC_962108","BC_1313433;BC_131867;BC_644424;BC_807090;BC_903239","BC_110564;BC_128384;BC_1787099;BC_644424;BC_807090;BC_84285;BC_903239",null,null,null,null,null,null,"BC_1030757;BC_1086022;BC_1148834;BC_1213834;BC_1234598;BC_1401656;BC_15047;BC_164227;BC_17085;BC_1763813;BC_1789932;BC_1886895;BC_1893064;BC_18987;BC_1997956;BC_205886;BC_2149136;BC_21632;BC_22965;BC_2323409;BC_27043;BC_345633;BC_4144;BC_525322;BC_558160;BC_57477;BC_692325;BC_805893;BC_806919;BC_836110;BC_840029;BC_856001;BC_957100;BC_996119","BC_1042754;BC_1117812;BC_1213834;BC_1234598;BC_1401656;BC_17085;BC_1893064;BC_18987;BC_205886;BC_2124613;BC_2149136;BC_22965;BC_2323409;BC_2379703;BC_2431038;BC_311022;BC_345633;BC_378145;BC_447033;BC_547591;BC_558160;BC_558530;BC_57477;BC_577148;BC_742000;BC_807090;BC_840029;BC_957100","BC_1080789;BC_1085024;BC_1117812;BC_1213834;BC_1234598;BC_1401656;BC_142517;BC_168056;BC_1861109;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_205886;BC_2149136;BC_2323409;BC_2334986;BC_239371;BC_302564;BC_378145;BC_4144;BC_469304;BC_558160;BC_558530;BC_57477;BC_577148;BC_65124;BC_761053;BC_806919;BC_836110;BC_840029;BC_957100","BC_1081261;BC_1149725;BC_1213834;BC_15047;BC_1789932;BC_1861109;BC_2124613;BC_2323409;BC_2485611;BC_284255;BC_345633;BC_525322;BC_558160;BC_57477;BC_806919;BC_836110;BC_840029;BC_893487;BC_957100","BC_274290;BC_807090","BC_18987;BC_558160;BC_77025","BC_4776","BC_103645;BC_104940;BC_106068;BC_1078058;BC_110875;BC_1123764;BC_1163332;BC_1191243;BC_1362159;BC_1364952;BC_1401656;BC_1416955;BC_1521897;BC_1624431;BC_1819135;BC_233564;BC_24812;BC_276740;BC_315496;BC_360785;BC_387377;BC_448316;BC_450659;BC_45455;BC_4776;BC_502950;BC_53115;BC_58392;BC_586820;BC_672;BC_677122;BC_789772;BC_864093;BC_89293;BC_910096;BC_935822;BC_981320;BC_99398","BC_106068;BC_1078058;BC_1191243;BC_1364952;BC_1421907;BC_1598285;BC_1624431;BC_1660953;BC_1779851;BC_2127747;BC_2458620;BC_274290;BC_315496;BC_360785;BC_42118;BC_428945;BC_450659;BC_4776;BC_48206;BC_490546;BC_53115;BC_541661;BC_556514;BC_586820;BC_59209;BC_597321;BC_773776;BC_846473;BC_864093;BC_878455;BC_890411;BC_903239;BC_981320;BC_99398","BC_104940;BC_106068;BC_1078058;BC_1123764;BC_1191243;BC_1295631;BC_1362159;BC_144682;BC_1828463;BC_194897;BC_2025991;BC_232171;BC_243041;BC_274290;BC_37395;BC_42118;BC_450659;BC_4776;BC_490546;BC_492351;BC_51548;BC_53115;BC_58392;BC_586820;BC_592418;BC_672;BC_691501;BC_864093;BC_884722;BC_890411;BC_89293;BC_903239;BC_935822;BC_939263;BC_981320","BC_106068;BC_1078058;BC_110875;BC_1123764;BC_1149744;BC_1176408;BC_1191243;BC_1287019;BC_1362159;BC_1364952;BC_1402783;BC_1409549;BC_1598023;BC_1650810;BC_1660953;BC_1772896;BC_1779851;BC_1819135;BC_1828463;BC_2127747;BC_274290;BC_315496;BC_387377;BC_428945;BC_440337;BC_450659;BC_4776;BC_48206;BC_492351;BC_502950;BC_51548;BC_586820;BC_592418;BC_672;BC_677122;BC_745085;BC_761053;BC_839556;BC_864093;BC_879574;BC_921347;BC_939263;BC_981320",null,null,"BC_492351","BC_110564;BC_123586;BC_128384;BC_1313433;BC_131867;BC_1423564;BC_1787099;BC_1789932;BC_644424;BC_715952;BC_768169;BC_807090;BC_903239;BC_962108","BC_110564;BC_128384;BC_1313433;BC_131867;BC_1787099;BC_673045;BC_807090;BC_84285;BC_903239;BC_962108","BC_110564;BC_1423564;BC_644424;BC_807090;BC_903239;BC_962108","BC_110564;BC_1260918;BC_1313433;BC_1787099;BC_1886895;BC_644424;BC_807090;BC_903239;BC_962108",null,null,null,"BC_110564;BC_1893064","BC_677122","BC_1789932;BC_502950","BC_1030757;BC_1083610;BC_1117812;BC_1213834;BC_1234598;BC_1401656;BC_142517;BC_15047;BC_1720202;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_1931510;BC_1939755;BC_205886;BC_2149136;BC_21632;BC_22965;BC_2323409;BC_2329183;BC_2334986;BC_2485611;BC_345633;BC_378145;BC_4144;BC_462092;BC_525322;BC_558160;BC_558530;BC_57477;BC_806919;BC_813722;BC_836110;BC_840029;BC_856001;BC_87546;BC_903239;BC_957100;BC_996119","BC_1083610;BC_1085024;BC_1086022;BC_110331;BC_1213834;BC_1234598;BC_1401656;BC_15047;BC_1671665;BC_17085;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_1997956;BC_205886;BC_2149136;BC_21632;BC_2431038;BC_345633;BC_378145;BC_38673;BC_469304;BC_55599;BC_558160;BC_558530;BC_57477;BC_577148;BC_57772;BC_65124;BC_751383;BC_840029;BC_857182;BC_896145;BC_957100;BC_97489;BC_996119","BC_1030757;BC_1080789;BC_110331;BC_1129411;BC_1213834;BC_1234598;BC_1401656;BC_1470246;BC_1650649;BC_1789932;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_205886;BC_2149136;BC_21632;BC_2323409;BC_2329183;BC_2334986;BC_27043;BC_370518;BC_374460;BC_38673;BC_47903;BC_547591;BC_57477;BC_577148;BC_57772;BC_606133;BC_761053;BC_806919;BC_836110;BC_840029;BC_87546;BC_896145;BC_957100","BC_1030757;BC_1042754;BC_110331;BC_1213834;BC_1234598;BC_127281;BC_1401656;BC_15047;BC_17085;BC_1763813;BC_1789932;BC_1893064;BC_18987;BC_1931510;BC_205886;BC_2124613;BC_2149136;BC_2284773;BC_2323409;BC_2329183;BC_239371;BC_280267;BC_345633;BC_38673;BC_462092;BC_475236;BC_47903;BC_525322;BC_558160;BC_558530;BC_57477;BC_577148;BC_738113;BC_836110;BC_840029;BC_896145;BC_957100","BC_4776;BC_807090;BC_903239","BC_345633;BC_439026;BC_51548;BC_903239",null,"BC_106068;BC_1078058;BC_1106269;BC_1123764;BC_1191243;BC_1287019;BC_1302483;BC_1355075;BC_1362159;BC_1364952;BC_1416955;BC_144682;BC_1650810;BC_1660953;BC_1779851;BC_2127747;BC_2420789;BC_277245;BC_315496;BC_37395;BC_387377;BC_440337;BC_450659;BC_4776;BC_490546;BC_492351;BC_53115;BC_557526;BC_586820;BC_592418;BC_607501;BC_691501;BC_839068;BC_99398","BC_103645;BC_104940;BC_106068;BC_1078058;BC_1123764;BC_1295631;BC_1306309;BC_1338563;BC_1347033;BC_1362159;BC_1364952;BC_138112;BC_1402783;BC_1598285;BC_1779851;BC_1877610;BC_2025991;BC_233564;BC_274290;BC_276740;BC_29685;BC_315496;BC_37395;BC_387360;BC_387377;BC_388685;BC_409821;BC_4776;BC_51548;BC_53115;BC_586820;BC_592418;BC_606929;BC_672;BC_691501;BC_807090;BC_839556;BC_884722;BC_890411;BC_89293;BC_894941;BC_981320","BC_106068;BC_1078058;BC_1123764;BC_1144927;BC_1191243;BC_1287019;BC_1362159;BC_1364952;BC_136550;BC_144682;BC_1507009;BC_1598285;BC_1748966;BC_1779851;BC_1879455;BC_1908692;BC_194897;BC_2420789;BC_2458620;BC_274290;BC_277245;BC_315496;BC_387377;BC_409821;BC_434701;BC_448316;BC_450659;BC_4776;BC_48206;BC_492351;BC_502950;BC_53115;BC_541661;BC_556514;BC_557526;BC_569851;BC_586820;BC_592418;BC_597321;BC_672;BC_677122;BC_745085;BC_756491;BC_765173;BC_773694;BC_864093;BC_879574;BC_890411;BC_89293;BC_905587;BC_981320","BC_104940;BC_106068;BC_1078058;BC_1106269;BC_1122004;BC_1123764;BC_1191243;BC_1362159;BC_1364952;BC_138112;BC_1402783;BC_1409549;BC_144682;BC_1598285;BC_2025991;BC_2127747;BC_2428082;BC_267248;BC_274290;BC_287881;BC_315496;BC_37395;BC_387377;BC_409821;BC_439026;BC_448316;BC_4776;BC_48206;BC_490546;BC_492351;BC_502950;BC_51548;BC_523674;BC_556514;BC_557526;BC_578418;BC_586820;BC_592418;BC_691501;BC_745085;BC_801081;BC_864093;BC_878455;BC_890411;BC_981320;BC_99398",null,null,"BC_903239","BC_1078058;BC_110564;BC_123586;BC_131867;BC_1787099;BC_2004073;BC_2168197;BC_345287;BC_4776;BC_644424;BC_807090;BC_903239","BC_110564;BC_123586;BC_128384;BC_1313433;BC_131867;BC_1787099;BC_345287;BC_644424;BC_807090;BC_84285;BC_903239;BC_962108","BC_110564;BC_131867;BC_1787099;BC_2004073;BC_238363;BC_644424;BC_807090;BC_903239;BC_962108","BC_110564;BC_123586;BC_128384;BC_1313433;BC_1787099;BC_238363;BC_345633;BC_644424;BC_807090;BC_903239;BC_962108",null,null,null,"BC_106068;BC_176445","BC_315496;BC_893487","BC_1893064;BC_592418;BC_807090","BC_1030757;BC_1035827;BC_1148834;BC_1149725;BC_1159473;BC_1213834;BC_1234598;BC_1401656;BC_1671665;BC_1789932;BC_1886895;BC_18987;BC_205886;BC_2149136;BC_21632;BC_228850;BC_2323409;BC_345633;BC_378145;BC_469304;BC_47903;BC_492019;BC_558160;BC_558530;BC_57477;BC_577148;BC_57772;BC_761053;BC_836110;BC_840029;BC_893487;BC_957100;BC_996119","BC_1085024;BC_110564;BC_1117812;BC_1149725;BC_1213834;BC_1401656;BC_142517;BC_1763813;BC_1789932;BC_1886895;BC_1893064;BC_18987;BC_205886;BC_21632;BC_22965;BC_2323409;BC_238341;BC_2431038;BC_2485611;BC_27365;BC_276740;BC_345633;BC_370518;BC_378145;BC_525322;BC_558160;BC_57477;BC_577148;BC_813722;BC_840029;BC_87546;BC_903239;BC_957100;BC_996119","BC_1117812;BC_1213834;BC_1234598;BC_1401656;BC_1470246;BC_1671665;BC_1763813;BC_1789932;BC_18258;BC_1861109;BC_1886895;BC_1893064;BC_18987;BC_205886;BC_2149136;BC_2279834;BC_22965;BC_2323409;BC_2485611;BC_345633;BC_378145;BC_475236;BC_55599;BC_558160;BC_57477;BC_577148;BC_65124;BC_806919;BC_836110;BC_840029;BC_957100;BC_996119","BC_1080789;BC_1085024;BC_1213834;BC_1234598;BC_1401656;BC_1789932;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_205886;BC_2158654;BC_2485611;BC_345633;BC_378145;BC_4776;BC_525322;BC_558160;BC_558530;BC_57477;BC_62428;BC_65124;BC_738113;BC_807090;BC_836110;BC_840029;BC_957100","BC_1213834;BC_903239",null,"BC_1886895;BC_592418","BC_106068;BC_1123764;BC_1144927;BC_116223;BC_1191243;BC_1362159;BC_136550;BC_138112;BC_1402783;BC_1598285;BC_1617412;BC_161832;BC_2025991;BC_2473726;BC_274290;BC_315496;BC_387360;BC_439439;BC_448316;BC_4776;BC_481088;BC_490546;BC_502950;BC_586820;BC_607501;BC_677122;BC_690075;BC_7205;BC_736147;BC_773776;BC_789772;BC_81824;BC_839556;BC_864093;BC_878455;BC_879574;BC_890411;BC_937809;BC_99398","BC_106068;BC_1078058;BC_1123764;BC_1191243;BC_1362159;BC_1364952;BC_1507009;BC_1598285;BC_1624431;BC_1779851;BC_1819135;BC_1908692;BC_2127747;BC_233564;BC_274290;BC_289985;BC_315496;BC_334506;BC_360785;BC_37395;BC_387377;BC_42118;BC_448316;BC_450659;BC_4776;BC_490546;BC_492351;BC_502950;BC_503814;BC_53115;BC_557526;BC_586820;BC_592418;BC_677122;BC_788994;BC_807090;BC_839556;BC_864093;BC_921347;BC_937809;BC_99398","BC_104940;BC_106068;BC_1078058;BC_1106269;BC_1191243;BC_1362159;BC_138112;BC_1409549;BC_1507009;BC_1779851;BC_1908692;BC_274290;BC_315496;BC_387377;BC_428945;BC_439026;BC_448316;BC_450659;BC_454470;BC_4776;BC_48720;BC_492351;BC_53115;BC_556514;BC_557526;BC_56047;BC_586820;BC_592418;BC_654042;BC_672;BC_677122;BC_691501;BC_846473;BC_864093;BC_879574;BC_884722;BC_890411;BC_957100;BC_981320","BC_106068;BC_1078058;BC_110875;BC_1123764;BC_1191243;BC_1337320;BC_1362159;BC_1364952;BC_138112;BC_1507009;BC_1521897;BC_1535450;BC_161832;BC_1779851;BC_1908692;BC_2025991;BC_2458620;BC_267248;BC_27043;BC_274290;BC_315496;BC_387377;BC_450659;BC_454470;BC_4776;BC_48206;BC_48720;BC_492351;BC_502950;BC_53115;BC_557526;BC_569851;BC_586820;BC_592418;BC_672;BC_675844;BC_677122;BC_691501;BC_765173;BC_773694;BC_773776;BC_807090;BC_864093;BC_879574;BC_890411;BC_903239;BC_99398",null,null,"BC_807090","BC_110564;BC_1213834;BC_131867;BC_2004073;BC_644424;BC_762832;BC_807090;BC_903239","BC_106068;BC_110564;BC_1313433;BC_131867;BC_1787099;BC_2004073;BC_345287;BC_51548;BC_644424;BC_807090;BC_84285;BC_903239","BC_110564;BC_1260918;BC_1423564;BC_1787099;BC_238363;BC_644424;BC_807090;BC_903239;BC_962108","BC_110564;BC_131867;BC_1423564;BC_1787099;BC_238363;BC_644424;BC_807090;BC_903239",null,null,null,"BC_22965;BC_2323409;BC_903239","BC_106068;BC_205886;BC_541661;BC_807090;BC_903239","BC_807090","BC_106279;BC_1083610;BC_110331;BC_1149725;BC_1213834;BC_1234598;BC_1401656;BC_1647027;BC_17085;BC_1720202;BC_1789932;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_1939755;BC_205886;BC_2323409;BC_2329183;BC_311022;BC_345633;BC_4144;BC_447033;BC_462092;BC_47903;BC_55599;BC_558160;BC_558530;BC_57477;BC_577148;BC_65124;BC_840029;BC_87546;BC_957100;BC_996119","BC_1080172;BC_1117812;BC_1213834;BC_1234598;BC_1401656;BC_1423564;BC_142517;BC_1470246;BC_1789932;BC_1886895;BC_189072;BC_1893064;BC_18987;BC_1939755;BC_205886;BC_2149136;BC_22965;BC_2323409;BC_2334986;BC_2431038;BC_345633;BC_4144;BC_462092;BC_47903;BC_491837;BC_525322;BC_558160;BC_558530;BC_57477;BC_65124;BC_761053;BC_813722;BC_840029;BC_957100;BC_996119","BC_110331;BC_1148834;BC_1157570;BC_1213834;BC_1234598;BC_1401656;BC_1555477;BC_1763813;BC_1893064;BC_18987;BC_1931510;BC_205886;BC_2124613;BC_2323409;BC_345633;BC_469304;BC_47903;BC_53115;BC_57477;BC_57772;BC_65124;BC_742000;BC_836110;BC_840029;BC_957100","BC_1117812;BC_1148834;BC_1183596;BC_1213834;BC_1401656;BC_168056;BC_1763813;BC_1767215;BC_1893064;BC_18987;BC_205886;BC_2124613;BC_2149136;BC_22965;BC_2323409;BC_2485611;BC_345633;BC_378145;BC_4144;BC_558160;BC_57477;BC_742000;BC_806919;BC_836110;BC_840029;BC_957100","BC_106068","BC_1191243;BC_205886;BC_4776","BC_490546;BC_644424;BC_890411","BC_104940;BC_106068;BC_1078058;BC_1093488;BC_1123764;BC_1163332;BC_1191243;BC_133737;BC_1355075;BC_1362159;BC_1364952;BC_138112;BC_1598285;BC_161832;BC_1779851;BC_1819135;BC_2127747;BC_233564;BC_2458620;BC_274290;BC_315496;BC_347495;BC_37395;BC_39877;BC_428945;BC_450659;BC_4776;BC_481088;BC_490546;BC_492351;BC_53115;BC_556514;BC_557526;BC_58392;BC_586820;BC_592418;BC_668361;BC_672;BC_677122;BC_788994;BC_84111;BC_89293;BC_939263","BC_106068;BC_1078058;BC_110875;BC_1123764;BC_116223;BC_1191243;BC_1362159;BC_1364952;BC_138112;BC_1521897;BC_1598285;BC_1624431;BC_1694418;BC_1779851;BC_189072;BC_2025991;BC_2127747;BC_2152287;BC_2458620;BC_274290;BC_315496;BC_347495;BC_409821;BC_434701;BC_440337;BC_450659;BC_4776;BC_48206;BC_490546;BC_492351;BC_502950;BC_523944;BC_53115;BC_556514;BC_586820;BC_592418;BC_597321;BC_672;BC_677122;BC_773694;BC_788994;BC_789772;BC_807090;BC_839556;BC_878455;BC_890411;BC_939263;BC_99398","BC_104940;BC_106068;BC_1078058;BC_1123764;BC_1191243;BC_1362159;BC_1364952;BC_136550;BC_144682;BC_161832;BC_1660953;BC_1779851;BC_1828463;BC_194897;BC_2025991;BC_259558;BC_274290;BC_315496;BC_409821;BC_42118;BC_448316;BC_4776;BC_48206;BC_490546;BC_492351;BC_53115;BC_541661;BC_557526;BC_578418;BC_586820;BC_592418;BC_644257;BC_672;BC_677122;BC_773694;BC_840029;BC_846473;BC_864093;BC_903239;BC_910;BC_910096;BC_921347;BC_939263;BC_981320","BC_106068;BC_1078058;BC_110564;BC_110875;BC_1123764;BC_1287019;BC_1347033;BC_1362159;BC_1364952;BC_136550;BC_1402783;BC_144682;BC_1507009;BC_1598285;BC_161832;BC_1779851;BC_1828463;BC_2004073;BC_2025991;BC_2458620;BC_274290;BC_315496;BC_347695;BC_37395;BC_387377;BC_409821;BC_448316;BC_4776;BC_48720;BC_490546;BC_492351;BC_51548;BC_53115;BC_541661;BC_556514;BC_557526;BC_578418;BC_586820;BC_592418;BC_597321;BC_644257;BC_672;BC_677122;BC_691501;BC_776659;BC_839068;BC_839556;BC_890411;BC_910;BC_921347;BC_981320;BC_99398","BC_807090",null,null,"BC_110564;BC_123586;BC_1260918;BC_1313433;BC_131867;BC_1787099;BC_2168197;BC_345287;BC_4776;BC_644424;BC_807090;BC_840029;BC_903239;BC_962108","BC_110564;BC_123586;BC_128384;BC_1313433;BC_1401656;BC_1423564;BC_173121;BC_2004073;BC_644424;BC_762832;BC_807090;BC_840029;BC_903239;BC_962108","BC_110564;BC_1260918;BC_128384;BC_131867;BC_1423564;BC_644424;BC_807090;BC_84285;BC_903239","BC_1313433;BC_173121;BC_644424;BC_807090;BC_903239",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,"1;1;1","1","1;2","10;3;3;1;1;15;4;12;2;2;1;1;1;1;1;5;2;4;10;6;4;2;4;8;1;14;5;2;3;1;1;1;5;6;2;4;2;9;1;3;6","3;1;1;1;1;9;1;14;2;1;1;1;2;12;1;9;4;2;12;8;3;16;1;2;1;1;1;5;3;4;5;1;2;8;12;2","21;9;6;4;4;9;10;2;5;3;2;2;2;1;2;4;5;1;2;2;2;2;1;9","2;3;2;1;1;1;2;3;10;4;7;1;1;4;10;1;5;4;1;7;2;1;3;3;5;4;5;1;1;1;4;2;4","1",null,null,"1;3;2;3;2;1;1;1;2;2;1;2;2;1;2;2;4;4;2;2;2;1;2","3;3;1;2;5;1;3;1;3;1;1;1;2;5;1;1;4;1;2;3;2;1;3;2;2;1;2;1","2;1;1;2;1;2;1;1;3;1;1;1;1;1;4;2;2;1;1;1;1;1;1;1;1;1","1;3;1;1;2;2;1;1;3;1;2;2;1;2;1;1;4;5;2;1;6;2;3;4;3;2;1;2;1",null,null,null,"5;1;2;3;32;2;38","2;1;2;32;31;3","2;4;5;43;2;28","4;1;1;1;1;5;4;26;2;27;1",null,null,null,"1","1","1","1;2;1;1;1;5;3;5;4;1;3;1;1;2;1;3;3;11;3;2;1;5;1;3;1;4;3;2;1;2;15;5;2;4;3","1;1;2;5;19;1;8;13;1;10;6;2;7;2;2;4;4;2;3;16;1;1;2;4;1;2;6;4;3;1;1;2;12;1","1;3;3;3;9;5;1;1;1;1;1;4;2;2;5;8;2;12;1;1;3;3;3;1;1;3;9","13;4;4;8;1;7;7;18;2;7;7;8;1;2;4;2;1;3;2;8;2;5;11;4","1","1;1;1",null,"1;1;2;2;1;1;1;2;1;1;1;1;2;3;1;1;1;1;2;1;1;1","2;4;1;5;1;1;5;1;1;1;1;1;5;1;1;1;5;2;5;3;1;1;1;2;2;2;1;1;1;2;2","2;1;3;7;1;2;2;2;2;1;2;1;11;2;2;2;6;2;1;1;9;1","1;3;2;1;1;1;3;1;9;4;1;1;1;1;3;2;2;1;1;1;1;1;1;5;2;2;1;3;1;2;2",null,null,null,"1;1;2;2;2;26;28;2","3;1;6;31;5;44","2;1;8;1;10;5;4","1;3;1;5;23;9",null,null,null,"1","1;1","1","1;2;1;1;1;1;4;2;14;3;1;1;2;1;2;1;8;4;4;2;2;1;2;2;4;1;4;3;3;1;1;3;1;1;10;2","1;1;1;10;2;9;1;1;1;4;2;4;2;12;2;2;12;1;1;1;3;2;1;3;4;1;4;1;6;1;1","2;2;5;3;6;1;3;3;2;8;1;4;1;1;7;3;2;1;2;1;5;4;5;2","1;1;1;4;2;7;1;1;1;2;3;12;1;2;2;4;4;1;2;3;1;2;2;16;1;3;6;6",null,null,"1;1","3;1;1;1;2;4;1;1;1;1;1;1;2;1;1;1;1;3;2;1;1;1;2;2;3;1;1;5;1","3;1;2;4;1;1;1;2;3;1;3;10;2;1;1;1;1;4;5;2;1;3;1;1;1;3;1","5;4;1;4;1;1;2;1;2;1;1;1;1;2;1;2;2;7;3;1;3;1;4;1;1;1;1;1;3;2","1;6;1;1;1;3;3;1;2;2;4;3;1;4;2;4;2;2;1;1;1;5;2;3;1;2;1;1;4;2",null,null,null,"1;1;4;47;39;6","4;1;3;1;1;1;2;47;2;32;1","1;3;1;2;2;1;2;1;20;17","1;1;4;4;34;28;3",null,null,null,"1",null,"1","2;1;1;1;1;1;12;11;14;2;3;1;4;4;4;1;9;1;14;1;1;8;6;1;1;6;2;1;2;1;1;2;4;1;1;1;1;8;1;1;7;5","2;1;1;3;3;12;2;12;10;1;2;1;1;2;3;5;1;1;14;2;20;3;3;16;1;4;3;4;1;1;5;8;3;1;1;3;1;5;2;1;11;4;1;16","2;11;1;3;2;4;1;10;1;1;3;7;1;1;1;2;1;1;5;2;2;2;5;8;9","10;3;1;3;2;19;2;4;2;1;1;5;3;1;5;1;4;1;5;13;6;3;11;1;5;1;7;3;1;2;7","1;1;1","1;1","2;1","6;2;9;5;6;1;1;4;3;2;3;1;1;3;1;1;2;1;1;1;2;10;1;6;3;1;7;1;16;1;3;2;2;3;4;1;1;2;1;1;3;2","3;8;7;1;3;5;6;3;1;4;2;3;6;1;2;1;4;5;3;1;3;3;2;1;2;14;8;6;1;2;5;1;2;13;1;10;1;9;2;1;1;4;21;1;1;1;1;1;2;1;3;20","1;3;15;4;8;2;1;11;1;1;2;3;2;1;1;3;4;1;1;4;1;16;2;11;2;7;9;2;1;3;1;14;3;2;6;1;4;3;2;3;1;13;1;6;3;2","4;2;2;4;2;5;1;2;1;5;2;2;1;1;2;1;1;2;1;2;3;6;5;4;1;25;2;1;6;1;8;2;2;2;5;2;1;1;1;1;1","1","1",null,"3;1;12;3;1;60;67","10;1;1;2;6;5;4;1;1;1;2;2;157;1;94","5;1;1;22;1;3;3;1;14;58;86;7","4;1;6;7;1;8;80;1;2;92;20",null,null,null,"1;1;1","1;1;1","1;1","8;1;2;1;1;1;15;2;7;9;1;2;1;5;5;4;2;3;4;15;1;1;6;1;2;2;8;3;1;4;3;7;1;2;1;3;1;1;1;9;1","6;4;7;18;4;2;8;23;23;1;2;3;16;4;3;1;11;2;3;8;3;2;9;5;2;2;1;6;1;4;7;6;5;2;2;1;15","1;5;1;1;1;2;3;3;2;1;5;2;4;1;1;1;1;2;2;5","1;1;4;3;5;2;1;1;1;1;2;3;1;1;1;1;3;1;2;1;2;5;1;1;3;4",null,"1","1","2;1;1;1;2;1;2;2;1;1;2;9;1;2;1;3;11;2;7;2;1;2;1;1;2;1","10;2;2;1;2;2;1;2;3;2;3;1;1;1;3;2;3;5;1;2;1;1","4;3;1;1;2;1;1;1;5;2;1;1;2;2;5;1;1;1;2;3;1;1;8;1;3;2;6;1;4;3;6;1;4;1;1;4;1;2","7;4;2;1;5;1;4;2;1;1;5;2;1;6;1;1;1;12;4;2;1;2;4;11;1;1;3;1;2;3;2;1;1;3","1",null,null,"2;11;9;2;2;1;93;4;64;11","5;1;6;1;1;15;4;5;175;1;115;34","3;2;1;2;22;4;1;8;44;73;6","4;7;4;1;1;2;1;1;7;2;67;60;14",null,null,null,"1;2;1","1;1","1","1;3;1;1;6;1;12;5;15;7;2;1;6;5;8;3;3;5;10;1;1;9;2;3;2;4;4;2;1;2;1;1;1;3;5;2;5;1;4;1;1;2;5;8;3;1;8;2;2","1;5;1;18;1;1;1;1;1;6;1;11;7;1;10;4;12;2;11;1;1;20;6;1;1;2;7;5;5;1;10;2;1;1;10;12;1;14;7","10;1;33;3;2;1;5;2;2;4;32;1;1;1;2;2;6;1;4;3;3;1;2;1;4;1;8","8;4;1;1;20;5;20;6;1;1;4;3;12;1;4;22;1;3;7;1;1;2;3;2;1;44;3;1;1;1;1;1;3;1;4;2;2;2;3;14;7;1;8","1;1",null,null,"8;4;6;6;13;4;8;9;10;4;1;6;10;2;3;1;4;28;8;2;3;17;1;5;1;2;2;1;5","1;1;14;4;5;1;1;6;1;1;1;3;1;1;2;1;1;2;1;3;1;1;1;6;1;1;2;3;4;1;3;1;1;1;4;2;1;3;2","2;2;10;10;14;2;2;1;1;1;2;4;15;19;1;5;6;1;2;10;2;7;2;25;6;1;1;3;1;7;4;1;4;5;1;1;4;1;1;1;1;1;11;1","6;5;2;4;7;1;3;2;1;1;1;2;2;2;1;2;3;1;6;4;4;6;5;2;1;7;1;7;26;3;4;2;3;8;3;15;4;14;2;1;1;2;1;10;2","1","1;1;1",null,"9;3;1;6;17;7;1;8;2;141;128;2","5;2;3;11;1;13;4;1;3;92;8;92;2","3;6;2;7;7;6;6;76;84;2","1;2;2;9;80;60;33",null,null,null,"1;1;1","1","1;1;1","2;1;1;14;3;1;12;1;2;1;1;2;4;2;4;7;13;3;2;1;3;2;1;2;5;2;5;2;4;1;2;4;1;1;2;1;9;3","1;1;2;2;2;32;3;8;6;3;2;1;1;2;1;1;1;3;9;4;30;2;6;1;1;2;1;8;1;5;2;1;4;7;2;1;6;1;1;2;2;1;2;4;4;4;2;24","1;4;16;6;1;3;2;1;8;9;1;12;1;2;2;12;3;3;1;4;5;2;3;2;13;6;5;3;14;4;2;5;2;14;2","1;2;3;8;9;6;13;6;1;1;5;2;5;3;20;1;3;1;13;5;2;2;8;1;2;1;1;4;2;5;1;2;1;2;1;1;7;2;1;7","1;1","1;1;1;1;1","1;1","3;11;7;1;1;1;2;12;5;8;2;1;1;4;6;1;1;1;1;7;13;5;2;3;4;3;10;16;1;4;1;4;4;1;4;4;2;6;3;2;2;4;1;4;5","5;5;6;3;1;4;6;3;2;1;2;4;3;2;1;1;1;2;4;8;1;3;3;2;16;2;2;1;1;4;1;2;7;5;4;1;2;3;3;1;4;3;6;1","3;8;3;2;8;5;4;8;1;14;3;1;1;2;1;4;4;9;2;1;8;4;1;1;9;10;2;9;1;12;1;8;1;6;5;1;4;4;2;4;2;3;2;1;1;25;3","4;1;6;1;1;5;1;2;2;3;2;2;11;2;6;1;1;8;4;1;8;2;2;1;1;1;2;3;1;3;1;3;5;2;6;3;1;8;5;6;1;3;6",null,null,null,"5;2;25;1;8;2;7;127;7;103;5","8;2;10;2;11;5;2;5;19;1;1;8;162;3;105;2","2;1;1;1;6;11;1;76;1;133;48","2;1;6;3;7;38;3;3;45;93",null,null,null,"1;1","1;1;1","1","1;1;1;4;7;4;2;1;5;3;8;3;4;1;8;1;3;3;2;2;1;1;4;1;4;1;2;1;1;1;1;1;6;1;3","1;5;5;7;2;2;1;2;2;4;4;11;1;1;6;5;2;8;1;2;3;10;4;3;1;1;1;1;1;1;2;8;4;3;1","1;10;1;11;3;7;2;1;4;2;11;3;3;18;2;1;7;4;34;2;1;2;4;13;1;1;2;2;1;1;6;4;10;7","2;5;1;13;1;19;2;2;5;1;8;4;3;1;1;6;3;1;22;5;1;2;6;4;2;4;5;6","1","1","1;1;1;1;1","2;9;1;2;1;2;6;2;3;7;1;1;2;2;1;7;1;1;1;1;2;5;4;1;3;1;1;16;1;3;2;6;1;1;2;1;1;6;2;2;8;2","1;16;9;6;1;1;6;3;1;1;3;4;1;10;6;4;2;3;2;2;2;2;4;4;1;1;1;4;6;1;3;3;1;11","12;4;1;2;1;2;3;1;8;2;3;6;15;3;1;1;2;4;3;9;1;4;1;1;4;2;1;2;2;4;8;1;2;2","1;10;4;1;3;2;1;2;4;1;3;1;1;4;1;3;7;3;1;1;27;3;2;6;6;1;11;2;1;8;6;1;2;1;5;1;1",null,"1","1;1","4;3;2;1;1;2;9;5;103;169;6","5;3;4;2;1;6;3;124;103","10;5;3;2;1;1;9;75;89;2","2;2;3;1;4;39;74;3",null,null,null,null,"1;1;1",null,"2;2;3;23;8;18;8;2;1;3;5;5;3;8;1;3;9;3;3;1;1;6;5;2;2;4;7;9;1","3;2;4;1;9;2;1;7;11;5;4;1;20;4;17;11;1;1;4;3;1;1;2;1;2;2;3;4;1;3;4;1;1;9;1","9;1;18;2;10;1;11;3;5;1;26;11;1;8;2;1;5;16;3;1;1;9;4;3;22;11","3;2;1;9;5;8;1;1;3;5;5;12;3;17;1;2;2;3;1;2;1;6;10","1","1;1","1","6;4;2;4;2;1;1;1;2;2;1;2;1;3;3;1;9;2;2;1;3;5;6;2;2;2;5;1;1;3;3;1;3;1;5;6;1","4;8;1;2;4;1;4;4;1;2;6;4;2;3;1;1;1;1;1;2;6;6;1;1;5;1;9;1;2;4;1;1;3;8;2;3;1;1;1;1;3;2;1;2","4;4;2;1;1;5;1;5;1;2;10;3;2;2;1;1;4;10;7;1;2;3;8;4;2;2;4;4;1;1;2;3;1;6;1;3","2;5;1;1;1;4;1;4;5;1;1;1;1;3;1;3;2;1;10;3;1;3;6;1;5;3;1;1;4;5;1;1;1;1;4;1;1;2;1;1;2",null,"1",null,"4;4;1;6;3;1;6;4;67;97;13","10;4;13;1;4;73;1;84;9","4;1;4;22;25","1;6;1;11;54;4;93",null,null,null,null,null,null,"1;2;1;5;6;10;3;1;2;1;9;1;2;1;2;8;3;3;1;18;3;5;4;2;1;4;2;2;4;1;14;1;6;1","1;5;10;4;18;1;7;1;12;2;2;1;13;2;1;2;2;1;3;3;3;6;5;2;1;1;8;9","3;1;1;11;4;10;5;1;1;1;1;9;1;5;1;11;1;1;2;2;3;1;1;4;4;2;1;1;2;3;3;7","3;1;7;7;2;2;2;12;2;2;3;5;1;5;2;4;6;1;5","1;1","1;1;1","1","1;5;2;6;3;3;1;7;1;4;1;1;2;1;1;2;1;4;13;2;2;4;4;3;6;1;1;1;5;1;6;2;4;3;1;2;1;1","3;5;1;2;2;2;2;3;2;1;3;4;2;1;2;1;2;10;1;1;1;1;1;7;2;1;1;1;2;1;6;1;1;1","1;3;5;8;7;1;2;1;2;1;1;2;1;1;1;3;1;11;1;2;2;2;1;11;6;8;1;5;1;2;1;1;5;2;1","5;2;1;2;1;1;4;2;1;1;1;1;3;1;2;1;3;1;1;1;4;20;4;1;1;1;6;5;3;1;3;6;7;4;1;1;1;2;1;2;2;1;4",null,null,"1","2;3;2;1;4;1;5;1;6;1;3;93;74;10","8;1;1;3;6;1;92;1;45;6","4;5;6;49;55;9","2;3;1;1;1;7;41;29;4",null,null,null,"1;1","1","1;1","2;1;1;16;4;9;6;1;3;1;8;10;6;2;1;8;4;2;1;9;2;1;1;26;1;1;1;2;3;5;5;1;3;2;3;2;2;1;17;12","2;1;1;3;6;11;5;2;2;2;6;2;4;2;2;16;3;8;5;6;1;5;4;1;1;12;6;3;6;2;1;2;2;6;11;2;1","9;1;1;2;8;3;16;5;2;7;1;1;12;4;9;6;1;12;1;6;4;1;2;4;1;1;6;3;6;2;2;1;1;10;2;1;11","3;3;3;8;15;1;7;5;1;1;3;10;5;1;17;1;1;2;17;3;4;2;7;1;2;1;1;5;2;9;10;2;1;1;11;1;15","1;1;1","1;1;1;1",null,"5;1;1;4;2;1;1;2;4;1;1;1;4;2;3;1;1;5;17;5;2;1;7;6;7;2;4;1;5;3;4;2;1;2","2;2;23;12;2;1;1;1;5;2;3;4;2;1;5;1;1;1;3;5;1;9;3;1;9;1;3;19;4;10;8;9;1;10;7;1;5;5;20;6;1;1","6;18;2;1;7;5;1;3;1;1;1;3;1;1;1;1;2;1;1;8;1;11;21;7;3;2;1;5;2;1;6;3;1;2;4;3;7;7;4;1;6;1;1;2;2;1;2;2;4;2;4","5;6;9;1;2;2;5;6;5;7;1;1;1;4;1;1;4;7;8;2;8;2;7;2;3;1;2;1;3;1;2;1;1;1;1;2;8;3;2;2;4;2;3;3;3;4",null,null,"1","1;13;7;8;12;1;1;1;1;1;154;115","15;1;1;2;15;12;2;7;146;15;115;1","6;27;11;1;1;12;32;92;48","2;5;2;2;2;1;1;9;61;116;4",null,null,null,"1;1","1;1","1;1;1","2;1;1;3;2;15;4;9;2;1;11;6;14;1;4;1;4;4;1;1;1;2;2;1;3;4;3;3;3;5;1;17;2","1;1;6;3;8;22;2;1;9;3;2;3;6;4;2;11;2;2;4;2;1;8;1;1;2;1;5;2;5;10;1;1;16;4","1;8;1;4;1;2;2;1;1;2;2;1;9;6;2;2;1;8;1;7;1;2;1;1;6;2;1;1;1;1;7;2","5;1;12;8;5;1;1;7;5;10;8;1;2;5;3;1;3;2;5;6;1;3;5;1;9;2;2","1;1",null,"1;1","13;2;1;1;1;4;5;1;1;1;2;1;1;1;12;2;2;1;1;17;4;1;3;12;1;2;2;2;2;1;1;3;2;1;2;1;6;2;6","4;5;3;8;3;2;1;1;1;1;2;5;2;1;6;1;11;3;1;8;1;2;10;4;31;1;1;4;3;2;1;5;3;1;1;1;7;1;1;2;2","1;5;14;1;12;2;4;1;1;5;4;5;6;7;2;4;2;3;1;12;2;1;1;1;1;2;2;4;1;1;2;1;2;2;1;4;8;1;2","11;10;2;2;7;3;1;1;8;2;2;1;2;1;4;1;2;1;1;4;6;8;5;2;8;3;1;6;3;7;2;3;12;4;2;1;2;2;1;1;1;1;5;1;6;1;6",null,null,"1","6;1;12;1;5;1;125;103","1;9;3;2;3;12;1;1;4;107;10;135","1;2;8;1;2;10;79;99;12","7;9;22;1;59;8;144;42",null,null,null,"1;1;1","1;1;1;1;2","1","1;1;2;6;10;6;10;2;5;6;3;1;7;3;5;1;5;14;2;1;5;1;5;3;2;1;2;1;4;1;1;14;3;5;2","1;6;8;3;9;1;4;1;9;4;8;3;6;2;5;1;1;11;1;1;12;1;3;1;1;1;1;4;6;2;8;1;8;14;1","1;4;2;2;8;13;1;1;3;2;1;5;1;26;6;1;1;1;2;2;4;2;2;20;15","3;1;4;9;5;2;1;2;5;3;7;1;2;2;9;2;2;2;1;1;4;2;1;3;11;12","1","1;1;1","1;1;1","3;14;9;1;13;1;9;8;2;6;2;1;1;2;3;2;1;2;2;5;8;1;2;5;2;1;18;6;4;2;6;1;16;1;5;14;1;1;9;2;1;1;3","9;9;2;11;2;3;5;2;5;2;5;1;1;6;1;2;3;2;4;5;10;6;4;2;3;2;23;2;2;2;1;1;11;5;4;6;2;1;3;1;3;2;1;3;1;1;8;7","2;6;16;5;3;1;2;1;1;8;2;1;1;1;3;1;17;19;3;2;3;16;1;3;1;14;2;7;1;7;10;1;6;2;2;1;3;2;1;1;1;1;2;4","8;2;1;3;3;4;5;3;1;1;2;2;1;3;2;2;1;1;4;1;2;6;1;2;1;2;8;30;3;1;1;1;2;1;2;4;4;14;3;5;2;4;2;4;2;2;1;2;3;1;3;3","1",null,null,"7;4;2;2;4;5;3;1;1;8;134;1;177;13","20;7;5;1;1;7;6;4;12;8;171;1;218;13","1;6;28;2;5;12;44;2;49","1;6;9;97;100",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>Plate_ID<\/th>\n      <th>Well_ID<\/th>\n      <th>Row<\/th>\n      <th>Column<\/th>\n      <th>Species<\/th>\n      <th>Cell_type<\/th>\n      <th>Model_type<\/th>\n      <th>Time<\/th>\n      <th>Unit<\/th>\n      <th>Treatment_1<\/th>\n      <th>Concentration_1<\/th>\n      <th>Unit_1<\/th>\n      <th>Sample_type<\/th>\n      <th>Barcode<\/th>\n      <th>Organoid<\/th>\n      <th>Labelled<\/th>\n      <th>id<\/th>\n      <th>analysis_condition<\/th>\n      <th>barcode<\/th>\n      <th>bc.umi.count<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":4},{"orderable":false,"targets":0},{"name":" ","targets":0},{"name":"Plate_ID","targets":1},{"name":"Well_ID","targets":2},{"name":"Row","targets":3},{"name":"Column","targets":4},{"name":"Species","targets":5},{"name":"Cell_type","targets":6},{"name":"Model_type","targets":7},{"name":"Time","targets":8},{"name":"Unit","targets":9},{"name":"Treatment_1","targets":10},{"name":"Concentration_1","targets":11},{"name":"Unit_1","targets":12},{"name":"Sample_type","targets":13},{"name":"Barcode","targets":14},{"name":"Organoid","targets":15},{"name":"Labelled","targets":16},{"name":"id","targets":17},{"name":"analysis_condition","targets":18},{"name":"barcode","targets":19},{"name":"bc.umi.count","targets":20}],"order":[],"autoWidth":false,"orderClasses":false},"selection":{"mode":"multiple","selected":null,"target":"row","selectable":null}},"evals":[],"jsHooks":[]}</script>
+</div>
+<div id="analysis-and-visualisation-of-barcoded-mac-seq-data"
+class="section level2">
+<h2>Analysis and Visualisation of barcoded MAC-seq data</h2>
+<pre class="r"><code>sc &lt;- Seurat::AddMetaData(sc, metadata)
+
+message(&quot;Percentage of cells with no barcode detected&quot;)</code></pre>
+<pre><code>Percentage of cells with no barcode detected</code></pre>
+<pre class="r"><code>length(which(is.na(sc$barcode))) / ncol(sc) * 100</code></pre>
+<pre><code>[1] 25.80645</code></pre>
+<pre class="r"><code>message(&quot;Percentage of cells with a barcode detected&quot;)</code></pre>
+<pre><code>Percentage of cells with a barcode detected</code></pre>
+<pre class="r"><code>length(which(!is.na(sc$barcode))) / ncol(sc) * 100</code></pre>
+<pre><code>[1] 74.19355</code></pre>
+<p>Repeating QC plot to visualist # of barcodes per cell:</p>
+<pre class="r"><code>plotBarcodesPerCell(sc, aggregated = T, sep = &quot;,&quot;)</code></pre>
+<p><img src="figure/Untitled.Rmd/unnamed-chunk-9-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>We can also visualise number of cells per clone, where a clone is
+defined as “a barcode or unique combination of barcodes”.:</p>
+<pre class="r"><code>plotCellsPerGroup(
+  sc,
+  group = &quot;barcode&quot;,
+  order = T,
+  threshold = 1,
+  plot = T,
+  label = T,
+  sep = &quot;,&quot;
+)</code></pre>
+<p><img src="figure/Untitled.Rmd/unnamed-chunk-10-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Running Seurat clustering:</p>
+<pre class="r"><code>sc &lt;- NormalizeData(sc)</code></pre>
+<pre><code>Normalizing layer: counts</code></pre>
+<pre class="r"><code>sc &lt;- ScaleData(sc)</code></pre>
+<pre><code>Centering and scaling data matrix</code></pre>
+<pre class="r"><code>sc &lt;- FindVariableFeatures(sc)</code></pre>
+<pre><code>Finding variable features for layer counts</code></pre>
+<pre class="r"><code>sc &lt;- RunPCA(sc)</code></pre>
+<pre><code>PC_ 1 
+Positive:  SNHG5, MIEN1, RBP1, ENSG00000213058, BMP7, BNIP3, PDLIM4, DNAJC15, CLRN3, CDH17 
+       SMOC1, PGAP3, CPVL, IGFBP2, DDC, CCDC43, ERBB2, GP2, IRF8, SLC43A3 
+       ZFP57, FADS2, HOXA10, SDCCAG8, PARVB, ENSG00000257764, QPRT, OLFM4, ONECUT2, CD70 
+Negative:  LGALS1, GDPD3, PSCA, PDZK1IP1, VWA5A, TNNC1, CKMT1B, KLK1, CCK, C3orf14 
+       TP53, BLVRB, BTBD16, PPL, H1-2, MUCL3, LINC03046, ECM1, PRAF2, MUC5AC 
+       ENSG00000256013, ZG16B, LCN2, VSIG2, H3C8, MACROH2A2, ELP5, NDUFAF1, TCF4, SLC6A14 
+PC_ 2 
+Positive:  CA9, CDC25B, FADS1, HOXB2, TFF3, ZNG1A, AFAP1-AS1, DEGS2, OLMALINC, HRCT1 
+       HTRA1, RILPL2, NAPRT, CREB3L1, ELAPOR1, ACOT7, CCDC43, FOXJ1, HSPA1B, PCSK9 
+       TPM2, EXOSC4, SCD, TM4SF5, ACAA2, VWA2, ACSS1, PHGDH, CLDN3, KHK 
+Negative:  PSMD3, STARD3, CXCL5, EIF1, HOTAIRM1, KRT13, KRT20, C4orf48, ORMDL3, KRT17 
+       MED24, KRT16, PEAR1, GSDMB, KRT10-AS1, KYNU, WFDC2, CD163L1, MSL1, UPK1B 
+       KRT10, THRA, TCN1, EREG, IGFBP6, MMP1, SMARCE1, KRT6A, CXCL8, PHPT1 
+PC_ 3 
+Positive:  SMARCE1, CXCL1, MED24, CXCL3, JUP, CDC6, KRT10, NT5C3B, MSL1, CXCL5 
+       GRB7, STARD3, TMEM141, KRT20, PEAR1, ORMDL3, C4orf48, PSMD3, GNAI1, EREG 
+       TNS4, KRT10-AS1, PGAP3, HOTAIRM1, KRT17, TOP2A, THRA, ANXA10, KLK10, KYNU 
+Negative:  TFF2, S100A4, PRSS2, PTMS, TFF1, MSMB, CCK, SPTSSB, SYT8, PHGR1 
+       LINC01133, BTBD16, TFF3, PLAAT2, BEX3, CRYBB2, RARG, C15orf48, PSCA, PROM2 
+       HYAL1, MAP1LC3A, GDPD3, PLEKHB1, PAX8-AS1, SPRR2D, SPART, RASSF1, MIR4458HG, ASS1 
+PC_ 4 
+Positive:  GMDS, ROR1, FGFBP1, CLDN18, COMMD10, H2BC4, SLCO3A1, GPRC5B, SMYD3, GABRP 
+       CHCHD6, TRAPPC9, LRMDA, HMGCS2, MYEOV, LIF, KRT6B, FGF19, CTIF, ERN2 
+       H2BC9, SLC12A7, PLK1, ITFG1, LDLR, LEMD1, SUCLG2, ONECUT3, IGF1R, ENSG00000290032 
+Negative:  DDIT3, LINC02404, LINC01300, IFIT2, ISG15, ULBP2, RAET1G, CDH16, INSL4, IRF7 
+       OASL, DNAJC12, BEX2, SYT11, CSTA, GUCA2A, LINC01273, ALOXE3, DHDH, RHEBL1 
+       STING1, IFIT1, ENSG00000272554, MESP1, VAMP5, DNAJC9-AS1.1, PHYHIP, GUCA2B, MB, PMEL 
+PC_ 5 
+Positive:  SPRR2A, SPRR1A, EDN2, SPRR1B, SPRR2D, SPRR3, H2BC21, GPRC5B, SERPINB2, MUC4 
+       CXCL8, BCL2A1, PLA2G2F, TNFAIP2, IL2RG, VSTM2L, SLC12A7, PHLDA3, THBS1, KLHL24 
+       C15orf48, LIPH, UNC5B, TCIM, CLDN18, UNC5B-AS1, TACSTD2, TSC22D3, SLCO3A1, ASS1 
+Negative:  DERL3, HPDL, PLK1, DYNC2I2, TPPP3, AQP5, RANBP1, PKMYT1, TYMSOS, AGR3 
+       UBXN10, H4C3, MCM5, CRIP1, KIF20A, TOP2A, CLDN2, PCLAF, CDC20, SKP2 
+       AQP5-AS1, EXOSC8, NUDT8, ENSG00000276810, TMEM161A, WDR54, GATM, FBXO4, ZNRF3-AS1, GMDS </code></pre>
+<pre class="r"><code>sc &lt;- FindNeighbors(sc, dims=1:10)</code></pre>
+<pre><code>Computing nearest neighbor graph</code></pre>
+<pre><code>Computing SNN</code></pre>
+<pre class="r"><code>sc &lt;- FindClusters(sc, resolution = 0.5)</code></pre>
+<pre><code>Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
+
+Number of nodes: 310
+Number of edges: 5839
+
+Running Louvain algorithm...
+Maximum modularity in 10 random starts: 0.9093
+Number of communities: 8
+Elapsed time: 0 seconds</code></pre>
+<p>Plotting cells in seurat clusters, by organoid:</p>
+<pre class="r"><code>p1&lt;- plotCellsInClusters(sc, 
+                    group = &quot;Organoid&quot;, 
+                    factor = &quot;ORG38&quot;, 
+                    clusters = &quot;seurat_clusters&quot;)</code></pre>
+<pre><code># A tibble: 4 × 2
+  seurat_clusters     n
+  &lt;fct&gt;           &lt;int&gt;
+1 2                  44
+2 4                   7
+3 5                  26
+4 6                  21</code></pre>
+<pre><code>Warning in ggplot2::geom_histogram(stat = &quot;identity&quot;): Ignoring unknown
+parameters: `binwidth`, `bins`, and `pad`</code></pre>
+<pre class="r"><code>p2&lt;- plotCellsInClusters(sc, 
+                    group = &quot;Organoid&quot;, 
+                    factor = &quot;ORG49&quot;, 
+                    clusters = &quot;seurat_clusters&quot;)</code></pre>
+<pre><code># A tibble: 3 × 2
+  seurat_clusters     n
+  &lt;fct&gt;           &lt;int&gt;
+1 0                  71
+2 4                   7
+3 7                  20</code></pre>
+<pre><code>Warning in ggplot2::geom_histogram(stat = &quot;identity&quot;): Ignoring unknown
+parameters: `binwidth`, `bins`, and `pad`</code></pre>
+<pre class="r"><code>p3&lt;- plotCellsInClusters(sc, 
+                    group = &quot;Organoid&quot;, 
+                    factor = &quot;ORG66&quot;, 
+                    clusters = &quot;seurat_clusters&quot;)</code></pre>
+<pre><code># A tibble: 3 × 2
+  seurat_clusters     n
+  &lt;fct&gt;           &lt;int&gt;
+1 1                  52
+2 3                  39
+3 4                   7</code></pre>
+<pre><code>Warning in ggplot2::geom_histogram(stat = &quot;identity&quot;): Ignoring unknown
+parameters: `binwidth`, `bins`, and `pad`</code></pre>
+<pre class="r"><code>ggarrange(p1,p2,p3, ncol=3)</code></pre>
+<p><img src="figure/Untitled.Rmd/unnamed-chunk-12-1.png" width="1920" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># plotMetrics(sc, group = &quot;barcode&quot;, factor = &quot;nCount_RNA&quot;, threshold = 2)
+# plotCellsPerGroup(sc, group = &quot;barcode&quot;, threshold = 1)
+# plotCellsInClusters(sc, group = &quot;Organoid&quot;, factor = &quot;ORG38&quot;, clusters = &quot;seurat_clusters&quot;)</code></pre>
+<p>#Splitting into organoids</p>
+<pre class="r"><code>org_38 &lt;- metadata[metadata$Organoid==&#39;ORG38&#39; 
+                   &amp; metadata$Treatment_1 != &#39;STAUR&#39; 
+                   &amp; metadata$Labelled != &#39;unlabelled&#39;
+                   &amp; metadata$Time==&#39;48H&#39;,c(&#39;Well_ID&#39;,&quot;Treatment_1&quot;,&#39;Time&#39;,&quot;barcode&quot;, &quot;bc.umi.count&quot;)]
+
+
+rownames(org_38)&lt;- org_38$Well_ID
+treatments&lt;- c(org_38$Well_ID)
+org38_counts_combined &lt;- data.frame(barcode=character())
+
+individual_counts &lt;- function(df, well_id){
+  subset &lt;- df[df$Well_ID==well_id,c(&#39;barcode&#39;, &#39;bc.umi.count&#39;)]
+  subset &lt;- separate_longer_delim(data=subset, cols=c(&#39;barcode&#39;,&#39;bc.umi.count&#39;),delim = &#39;;&#39;)
+  subset$bc.umi.count &lt;- as.integer(c(subset$bc.umi.count))
+  names(subset)[2]&lt;- well_id
+  subset &lt;- drop_na(subset)
+  return(subset)
+}
+
+for (well in treatments){
+  df &lt;- individual_counts(org_38, well)
+  org38_counts_combined&lt;- merge(org38_counts_combined, df, all=TRUE)
+}
+
+org38_counts_combined[is.na(org38_counts_combined)]&lt;- 0
+barcode_data &lt;- DGEList(counts=org38_counts_combined[,2:29])
+rownames(barcode_data$counts)&lt;- org38_counts_combined[,1]
+
+#adding samplesheet information to DGElist object
+barcode_data$samples$Sample &lt;- org_38$Well_ID
+barcode_data$samples$Treatment &lt;- org_38$Treatment_1
+barcode_data$samples$Time &lt;- org_38$Time
+barcode_data &lt;- barcode_data[rowSums(barcode_data$counts) != 0, ]
+
+plotBarcodeBubble(barcode_data, 
+                  proportionCutoff = 5, 
+                  labelBarcodes = T,
+                  group=&quot;Treatment&quot;)</code></pre>
+<pre><code>Warning: Vectorized input to `element_text()` is not officially supported.
+ℹ Results may be unexpected or may change in future versions of ggplot2.</code></pre>
+<p><img src="figure/Untitled.Rmd/unnamed-chunk-13-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plotBarcodeHistogram(barcode_data, topN = 10, alphaLowFreq = 0)</code></pre>
+<pre><code>Warning: The `guide` argument in `scale_*()` cannot be `FALSE`. This was deprecated in
+ggplot2 3.3.4.
+ℹ Please use &quot;none&quot; instead.
+ℹ The deprecated feature was likely used in the bartools package.
+  Please report the issue to the authors.
+This warning is displayed once every 8 hours.
+Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+generated.</code></pre>
+<p><img src="figure/Untitled.Rmd/unnamed-chunk-13-2.png" width="672" style="display: block; margin: auto;" /></p>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span>
+Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.4.0 (2024-04-24)
+Platform: aarch64-apple-darwin20
+Running under: macOS Sonoma 14.4.1
+
+Matrix products: default
+BLAS:   /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/lib/libRblas.0.dylib 
+LAPACK: /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.0
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+time zone: Australia/Melbourne
+tzcode source: internal
+
+attached base packages:
+[1] stats4    stats     graphics  grDevices utils     datasets  methods  
+[8] base     
+
+other attached packages:
+ [1] ggpubr_0.6.0                DT_0.33                    
+ [3] tidyr_1.3.1                 reshape2_1.4.4             
+ [5] dplyr_1.1.4                 SingleCellExperiment_1.27.2
+ [7] SummarizedExperiment_1.35.1 Biobase_2.65.0             
+ [9] GenomicRanges_1.57.1        GenomeInfoDb_1.41.1        
+[11] IRanges_2.39.2              S4Vectors_0.43.2           
+[13] BiocGenerics_0.51.0         MatrixGenerics_1.17.0      
+[15] matrixStats_1.3.0           Seurat_5.1.0               
+[17] SeuratObject_5.0.2          sp_2.1-4                   
+[19] bartools_1.0.0              ggplot2_3.5.1              
+[21] edgeR_4.3.7                 limma_3.61.7               
+[23] workflowr_1.7.1            
+
+loaded via a namespace (and not attached):
+  [1] RcppAnnoy_0.0.22        splines_4.4.0           later_1.3.2            
+  [4] R.oo_1.26.0             tibble_3.2.1            polyclip_1.10-7        
+  [7] fastDummies_1.7.3       lifecycle_1.0.4         rstatix_0.7.2          
+ [10] rprojroot_2.0.4         globals_0.16.3          processx_3.8.4         
+ [13] lattice_0.22-6          MASS_7.3-61             crosstalk_1.2.1        
+ [16] backports_1.5.0         magrittr_2.0.3          plotly_4.10.4          
+ [19] sass_0.4.9              rmarkdown_2.27          jquerylib_0.1.4        
+ [22] yaml_2.3.10             httpuv_1.6.15           sctransform_0.4.1      
+ [25] spam_2.10-0             spatstat.sparse_3.1-0   reticulate_1.38.0      
+ [28] cowplot_1.1.3           pbapply_1.7-2           RColorBrewer_1.1-3     
+ [31] abind_1.4-5             zlibbioc_1.51.1         Rtsne_0.17             
+ [34] R.utils_2.12.3          purrr_1.0.2             git2r_0.33.0           
+ [37] GenomeInfoDbData_1.2.12 ggrepel_0.9.5           irlba_2.3.5.1          
+ [40] listenv_0.9.1           spatstat.utils_3.0-5    vegan_2.6-6.1          
+ [43] goftest_1.2-3           RSpectra_0.16-2         spatstat.random_3.3-1  
+ [46] fitdistrplus_1.2-1      parallelly_1.38.0       permute_0.9-7          
+ [49] leiden_0.4.3.1          codetools_0.2-20        DelayedArray_0.31.10   
+ [52] tidyselect_1.2.1        farver_2.1.2            UCSC.utils_1.1.0       
+ [55] viridis_0.6.5           spatstat.explore_3.3-1  jsonlite_1.8.8         
+ [58] progressr_0.14.0        ggridges_0.5.6          survival_3.7-0         
+ [61] tools_4.4.0             ica_1.0-3               Rcpp_1.0.13            
+ [64] glue_1.7.0              gridExtra_2.3           SparseArray_1.5.27     
+ [67] xfun_0.46               mgcv_1.9-1              withr_3.0.1            
+ [70] fastmap_1.2.0           fansi_1.0.6             callr_3.7.6            
+ [73] digest_0.6.36           R6_2.5.1                mime_0.12              
+ [76] colorspace_2.1-1        scattermore_1.2         tensor_1.5             
+ [79] spatstat.data_3.1-2     R.methodsS3_1.8.2       utf8_1.2.4             
+ [82] generics_0.1.3          data.table_1.15.4       httr_1.4.7             
+ [85] htmlwidgets_1.6.4       S4Arrays_1.5.5          whisker_0.4.1          
+ [88] uwot_0.2.2              pkgconfig_2.0.3         gtable_0.3.5           
+ [91] lmtest_0.9-40           XVector_0.45.0          htmltools_0.5.8.1      
+ [94] carData_3.0-5           dotCall64_1.1-1         scales_1.3.0           
+ [97] png_0.1-8               spatstat.univar_3.0-0   knitr_1.48             
+[100] rstudioapi_0.16.0       nlme_3.1-165            cachem_1.1.0           
+[103] zoo_1.8-12              stringr_1.5.1           KernSmooth_2.23-24     
+[106] parallel_4.4.0          miniUI_0.1.1.1          pillar_1.9.0           
+[109] grid_4.4.0              vctrs_0.6.5             RANN_2.6.1             
+[112] promises_1.3.0          car_3.1-2               xtable_1.8-4           
+[115] cluster_2.1.6           evaluate_0.24.0         cli_3.6.3              
+[118] locfit_1.5-9.10         compiler_4.4.0          rlang_1.1.4            
+[121] crayon_1.5.3            ggsignif_0.6.4          future.apply_1.11.2    
+[124] labeling_0.4.3          ps_1.7.7                getPass_0.2-4          
+[127] plyr_1.8.9              fs_1.6.4                stringi_1.8.4          
+[130] viridisLite_0.4.2       deldir_2.0-4            munsell_0.5.1          
+[133] lazyeval_0.2.2          spatstat.geom_3.3-2     Matrix_1.7-0           
+[136] RcppHNSW_0.6.0          patchwork_1.2.0         future_1.34.0          
+[139] statmod_1.5.0           shiny_1.9.1             highr_0.11             
+[142] ROCR_1.0-11             ineq_0.2-13             broom_1.0.6            
+[145] igraph_2.0.3            bslib_0.8.0            </code></pre>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+https://docs.mathjax.org/en/latest/web/configuration.html. This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

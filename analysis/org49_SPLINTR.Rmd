@@ -1,0 +1,164 @@
+---
+title: "ORG49 BC Analysis"
+output: html_document
+date: "2024-09-11"
+---
+
+```{r setup}
+knitr::opts_chunk$set(echo = FALSE, warning =FALSE, message = FALSE)
+```
+
+```{r, echo=TRUE}
+library(bartools)
+library(Seurat)
+library(SingleCellExperiment)
+library(dplyr)
+library(reshape2)
+library(tidyr)
+library(ggpubr)
+```
+
+## Loading Data
+```{r, echo=TRUE}
+##Loading data
+counts_path <- "/Volumes/bioinf/home/ndalvi/MACseq_PMC228/results/splintr/MGC-SA-7209-full/counts/MGC-SA-7209_S1.counts.tsv"
+counts <- readBartabCounts(counts_path)
+
+#changing BC names to make them shorter
+counts$barcode <- sub('SPLINTR_mCHERRY_V2_Barcode','BC',counts$barcode)
+counts_agg <- aggregateBarcodes(counts)
+#import metadata
+metadata<-read.csv("/Volumes/bioinf/home/ndalvi/MACseq_PMC228/metadata/PMC228.csv",header=T) %>%
+  arrange("Barcode") %>%
+  mutate(id=gsub("Plate","",Plate_ID)) %>%
+  mutate(analysis_condition=paste0(Organoid,".",Treatment_1,".",Time))
+
+metadata<- metadata %>%
+  left_join(counts_agg,by=c("Barcode"="cellid"))
+
+```
+
+Subsetting data for the relevant ORG line:
+```{r, fig.width=10, fig.height=10}
+individual_counts <- function(df, well_id){
+  subset <- df[df$Well_ID==well_id,c('barcode', 'bc.umi.count')]
+  subset <- separate_longer_delim(data=subset, cols=c('barcode','bc.umi.count'),delim = ';')
+  subset$bc.umi.count <- as.integer(c(subset$bc.umi.count))
+  names(subset)[2]<- well_id
+  subset <- drop_na(subset)
+  return(subset)
+}
+
+org_data <- metadata[metadata$Organoid=='ORG49' 
+                   & metadata$Treatment_1 != 'STAUR' 
+                   & metadata$Labelled != 'unlabelled',c('Well_ID',"Organoid","Treatment_1",'Time',"barcode", "bc.umi.count")]
+
+rownames(org_data)<- org_data$Well_ID
+treatments<- c(org_data$Well_ID)
+org_data_combined <- data.frame(barcode=character())
+
+for (well in treatments){
+  df <- individual_counts(org_data, well)
+  org_data_combined<- merge(org_data_combined, df, all=TRUE)
+}
+
+org_data_combined[is.na(org_data_combined)]<- 0
+end <- dim(org_data_combined)[2]
+barcode_data <- DGEList(counts=org_data_combined[,2:end])
+rownames(barcode_data$counts)<- org_data_combined[,1]
+
+#adding samplesheet information to DGElist object
+barcode_data$samples$Sample <- org_data$Well_ID
+barcode_data$samples$Treatment <- org_data$Treatment_1
+barcode_data$samples$Time <- org_data$Time
+barcode_data$samples$ORG <- org_data$Organoid
+barcode_data <- barcode_data[rowSums(barcode_data$counts) != 0, ]
+
+```
+
+## Barcode Histogram 
+
+### Entire Plate 
+Visualising proportion of barcodes in all ORG49 wells across both timepoints:
+```{r, fig.height=6, fig.width=10}
+plotBarcodeHistogram(barcode_data, topN = 10, alphaLowFreq = 0)
+```
+
+## Proportional Bubble Plots 
+
+### Treatment {.tabset}
+
+#### All
+Visualising proportion of Barcodes in each ORG49 well across all treatments:
+
+```{r, fig.height=8, fig.width=10}
+p1<- plotBarcodeBubble(barcode_data, 
+                  proportionCutoff = 5, 
+                  labelBarcodes = T,
+                  group='Treatment')
+
+p1
+```
+
+#### Paclitaxel
+
+Comparing proportion of barcodes after treatment with DMSO 48H VS Paclitaxel IC50 48H:
+```{r, fig.height=10, fig.width=15}
+p2<- plotBarcodeBubble(barcode_data[,barcode_data$samples$Time=='48H' &
+                                      barcode_data$samples$Treatment=='DMSO'],
+                       proportionCutoff = 5,
+                       labelBarcodes = T)
+
+p3<- plotBarcodeBubble(barcode_data[,barcode_data$samples$Time=='48H' &
+                                barcode_data$samples$Treatment=='Paclitaxel_IC50'],
+                       proportionCutoff = 5,
+                       labelBarcodes = T)
+
+ggarrange(p2,p3, ncol=2)
+```
+
+#### SN38
+
+Comparing proportion of barcodes after treatment with DMSO 48H VS SN38 IC50 48H:
+```{r, fig.height=10, fig.width=15}
+p4<- plotBarcodeBubble(barcode_data[,barcode_data$samples$Time=='48H' &
+                                      barcode_data$samples$Treatment=='DMSO'],
+                       proportionCutoff = 5,
+                       labelBarcodes = T)
+
+p5<- plotBarcodeBubble(barcode_data[,barcode_data$samples$Time=='48H' &
+                                      barcode_data$samples$Treatment=='SN38_IC50'],
+                       proportionCutoff = 5,
+                       labelBarcodes = T)
+
+ggarrange(p4,p5, ncol=2)
+```
+
+### Timepoint {.tabset}
+
+#### 24H
+Visualising proportion of Barcodes in each ORG49 well across all treatments at 24H:
+```{r, fig.height=8, fig.width=10}
+p6<- plotBarcodeBubble(barcode_data[,barcode_data$samples$Time=='24H'], 
+                  proportionCutoff = 5, 
+                  labelBarcodes = T,
+                  group='Treatment')
+p6
+```
+
+#### 48H
+Visualising proportion of Barcodes in each ORG49 well across all treatments at 48H:
+```{r, fig.height=8, fig.width=10}
+p7<- plotBarcodeBubble(barcode_data[,barcode_data$samples$Time=='48H'], 
+                  proportionCutoff = 5, 
+                  labelBarcodes = T,
+                  group='Treatment')
+p7
+```
+
+####  Comparison
+Comparing proportion of Barcodes in each ORG49 well across at 24H VS at 48H:
+
+```{r, fig.height=10, fig.width=15}
+ggarrange(p6,p7, ncol=2)
+```

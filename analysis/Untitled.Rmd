@@ -1,0 +1,203 @@
+---
+title: "SPLINTR Plate 1 QC"
+output: html_document
+date: "2024-09-10"
+---
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(bartools)
+library(Seurat)
+library(SingleCellExperiment)
+library(dplyr)
+library(reshape2)
+library(tidyr)
+library(DT)
+library(ggplot2)
+library(ggpubr)
+```
+
+##Loading data
+```{r, include=TRUE}
+counts_path <- "/Volumes/bioinf/home/ndalvi/MACseq_PMC228/results/splintr/MGC-SA-7209-full/counts/MGC-SA-7209_S1.counts.tsv"
+counts <- readBartabCounts(counts_path)
+
+#changing BC names to make them shorter
+counts$barcode <- sub('SPLINTR_mCHERRY_V2_Barcode','BC',counts$barcode)
+
+head(counts)
+```
+
+## QC and filter barcodes
+
+To assess quality of data, we can look at the number of barcodes detected per cell and the number of UMIs supporting the most frequent barcode:
+
+```{r}
+plotBarcodesPerCell(counts)
+
+plotUmiPerBarcode(counts)
+```
+
+In order to find suitable threshold for filtering, we can plot cumulative sum of how many cells would pass each threshold:
+
+```{r}
+plotUmiFilterThresholds(counts)
+```
+We can also filter by removing minor barcodes from cells. A minor barcode is defined as a barcode that has less than half the number of supporting UMIs than the major barcode in the cell: 
+
+```{r}
+counts_filtered <- filterBarcodes(counts, umiCountFilter = 25, umiFractionFilter = 0.5)
+
+plotBarcodesPerCell(counts_filtered)
+```
+As any given well will have multiple barcodes, we can aggregare barcodes per well by concatenating barcodes and UMIs with ';' :
+
+```{r}
+counts_agg <- aggregateBarcodes(counts)
+head(counts_agg) 
+```
+
+## Adding barcode Data to Seurat object
+
+```{r}
+#Setting up Seurat object
+expression.data <-
+  Read10X(data.dir = "/Volumes/bioinf/home/ndalvi/MACseq_PMC228/raw/PMC228/starsolo/SA_PMC228-null.Solo.out/Gene/raw", strip.suffix = T)
+
+sc <- CreateSeuratObject(
+  counts = expression.data,
+  min.cells = 3,
+  min.features = 200,
+  project = "PMC228"
+)
+```
+
+We can import SPLINTR barcode annotation information to the metadata, making sure the barcodes match the respective well/treatments they come from: 
+
+```{r}
+#import metadata
+metadata<-read.csv("/Volumes/bioinf/home/ndalvi/MACseq_PMC228/metadata/PMC228.csv",header=T) %>%
+  arrange("Barcode") %>%
+  mutate(id=gsub("Plate","",Plate_ID)) %>%
+  mutate(analysis_condition=paste0(Organoid,".",Treatment_1,".",Time))
+
+metadata<- metadata %>%
+  left_join(counts_agg,by=c("Barcode"="cellid"))
+
+rownames(metadata) <- metadata$Barcode
+
+datatable(metadata)
+```
+
+## Analysis and Visualisation of barcoded MAC-seq data
+
+```{r}
+sc <- Seurat::AddMetaData(sc, metadata)
+
+message("Percentage of cells with no barcode detected")
+length(which(is.na(sc$barcode))) / ncol(sc) * 100
+
+message("Percentage of cells with a barcode detected")
+length(which(!is.na(sc$barcode))) / ncol(sc) * 100
+```
+
+Repeating QC plot to visualist # of barcodes per cell:
+
+```{r}
+plotBarcodesPerCell(sc, aggregated = T, sep = ",")
+```
+
+We can also visualise number of cells per clone, where a clone is defined as "a barcode or unique combination of barcodes".:
+```{r}
+plotCellsPerGroup(
+  sc,
+  group = "barcode",
+  order = T,
+  threshold = 1,
+  plot = T,
+  label = T,
+  sep = ","
+)
+```
+
+
+Running Seurat clustering:
+```{r}
+sc <- NormalizeData(sc)
+sc <- ScaleData(sc)
+sc <- FindVariableFeatures(sc)
+sc <- RunPCA(sc)
+sc <- FindNeighbors(sc, dims=1:10)
+sc <- FindClusters(sc, resolution = 0.5)
+```
+
+Plotting cells in seurat clusters, by organoid:
+```{r, fig.height=8, fig.width=20}
+
+p1<- plotCellsInClusters(sc, 
+                    group = "Organoid", 
+                    factor = "ORG38", 
+                    clusters = "seurat_clusters")
+
+p2<- plotCellsInClusters(sc, 
+                    group = "Organoid", 
+                    factor = "ORG49", 
+                    clusters = "seurat_clusters")
+
+p3<- plotCellsInClusters(sc, 
+                    group = "Organoid", 
+                    factor = "ORG66", 
+                    clusters = "seurat_clusters")
+
+ggarrange(p1,p2,p3, ncol=3)
+
+
+# plotMetrics(sc, group = "barcode", factor = "nCount_RNA", threshold = 2)
+# plotCellsPerGroup(sc, group = "barcode", threshold = 1)
+# plotCellsInClusters(sc, group = "Organoid", factor = "ORG38", clusters = "seurat_clusters")
+```
+
+#Splitting into organoids
+```{r}
+org_38 <- metadata[metadata$Organoid=='ORG38' 
+                   & metadata$Treatment_1 != 'STAUR' 
+                   & metadata$Labelled != 'unlabelled'
+                   & metadata$Time=='48H',c('Well_ID',"Treatment_1",'Time',"barcode", "bc.umi.count")]
+
+
+rownames(org_38)<- org_38$Well_ID
+treatments<- c(org_38$Well_ID)
+org38_counts_combined <- data.frame(barcode=character())
+
+individual_counts <- function(df, well_id){
+  subset <- df[df$Well_ID==well_id,c('barcode', 'bc.umi.count')]
+  subset <- separate_longer_delim(data=subset, cols=c('barcode','bc.umi.count'),delim = ';')
+  subset$bc.umi.count <- as.integer(c(subset$bc.umi.count))
+  names(subset)[2]<- well_id
+  subset <- drop_na(subset)
+  return(subset)
+}
+
+for (well in treatments){
+  df <- individual_counts(org_38, well)
+  org38_counts_combined<- merge(org38_counts_combined, df, all=TRUE)
+}
+
+org38_counts_combined[is.na(org38_counts_combined)]<- 0
+barcode_data <- DGEList(counts=org38_counts_combined[,2:29])
+rownames(barcode_data$counts)<- org38_counts_combined[,1]
+
+#adding samplesheet information to DGElist object
+barcode_data$samples$Sample <- org_38$Well_ID
+barcode_data$samples$Treatment <- org_38$Treatment_1
+barcode_data$samples$Time <- org_38$Time
+barcode_data <- barcode_data[rowSums(barcode_data$counts) != 0, ]
+
+plotBarcodeBubble(barcode_data, 
+                  proportionCutoff = 5, 
+                  labelBarcodes = T,
+                  group="Treatment")
+
+plotBarcodeHistogram(barcode_data, topN = 10, alphaLowFreq = 0)
+```

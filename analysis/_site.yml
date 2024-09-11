@@ -19,6 +19,16 @@ navbar:
     menu:
     - text: Pathway Enrichment
       href: DGE_VPathwaysEnrichment.html
+  - text: SPLINTR
+    menu:
+    - text: QC
+      href: Untitled.html
+    - text: ORG38
+      href: org38_SPLINTR.html
+    - text: ORG49
+      href: org49_SPLINTR.html
+    - text: ORG66
+      href: org66_SPLINTR.html
 output:
   workflowr::wflow_html:
     toc: yes

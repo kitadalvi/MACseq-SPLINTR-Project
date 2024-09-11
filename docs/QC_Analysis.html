@@ -17,7 +17,7 @@
 <script src="site_libs/header-attrs-2.27/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<link href="site_libs/bootstrap-3.3.5/css/sandstone.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
@@ -338,6 +338,48 @@ div.tocify {
 <li>
   <a href="license.html">License</a>
 </li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    Differential Expression
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="differential_expression_24H.html">Differential Expression (24H)</a>
+    </li>
+    <li>
+      <a href="differential_expression.html">Differential Expression (48H)</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    Pathway Enrichment
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="DGE_VPathwaysEnrichment.html">Pathway Enrichment</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    SPLINTR
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="Untitled.html">QC</a>
+    </li>
+    <li>
+      <a href="org38_SPLINTR.html">ORG38</a>
+    </li>
+  </ul>
+</li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
         
@@ -359,7 +401,7 @@ div.tocify {
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
 <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
-workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger"
+workflowr <span class="glyphicon glyphicon-ok text-success"
 aria-hidden="true"></span>
 </button>
 </p>
@@ -370,8 +412,8 @@ aria-hidden="true"></span>
 </li>
 <li>
 <a data-toggle="tab" href="#checks"> Checks <span
-class="glyphicon glyphicon-exclamation-sign text-danger"
-aria-hidden="true"></span> </a>
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+</a>
 </li>
 <li>
 <a data-toggle="tab" href="#versions">Past versions</a>
@@ -380,13 +422,13 @@ aria-hidden="true"></span> </a>
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2024-08-07
+<strong>Last updated:</strong> 2024-09-11
 </p>
 <p>
 <strong>Checks:</strong> <span
-class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7
 <span class="glyphicon glyphicon-exclamation-sign text-danger"
-aria-hidden="true"></span> 1
+aria-hidden="true"></span> 0
 </p>
 <p>
 <strong>Knit directory:</strong> <code>MACseq-SPLINTR-Project/</code>
@@ -409,21 +451,18 @@ versions</em> tab lists the development history.
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges">
-<span class="glyphicon glyphicon-exclamation-sign text-danger"
-aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted
-changes </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date
+</a>
 </p>
 </div>
-<div id="strongRMarkdownfilestronguncommittedchanges"
+<div id="strongRMarkdownfilestronguptodate"
 class="panel-collapse collapse">
 <div class="panel-body">
-<p>The R Markdown is untracked by Git. To know which version of the R
-Markdown file created these results, you’ll want to first commit it to
-the Git repo. If you’re still working on the analysis, you can ignore
-this warning. When you’re finished, you can run
-<code>wflow_publish</code> to commit the R Markdown file and build the
-HTML.</p>
+<p>Great! Since the R Markdown file has been committed to the Git
+repository, you know the exact version of the code that produced these
+results.</p>
 </div>
 </div>
 </div>
@@ -514,13 +553,15 @@ project makes it easier to run your code on other machines.</p>
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongf2aa438">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomkitadalviMACseqSPLINTRProjecttreecbf5e6f33e75709424ebce18740657259cc50aaatargetblankcbf5e6fa">
 <span class="glyphicon glyphicon-ok text-success"
-aria-hidden="true"></span> <strong>Repository version:</strong> f2aa438
+aria-hidden="true"></span> <strong>Repository version:</strong>
+<a href="https://github.com/kitadalvi/MACseq-SPLINTR-Project/tree/cbf5e6f33e75709424ebce18740657259cc50aaa" target="_blank">cbf5e6f</a>
 </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongf2aa438"
+<div
+id="strongRepositoryversionstrongahrefhttpsgithubcomkitadalviMACseqSPLINTRProjecttreecbf5e6f33e75709424ebce18740657259cc50aaatargetblankcbf5e6fa"
 class="panel-collapse collapse">
 <div class="panel-body">
 <p>
@@ -529,7 +570,8 @@ and connecting the code version to the results is critical for
 reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version f2aa438.
+The results in this page were generated with repository version
+<a href="https://github.com/kitadalvi/MACseq-SPLINTR-Project/tree/cbf5e6f33e75709424ebce18740657259cc50aaa" target="_blank">cbf5e6f</a>.
 See the <em>Past versions</em> tab to see a history of the changes made
 to the R Markdown and HTML files.
 </p>
@@ -547,13 +589,18 @@ Ignored files:
     Ignored:    .DS_Store
     Ignored:    .Rhistory
     Ignored:    .Rproj.user/
+    Ignored:    data/.DS_Store
+    Ignored:    data/DEgenes/
+    Ignored:    data/enrichedPathways/
+    Ignored:    data/rObjects/
 
 Untracked files:
-    Untracked:  analysis/QC_Analysis.Rmd
-    Untracked:  analysis/QC_VCFG.Rmd
+    Untracked:  analysis/Untitled.Rmd
+    Untracked:  analysis/org38_SPLINTR.Rmd
 
 Unstaged changes:
-    Modified:   analysis/index.Rmd
+    Modified:   analysis/DGE_VPathwaysEnrichment.Rmd
+    Modified:   analysis/_site.yml
 
 </code></pre>
 <p>
@@ -568,10 +615,74 @@ have uncommitted changes.
 <hr>
 </div>
 <div id="versions" class="tab-pane fade">
+
 <p>
-There are no past versions. Publish this analysis with
-<code>wflow_publish()</code> to start tracking its development.
+These are the previous versions of the repository in which changes were
+made to the R Markdown (<code>analysis/QC_Analysis.Rmd</code>) and HTML
+(<code>docs/QC_Analysis.html</code>) files. If you’ve configured a
+remote Git repository (see <code>?wflow_git_remote</code>), click on the
+hyperlinks in the table below to view the files as they were in that
+past version.
 </p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/kitadalvi/MACseq-SPLINTR-Project/blob/da219c147227f5c23b36af8d5390ba8614bbe942/analysis/QC_Analysis.Rmd" target="_blank">da219c1</a>
+</td>
+<td>
+kitadalvi
+</td>
+<td>
+2024-08-08
+</td>
+<td>
+initial commit
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/kitadalvi/MACseq-SPLINTR-Project/da219c147227f5c23b36af8d5390ba8614bbe942/docs/QC_Analysis.html" target="_blank">da219c1</a>
+</td>
+<td>
+kitadalvi
+</td>
+<td>
+2024-08-08
+</td>
+<td>
+initial commit
+</td>
+</tr>
+</tbody>
+</table>
+</div>
 <hr>
 </div>
 </div>
@@ -624,11 +735,85 @@ dim(raw_counts)</code></pre>
 <pre><code>Warning: Default search for &quot;data&quot; layer in &quot;RNA&quot; assay yielded no results;
 utilizing &quot;counts&quot; layer instead.</code></pre>
 <p><img src="figure/QC_Analysis.Rmd/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-2-1">
+Past versions of unnamed-chunk-2-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-2-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/kitadalvi/MACseq-SPLINTR-Project/blob/da219c147227f5c23b36af8d5390ba8614bbe942/docs/figure/QC_Analysis.Rmd/unnamed-chunk-2-1.png" target="_blank">da219c1</a>
+</td>
+<td>
+kitadalvi
+</td>
+<td>
+2024-08-08
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </div>
 <div id="plate-qc" class="section level3">
 <h3>Plate QC</h3>
 <pre><code>tidyseurat says: Key columns are missing. A data frame is returned for independent data analysis.</code></pre>
 <p><img src="figure/QC_Analysis.Rmd/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-3-1">
+Past versions of unnamed-chunk-3-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-3-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/kitadalvi/MACseq-SPLINTR-Project/blob/da219c147227f5c23b36af8d5390ba8614bbe942/docs/figure/QC_Analysis.Rmd/unnamed-chunk-3-1.png" target="_blank">da219c1</a>
+</td>
+<td>
+kitadalvi
+</td>
+<td>
+2024-08-08
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <br>
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">

@@ -12,6 +12,9 @@ knitr::opts_chunk$set(
 )
 library(tidyverse)
 library(dplyr)
+library(DOSE)
+library(enrichplot)
+library(clusterProfiler)
 ```
 
 ```{r}
@@ -106,7 +109,7 @@ p3<- ggplot(data=S_IC25, aes(x=genes,
   ggplot2::ggtitle("LogFC of ORG49 genes/pathways after SN38 treatment at IC25")
 
 genes<- c('PSRC1','PKD1','SRPK1','PRPF31','SAMD8','COL1A1','SYT12','TAF12','LPIN1','SLC44A1','ATP1A1','IGF1R','MMP28','HSD17B12','NFIC','TRIM16')
-S_IC50 <- data.frame(genes=genes, logFC= ORG38_SN3850_48H_DE[genes,c('logFC')], pathways = c(rep('	nitrogen compound metabolic process',4),rep('	macromolecule metabolic process', 4),rep('membrane',4), rep('regulation of cellular process',4)))
+S_IC50 <- data.frame(genes=genes, logFC= ORG38_SN3850_48H_DE[genes,c('logFC')], pathways = c(rep('nitrogen compound metabolic process',4),rep('	macromolecule metabolic process', 4),rep('membrane',4), rep('regulation of cellular process',4)))
 
 p4<- ggplot(data=S_IC50, aes(x=genes, 
                                 y=logFC))+
@@ -122,6 +125,9 @@ p1
 p2
 p3
 p4
+
+p5 <- dotplot(ORG38_PAC25_48H_gse)
+p6<- dotplot(ORG38_PAC50_48H_gse)
 ```
 
 ## ORG 49
@@ -265,4 +271,8 @@ p1
 p2
 p3
 p4
+```
+
+## Category Netplots
+```{r}
 ```
