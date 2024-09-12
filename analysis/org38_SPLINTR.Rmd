@@ -93,7 +93,8 @@ Visualising proportion of Barcodes in each ORG38 well across all treatments:
 
 ```{r, fig.height=8, fig.width=10}
 p1<- plotBarcodeBubble(barcode_data, 
-                  proportionCutoff = 5, 
+                  proportionCutoff = 5,
+                  colorDominant = TRUE,
                   labelBarcodes = T,
                   group='Treatment')
 
@@ -106,11 +107,15 @@ Comparing proportion of barcodes after treatment with DMSO 48H VS Paclitaxel IC5
 ```{r, fig.height=10, fig.width=15}
 p2<- plotBarcodeBubble(barcode_data[,barcode_data$samples$Time=='48H' &
                                       barcode_data$samples$Treatment=='DMSO'],
+                       title="DMSO 48H",
+                       colorDominant = TRUE,
                        proportionCutoff = 5,
                        labelBarcodes = T)
 
 p3<- plotBarcodeBubble(barcode_data[,barcode_data$samples$Time=='48H' &
                                 barcode_data$samples$Treatment=='Paclitaxel_IC50'],
+                       title="Paclitaxel IC50 48H",
+                       colorDominant = TRUE,
                        proportionCutoff = 5,
                        labelBarcodes = T)
 
@@ -123,11 +128,15 @@ Comparing proportion of barcodes after treatment with DMSO 48H VS SN38 IC50 48H:
 ```{r, fig.height=10, fig.width=15}
 p4<- plotBarcodeBubble(barcode_data[,barcode_data$samples$Time=='48H' &
                                       barcode_data$samples$Treatment=='DMSO'],
+                       title="DMSO 48H",
+                       colorDominant = TRUE,
                        proportionCutoff = 5,
                        labelBarcodes = T)
 
 p5<- plotBarcodeBubble(barcode_data[,barcode_data$samples$Time=='48H' &
                                       barcode_data$samples$Treatment=='SN38_IC50'],
+                       title="SN38 IC50 48H",
+                       colorDominant = TRUE,
                        proportionCutoff = 5,
                        labelBarcodes = T)
 
@@ -140,8 +149,10 @@ ggarrange(p4,p5, ncol=2)
 Visualising proportion of Barcodes in each ORG38 well across all treatments at 24H:
 ```{r, fig.height=8, fig.width=10}
 p6<- plotBarcodeBubble(barcode_data[,barcode_data$samples$Time=='24H'], 
-                  proportionCutoff = 5, 
+                  proportionCutoff = 5,
+                  title="All treatments 24H",
                   labelBarcodes = T,
+                  colorDominant = TRUE,
                   group='Treatment')
 p6
 ```
@@ -150,7 +161,9 @@ p6
 Visualising proportion of Barcodes in each ORG38 well across all treatments at 48H:
 ```{r, fig.height=8, fig.width=10}
 p7<- plotBarcodeBubble(barcode_data[,barcode_data$samples$Time=='48H'], 
-                  proportionCutoff = 5, 
+                  proportionCutoff = 5,
+                  colorDominant = TRUE,
+                  title="All treatments 48H",
                   labelBarcodes = T,
                   group='Treatment')
 p7
