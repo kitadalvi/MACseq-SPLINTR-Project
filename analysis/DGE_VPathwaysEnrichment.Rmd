@@ -1,5 +1,5 @@
 ---
-title: "DGE Visualisation"
+title: "Pathway Enrichment Visualisation"
 output: html_document
 date: "2024-08-28"
 ---
@@ -15,6 +15,8 @@ library(dplyr)
 library(DOSE)
 library(enrichplot)
 library(clusterProfiler)
+library(org.Hs.eg.db)
+library(ggpubr)
 ```
 
 ```{r}
@@ -22,257 +24,298 @@ library(clusterProfiler)
 setwd('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/')
 
 #set up and load saved gse objects
-ORG38_PAC25_48H_gse <- readRDS('data/rObjects/ORG38/PAC_25_48H_gse.rds')
-ORG38_PAC50_48H_gse <- readRDS('data/rObjects/ORG38/PAC_50_48H_gse.rds')
-ORG38_SN3825_48H_gse <- readRDS('data/rObjects/ORG38/SN38_25_48H_gse.rds')
-ORG38_SN3850_48H_gse <- readRDS('data/rObjects//ORG38/SN38_50_48H_gse.rds')
 
-ORG49_PAC25_48H_gse <- readRDS('data/rObjects/ORG49/PAC_25_48H_gse.rds')
-ORG49_PAC50_48H_gse <- readRDS('data/rObjects/ORG49/PAC_50_48H_gse.rds')
-ORG49_SN3825_48H_gse <- readRDS('data/rObjects/ORG49/SN38_25_48H_gse.rds')
-ORG49_SN3850_48H_gse <- readRDS('data/rObjects/ORG49/SN38_50_48H_gse.rds')
+ORG38_PAC50_48H_gse <- readRDS('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG38/PAC_50_48H_gse.rds')
+ORG38_SN3850_48H_gse <- readRDS('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG38/SN38_50_48H_gse.rds')
 
-ORG66_PAC25_48H_gse <- readRDS('data/rObjects/ORG66/PAC_25_48H_gse.rds')
-ORG66_PAC50_48H_gse <- readRDS('data/rObjects/ORG66/PAC_50_48H_gse.rds')
-ORG66_SN3825_48H_gse <- readRDS('data/rObjects/ORG66/SN38_25_48H_gse.rds')
-ORG66_SN3850_48H_gse <- readRDS('data/rObjects/ORG66/SN38_50_48H_gse.rds')
+ORG49_PAC50_48H_gse <- readRDS('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG49/PAC_50_48H_gse.rds')
+ORG49_SN3850_48H_gse <- readRDS('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG49/SN38_50_48H_gse.rds')
+
+ORG66_PAC50_48H_gse <- readRDS('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG66/PAC_50_48H_gse.rds')
+ORG66_SN3850_48H_gse <- readRDS('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG66/SN38_50_48H_gse.rds')
 
 #set up and load DE gene dataframes
-ORG38_PAC25_48H_DE <- read_delim('data/DEgenes//ORG38/PAC_IC25_48H.txt', show_col_types = FALSE)
-ORG38_PAC50_48H_DE <- read_delim('data/DEgenes/ORG38/PAC_IC50_48H.txt', show_col_types = FALSE)
-ORG38_SN3825_48H_DE <- read_delim('data/DEgenes/ORG38/SN38_IC25_48H.txt', show_col_types = FALSE)
-ORG38_SN3850_48H_DE <- read_delim('data/DEgenes//ORG38/SN38_IC50_48H.txt', show_col_types = FALSE)
+ORG38_PAC50_48H_DE <- read_delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG38/PAC_IC50_48H.txt', show_col_types = FALSE)
+ORG38_SN3850_48H_DE <- read_delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG38/SN38_IC50_48H.txt', show_col_types = FALSE)
 
-ORG49_PAC25_48H_DE <- read_delim('data/DEgenes/ORG49/PAC_IC25_48H.txt', show_col_types = FALSE)
-ORG49_PAC50_48H_DE <- read_delim('data/DEgenes/ORG49/PAC_IC50_48H.txt', show_col_types = FALSE)
-ORG49_SN3825_48H_DE <- read_delim('data/DEgenes/ORG49/SN38_IC25_48H.txt', show_col_types = FALSE)
-ORG49_SN3850_48H_DE <- read_delim('data/DEgenes/ORG49/SN38_IC50_48H.txt', show_col_types = FALSE)
+ORG49_PAC50_48H_DE <- read_delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG49/PAC_IC50_48H.txt', show_col_types = FALSE)
+ORG49_SN3850_48H_DE <- read_delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG49/SN38_IC50_48H.txt', show_col_types = FALSE)
 
-ORG66_PAC25_48H_DE <- read_delim('data/DEgenes/ORG66/PAC_IC25_48H.txt', show_col_types = FALSE)
-ORG66_PAC50_48H_DE <- read_delim('data/DEgenes/ORG66/PAC_IC50_48H.txt', show_col_types = FALSE)
-ORG66_SN3825_48H_DE <- read_delim('data/DEgenes/ORG66/SN38_IC25_48H.txt', show_col_types = FALSE)
-ORG66_SN3850_48H_DE <- read_delim('data/DEgenes/ORG66/SN38_IC50_48H.txt', show_col_types = FALSE)
+ORG66_PAC50_48H_DE <- read_delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG66/PAC_IC50_48H.txt', show_col_types = FALSE)
+ORG66_SN3850_48H_DE <- read_delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG66/SN38_IC50_48H.txt', show_col_types = FALSE)
 ```
+
+## Threshold notes
+• Differentially expressed genes = meeting logFC threshold of x > +1 and/or x < -1
+
+• p value threshold for differential expression analysis = 0.05
+
+• p value threshold for GSEA analysis = 0.005
 
 ## ORG 38 
 ### 48H timepoint comparisons
 ```{r, label=org38_48H_plots, fig.height=15, fig,width=15}
 
+categories <- c('DNA damage response', 'DNA repair', 'cellular response to stress', 'cell differentiation', 'signaling receptor regulator activity')
+
 #ORG38 Paclitaxel plot summary 
-rownames(ORG38_PAC25_48H_DE) <- ORG38_PAC25_48H_DE$genes
-rownames(ORG38_PAC50_48H_DE) <- ORG38_PAC50_48H_DE$genes
+ORG38_PAC50_48H_DE <- as.data.frame(ORG38_PAC50_48H_DE)
 
-genes<- c('TAFAZZIN','TEAD4','LRP8','ZNF761','KDELR3','TMCO1','PDCD5','CYP51A1','PFDN2','NCAPD3','PFDN2','ARPC1B','LRP8','G6PD','ENY2','CINP')
-P_IC25 <- data.frame(genes=genes, logFC= ORG38_PAC25_48H_DE[genes,c('logFC')], pathways = c(rep('heterocycle biosynthetic process',4),rep('transport', 4),rep('organelle organization', 4),rep('response to stress', 4)))
+fc <- ORG38_PAC50_48H_DE[order(ORG38_PAC50_48H_DE$logFC, decreasing = TRUE),]
+gene_names <- fc$genes
+fc<- fc[,c("logFC")]
+names(fc) <- gene_names
 
-p1<- ggplot(data=P_IC25, aes(x=genes, 
-                                y=logFC))+
-  scale_x_discrete(position='top')+
-  geom_bar(stat='identity', position='dodge')+
-  coord_flip()+
-  facet_wrap(vars(pathways), nrow=4, scales='free_y')+
-  theme_linedraw()+
-    geom_hline(yintercept = 0, linetype=2) +
-  ggplot2::ggtitle("LogFC of ORG49 genes/pathways after Paclitaxel treatment at IC25")
+p1 <- cnetplot(ORG38_PAC50_48H_gse, 
+         foldChange=fc,
+         node_label='all',
+         showCategory=5,
+         colorEdge=TRUE,
+         layout='kk',
+         color.params=list(category='deeppink1'))
+p1 + scale_color_gradientn(colours = c("red3", "blue")) 
+
+p2 <- cnetplot(ORG38_PAC50_48H_gse, 
+         foldChange=fc,
+         node_label='all',
+         showCategory=categories,
+         colorEdge=TRUE,
+         color.params=list(category='deeppink1'))
+p2 + scale_color_gradientn(colours = c("red3", "blue")) 
 
 
-genes<- c('MAPK8IP1','POLR2J2','RAD50','ZNF879','USP14','CLU','CTDSPL','HK1','PIMREG','TXN','H2AX','NUP43','HES2','ZNF467','BHLHE41','TAF12-DT')
-P_IC50 <- data.frame(genes=genes, logFC= ORG38_PAC50_48H_DE[genes,c('logFC')], pathways = c(rep('organic cyclic compound biosynthetic process',4),rep('extracellular region', 4),rep('nucleoplasm',4),rep('	nucleic acid binding',4)))
+categories <- c('RNA binding', 'cellular metabolic process','tumor necrosis factor-mediated signaling pathway','regulation of cell migration')
+ORG38_SN3850_48H_DE <- as.data.frame(ORG38_SN3850_48H_DE)
 
-p2<- ggplot(data=P_IC50, aes(x=genes, 
-                                y=logFC))+
-  scale_x_discrete(position='top')+
-  geom_bar(stat='identity', position='dodge')+
-  coord_flip()+
-  facet_wrap(vars(pathways), nrow=4, scales='free_y')+
-  theme_linedraw()+
-    geom_hline(yintercept = 0, linetype=2) +
-  ggplot2::ggtitle("LogFC of ORG49 genes/pathways after Paclitaxel treatment at IC50")
+fc <- ORG38_SN3850_48H_DE[order(ORG38_SN3850_48H_DE$logFC, decreasing = TRUE),]
+gene_names <- fc$genes
+fc<- fc[,c("logFC")]
+names(fc) <- gene_names
 
-#ORG38 SN38 Plot summary
-rownames(ORG38_SN3825_48H_DE) <- ORG38_SN3825_48H_DE$genes
-rownames(ORG38_SN3850_48H_DE) <- ORG38_SN3850_48H_DE$genes
+p3 <- cnetplot(ORG38_SN3850_48H_gse, 
+         foldChange=fc,
+         node_label='all',
+         showCategory=5,
+         colorEdge=TRUE,
+         color.params=list(category='deeppink1'))
+p3 + scale_color_gradientn(colours = c("red3", "blue"))
 
-genes<- c('THOC1','BRD9','FBXL5','STK39','VCP','FXR1','MCM6','ENO1','PKN2','RALGAPA2','XPO6','THOC1','HSP90B1','RTL10','ANXA4','TUBB')
-S_IC25 <- data.frame(genes=genes, logFC= ORG38_SN3825_48H_DE[genes,c('logFC')], pathways = c(rep('4
-organic substance metabolic process', 4),rep('metabolic process',4), rep("GO:0043231
-intracellular membrane-bounded organelle",4),rep("cytoplasm",4)))
+p4 <- cnetplot(ORG38_SN3850_48H_gse, 
+         foldChange=fc,
+         node_label='all',
+         showCategory=categories,
+         colorEdge=TRUE,
+         color.params=list(category='deeppink1'))
 
-p3<- ggplot(data=S_IC25, aes(x=genes, 
-                                y=logFC))+
-  scale_x_discrete(position='top')+
-  geom_bar(stat='identity', position='dodge')+
-  coord_flip()+
-  facet_wrap(vars(pathways), nrow=4, scales='free_y')+
-  theme_linedraw()+
-    geom_hline(yintercept = 0, linetype=2) +
-  ggplot2::ggtitle("LogFC of ORG49 genes/pathways after SN38 treatment at IC25")
-
-genes<- c('PSRC1','PKD1','SRPK1','PRPF31','SAMD8','COL1A1','SYT12','TAF12','LPIN1','SLC44A1','ATP1A1','IGF1R','MMP28','HSD17B12','NFIC','TRIM16')
-S_IC50 <- data.frame(genes=genes, logFC= ORG38_SN3850_48H_DE[genes,c('logFC')], pathways = c(rep('nitrogen compound metabolic process',4),rep('	macromolecule metabolic process', 4),rep('membrane',4), rep('regulation of cellular process',4)))
-
-p4<- ggplot(data=S_IC50, aes(x=genes, 
-                                y=logFC))+
-  scale_x_discrete(position='top')+
-  geom_bar(stat='identity', position='dodge')+
-  coord_flip()+
-  facet_wrap(vars(pathways), nrow=4, scales='free_y')+
-  theme_linedraw()+
-    geom_hline(yintercept = 0, linetype=2) +
-  ggplot2::ggtitle("LogFC of ORG49 genes/pathways after SN38 treatment at IC50")
-
-p1
-p2
-p3
-p4
-
-p5 <- dotplot(ORG38_PAC25_48H_gse)
-p6<- dotplot(ORG38_PAC50_48H_gse)
+p4 + scale_color_gradientn(colours = c("red3", "blue"))
 ```
 
 ## ORG 49
 ### 48H timepoint comparisons
 ```{r, label=org49_48H_plots, fig.height=10, fig,width=10}
 
+categories <- c('cation binding', 'metal ion binding')
+
 #ORG49 Paclitaxel plot summary 
-rownames(ORG49_PAC25_48H_DE) <- ORG49_PAC25_48H_DE$genes
-rownames(ORG49_PAC50_48H_DE) <- ORG49_PAC50_48H_DE$genes
+ORG49_PAC50_48H_DE <- as.data.frame(ORG49_PAC50_48H_DE)
 
-genes<- c('RREB1','ZNF319','SMOC2','NTSR1','BCL6','COL4A1','STK36','CRYGS')
-P_IC25 <- data.frame(genes=genes, logFC= ORG49_PAC25_48H_DE[genes,c('logFC')], pathways = c(rep('positive regulation of biological process',4),rep('cell surface receptor signalling', 4)))
+fc <- ORG49_PAC50_48H_DE[order(ORG49_PAC50_48H_DE$logFC, decreasing = TRUE),]
+gene_names <- fc$genes
+fc<- fc[,c("logFC")]
+names(fc) <- gene_names
 
-p1<- ggplot(data=P_IC25, aes(x=genes, 
-                                y=logFC))+
-  scale_x_discrete(position='top')+
-  geom_bar(stat='identity', position='dodge')+
-  coord_flip()+
-  facet_wrap(vars(pathways), nrow=4, scales='free_y')+
-  theme_linedraw()+
-    geom_hline(yintercept = 0, linetype=2) +
-  ggplot2::ggtitle("LogFC of ORG49 genes/pathways after Paclitaxel treatment at IC25")
+p1 <- cnetplot(ORG49_PAC50_48H_gse, 
+         foldChange=fc,
+         node_label='all',
+         showCategory=10,
+         colorEdge=TRUE,
+         color.params=list(category='deeppink1'))
+p1 + scale_color_gradientn(colours = c("red3", "blue")) 
 
 
-genes<- c('POLD1','CHAF1B','MCM5','DHRS9','SPINK1','DBP','CYP1A1','DHRS2','MAP1B','KRT86','LBH', 'CIART', 'TMEM92','AJUBA', 'GEMIN7')
-P_IC50 <- data.frame(genes=genes, logFC= ORG49_PAC50_48H_DE[genes,c('logFC')], pathways = c(rep('DNA damage',3),rep('regulation of hormone levels', 5),rep('epithelial cell differentiation',3),rep('nucleoplasm',4)))
+ORG49_SN3850_48H_DE <- as.data.frame(ORG49_SN3850_48H_DE)
 
-p2<- ggplot(data=P_IC50, aes(x=genes, 
-                                y=logFC))+
-  scale_x_discrete(position='top')+
-  geom_bar(stat='identity', position='dodge')+
-  coord_flip()+
-  facet_wrap(vars(pathways), nrow=4, scales='free_y')+
-  theme_linedraw()+
-    geom_hline(yintercept = 0, linetype=2) +
-  ggplot2::ggtitle("LogFC of ORG49 genes/pathways after Paclitaxel treatment at IC50")
+fc <- ORG49_SN3850_48H_DE[order(ORG49_SN3850_48H_DE$logFC, decreasing = TRUE),]
+gene_names <- fc$genes
+fc<- fc[,c("logFC")]
+names(fc) <- gene_names
 
-#ORG49 SN38 Plot summary
-rownames(ORG49_SN3825_48H_DE) <- ORG49_SN3825_48H_DE$genes
-rownames(ORG49_SN3850_48H_DE) <- ORG49_SN3850_48H_DE$genes
+p3 <- cnetplot(ORG49_SN3850_48H_gse, 
+         foldChange=fc,
+         node_label='all',
+         showCategory=10,
+         colorEdge=TRUE,
+         color.params=list(category='deeppink1'))
+p3 + scale_color_gradientn(colours = c("red3", "blue"))
 
-genes<- c('EGR1','DHCR24','FGFR4','LSS','PRMT3','HMGCS1','MFN1','SREBF1','PCSK9','INSIG1','NDUFAB1','DHCR7','LIPG','FASN')
-S_IC25 <- data.frame(genes=genes, logFC= ORG49_SN3825_48H_DE[genes,c('logFC')], pathways = c(rep('steroid metabolic process', 4),rep('small molecule metabolic process',4), rep("cholesterol metabolic process",2),rep("small molecule biosynthetic process",4)))
 
-p3<- ggplot(data=S_IC25, aes(x=genes, 
-                                y=logFC))+
-  scale_x_discrete(position='top')+
-  geom_bar(stat='identity', position='dodge')+
-  coord_flip()+
-  facet_wrap(vars(pathways), nrow=4, scales='free_y')+
-  theme_linedraw()+
-    geom_hline(yintercept = 0, linetype=2) +
-  ggplot2::ggtitle("LogFC of ORG49 genes/pathways after SN38 treatment at IC25")
-
-genes<- c('GAL3ST1','BPNT2','WWC1','WWOX','IRF9','GK','HAUS3','EPHB6','MLEC','PPA2','GRSF1','XPO5','HILPDA','REC8','MCUB','ETFA')
-S_IC50 <- data.frame(genes=genes, logFC= ORG49_SN3850_48H_DE[genes,c('logFC')], pathways = c(rep('biosynthetic process',4),rep('cytoplasm', 4),rep('organic substance metabolic process',4), rep('organelle lumen',4)))
-
-p4<- ggplot(data=S_IC50, aes(x=genes, 
-                                y=logFC))+
-  scale_x_discrete(position='top')+
-  geom_bar(stat='identity', position='dodge')+
-  coord_flip()+
-  facet_wrap(vars(pathways), nrow=4, scales='free_y')+
-  theme_linedraw()+
-    geom_hline(yintercept = 0, linetype=2) +
-  ggplot2::ggtitle("LogFC of ORG49 genes/pathways after SN38 treatment at IC50")
-
-p1
-p2
-p3
-p4
 ```
 
 ## ORG 66
 ### 48H timepoint comparisons
 ```{r, label=org66_48H_plots, fig.height=12, fig,width=10}
 
+categories <- c('DNA repair', 'cell cycle', 'chromosome organization', 'postreplication repair', 'miRNA processing', 'spindle microtubule')
+
 #ORG66 Paclitaxel plot summary 
-rownames(ORG66_PAC25_48H_DE) <- ORG66_PAC25_48H_DE$genes
-rownames(ORG66_PAC50_48H_DE) <- ORG66_PAC50_48H_DE$genes
+ORG66_PAC50_48H_DE <- as.data.frame(ORG66_PAC50_48H_DE)
 
-genes<- c('EIF4E','SMARCE1','PSMD2','LSM7','ETF1','PFKL','NABP2','POLR2J','CARHSP1','PUF60','BRIX1','POLDIP2','ITGB3BP','DYNLT2B','GADD45GIP1','RTRAF')
-P_IC25 <- data.frame(genes=genes, logFC= ORG66_PAC25_48H_DE[genes,c('logFC')], pathways = c(rep('nuclear lumen',4),rep('nucleobase containing metabolic process', 4), rep('cellular nitrogen compound metabolic process',4), rep('protein containing complex',4)))
+fc <- ORG66_PAC50_48H_DE[order(ORG66_PAC50_48H_DE$logFC, decreasing = TRUE),]
+gene_names <- fc$genes
+fc<- fc[,c("logFC")]
+names(fc) <- gene_names
 
-p1<- ggplot(data=P_IC25, aes(x=genes, 
-                                y=logFC))+
-  scale_x_discrete(position='top')+
-  geom_bar(stat='identity', position='dodge')+
-  coord_flip()+
-  facet_wrap(vars(pathways), nrow=4, scales='free_y')+
-  theme_linedraw()+
-    geom_hline(yintercept = 0, linetype=2) +
-  ggplot2::ggtitle("LogFC of ORG66 genes/pathways after Paclitaxel treatment at IC25")
+p1 <- cnetplot(ORG66_PAC50_48H_gse, 
+         foldChange=fc,
+         node_label='all',
+         showCategory=10,
+         colorEdge=TRUE,
+         color.params=list(category='deeppink1'))
+p1 + scale_color_gradientn(colours = c("red3", "blue")) 
 
-
-genes<- c('DDX1','EIF4E','MAP3K12','PTBP1','MIS18A','VCP','ACADVL','CBX3','MRPS7','VDAC2','SETD3','RBBP4','SLC25A11','RSL1D1','MRPL3','FLNA')
-P_IC50 <- data.frame(genes=genes, logFC= ORG66_PAC50_48H_DE[genes,c('logFC')], pathways = c(rep('organic cyclic compound binding',4),rep('organelle lumen', 4),rep('membrane enclosed lumen',4),rep('RNA binding',4)))
-
-p2<- ggplot(data=P_IC50, aes(x=genes, 
-                                y=logFC))+
-  scale_x_discrete(position='top')+
-  geom_bar(stat='identity', position='dodge')+
-  coord_flip()+
-  facet_wrap(vars(pathways), nrow=4, scales='free_y')+
-  theme_linedraw()+
-    geom_hline(yintercept = 0, linetype=2) +
-  ggplot2::ggtitle("LogFC of ORG66 genes/pathways after Paclitaxel treatment at IC50")
-
-#ORG66 SN38 Plot summary
-rownames(ORG66_SN3825_48H_DE) <- ORG66_SN3825_48H_DE$genes
-rownames(ORG66_SN3850_48H_DE) <- ORG66_SN3850_48H_DE$genes
-
-genes<- c('CDC20','PLK1','TUBB','GPSM2','CCNA2','SAPCD2','PTTG1','SPAG5','NDC1','GPSM2','ZWINT','BUB1','CDC20','CCNB1')
-S_IC25 <- data.frame(genes=genes, logFC= ORG66_SN3825_48H_DE[genes,c('logFC')], pathways = c(rep('anaphase-promoting complex-dependent catabolic process',2),rep('cell division', 4),rep('chromosome segregation',4), rep("negative regulation of chromosome organization",4)))
-
-p3<- ggplot(data=S_IC25, aes(x=genes, 
-                                y=logFC))+
-  scale_x_discrete(position='top')+
-  geom_bar(stat='identity', position='dodge')+
-  coord_flip()+
-  facet_wrap(vars(pathways), nrow=4, scales='free_y')+
-  theme_linedraw()+
-    geom_hline(yintercept = 0, linetype=2) +
-  ggplot2::ggtitle("LogFC of ORG66 genes/pathways after SN38 treatment at IC25")
-
-genes<- c('BOP1','CDK6','TUBA4A','KRT18','CHCHD10','SSRP1','CSE1L','TSEN15','UBE2S','BMP4','RANBP1','NAE1','ALG6','HBS1L','POLR1G','GINS2')
-S_IC50 <- data.frame(genes=genes, logFC= ORG66_SN3850_48H_DE[genes,c('logFC')], pathways = c(rep('cell cycle',4),rep('cellular process', 4),rep('cell cycle process',4), rep('molecular function',4)))
-
-p4<- ggplot(data=S_IC50, aes(x=genes, 
-                                y=logFC))+
-  scale_x_discrete(position='top')+
-  geom_bar(stat='identity', position='dodge')+
-  coord_flip()+
-  facet_wrap(vars(pathways), nrow=4, scales='free_y')+
-  theme_linedraw()+
-    geom_hline(yintercept = 0, linetype=2) +
-  ggplot2::ggtitle("LogFC of ORG66 genes/pathways after SN38 treatment at IC50")
+p2 <- cnetplot(ORG66_PAC50_48H_gse, 
+         foldChange=fc,
+         node_label='all',
+         showCategory=categories,
+         colorEdge=TRUE,
+         color.params=list(category='deeppink1'))
+p2 + scale_color_gradientn(colours = c("red3", "blue")) 
 
 
-p1
-p2
-p3
-p4
+categories <- c('cell cycle process', 'meiosis I cell cycle process', 'mitotic nuclear division', 'cell cycle checkpoint signaling','cyclin-dependent protein serine/threonine kinase regulator activity')
+ORG66_SN3850_48H_DE <- as.data.frame(ORG66_SN3850_48H_DE)
+
+fc <- ORG66_SN3850_48H_DE[order(ORG66_SN3850_48H_DE$logFC, decreasing = TRUE),]
+gene_names <- fc$genes
+fc<- fc[,c("logFC")]
+names(fc) <- gene_names
+
+p3 <- cnetplot(ORG66_SN3850_48H_gse, 
+         foldChange=fc,
+         node_label='all',
+         showCategory=10,
+         colorEdge=TRUE,
+         color.params=list(category='deeppink1'))
+p3 + scale_color_gradientn(colours = c("red3", "blue"))
+
+p4 <- cnetplot(ORG66_SN3850_48H_gse, 
+         foldChange=fc,
+         node_label='all',
+         showCategory=categories,
+         colorEdge=TRUE,
+         color.params=list(category='deeppink1'))
+
+p4 + scale_color_gradientn(colours = c("red3", "blue"))
 ```
-
-## Category Netplots
 ```{r}
+# ## Barplot
+# ```{r, fig.height=10, fig.width=30}
+# # Paclitaxel IC50 48H
+# org38_up <- c(ORG38_PAC50_48H_DE[ORG38_PAC50_48H_DE$logFC>0,c('genes')])
+# org38_down <- c(ORG38_PAC50_48H_DE[ORG38_PAC50_48H_DE$logFC<0,c('genes')])
+#
+# org49_up <- c(ORG49_PAC50_48H_DE[ORG49_PAC50_48H_DE$logFC>0,c('genes')])
+# org49_down <- c(ORG49_PAC50_48H_DE[ORG49_PAC50_48H_DE$logFC<0,c('genes')])
+#
+# org66_up <- c(ORG66_PAC50_48H_DE[ORG66_PAC50_48H_DE$logFC>0,c('genes')])
+# org66_down <- c(ORG66_PAC50_48H_DE[ORG66_PAC50_48H_DE$logFC<0,c('genes')])
+#
+# #mapping entrezID to gene name
+# org38_up<-select(org.Hs.eg.db, keys=org38_up$genes, columns=c('ENTREZID'), keytype="ALIAS")
+# org38_down<- select(org.Hs.eg.db, keys=org38_down$genes, columns=c('ENTREZID'), keytype="ALIAS")
+#
+# org49_up<- select(org.Hs.eg.db, keys=org49_up$genes, columns=c('ENTREZID'), keytype="ALIAS")
+# org49_down<- select(org.Hs.eg.db, keys=org49_down$genes, columns=c('ENTREZID'), keytype="ALIAS")
+#
+# org66_up<- select(org.Hs.eg.db, keys=org66_up$genes, columns=c('ENTREZID'), keytype="ALIAS")
+# org66_down<- select(org.Hs.eg.db, keys=org66_down$genes, columns=c('ENTREZID'), keytype="ALIAS")
+#
+# org38_up<- org38_up[,2]
+# org38_down<- org38_down[,2]
+#
+# org49_up<- org49_up[,2]
+# org49_down<- org49_down[,2]
+#
+# org66_up<- org66_up[,2]
+# org66_down<- org66_down[,2]
+#
+# #running GO enrichment and Generating dotplots
+# options(enrichplot.colours = c("blue","red"))
+#
+# edo <- enrichGO(org38_up, OrgDb = 'org.Hs.eg.db', pAdjustMethod = 'none', ont = 'ALL')
+# org38p_up <- barplot(edo) + ggtitle('ORG38')
+# edo <- enrichGO(org38_down, OrgDb = 'org.Hs.eg.db', pAdjustMethod = 'none', ont = 'ALL')
+# org38p_down <- barplot(edo) + ggtitle('ORG38')
+
+# edo <- enrichGO(org49_up, OrgDb = 'org.Hs.eg.db', pAdjustMethod = 'none', ont = 'ALL')
+# org49p_up <- barplot(edo) + ggtitle('ORG49')
+# edo <- enrichGO(org49_down, OrgDb = 'org.Hs.eg.db', pAdjustMethod = 'none', ont = 'ALL')
+# org49p_down <- barplot(edo) + ggtitle('ORG49')
+# 
+# edo <- enrichGO(org66_up, OrgDb = 'org.Hs.eg.db', pAdjustMethod = 'none', ont = 'ALL')
+# org66p_up <- barplot(edo) + ggtitle('ORG66')
+# edo <- enrichGO(org66_down, OrgDb = 'org.Hs.eg.db', pAdjustMethod = 'none', ont = 'ALL')
+# org66p_down <- barplot(edo) + ggtitle('ORG66')
+# 
+# p1<- ggarrange(org38p_up, org49p_up, org66p_up, ncol = 3, nrow = 1, common.legend = TRUE, legend = 'right')
+# a <- annotate_figure(p1, top=text_grob('A. Upregulated GO pathways enriched after treatment with Paclitaxel IC50 at 48H', face = 'bold', size = 25))
+# 
+# p2<- ggarrange(org38p_down, org49p_down, org66p_down, ncol = 3, nrow = 1, common.legend = TRUE, legend = 'right')
+# b <- annotate_figure(p2, top=text_grob('B. Downregulated GO pathways enriched after treatment with Paclitaxel IC50 at 48H', face = 'bold', size = 25))
+# 
+# # SN38 IC50 48H
+# org38_up <- c(ORG38_SN3850_48H_DE[ORG38_SN3850_48H_DE$logFC>0,c('genes')])
+# org38_down <- c(ORG38_SN3850_48H_DE[ORG38_SN3850_48H_DE$logFC<0,c('genes')])
+# 
+# org49_up <- c(ORG49_SN3850_48H_DE[ORG49_SN3850_48H_DE$logFC>0,c('genes')])
+# org49_down <- c(ORG49_SN3850_48H_DE[ORG49_SN3850_48H_DE$logFC<0,c('genes')])
+# 
+# org66_up <- c(ORG66_SN3850_48H_DE[ORG66_SN3850_48H_DE$logFC>0,c('genes')])
+# org66_down <- c(ORG66_SN3850_48H_DE[ORG66_SN3850_48H_DE$logFC<0,c('genes')])
+# 
+# #mapping entrezID to gene name
+# org38_up<- select(org.Hs.eg.db, keys=org38_up$genes, columns=c('ENTREZID'), keytype="ALIAS")
+# org38_down<- select(org.Hs.eg.db, keys=org38_down$genes, columns=c('ENTREZID'), keytype="ALIAS")
+# 
+# org49_up<- select(org.Hs.eg.db, keys=org49_up$genes, columns=c('ENTREZID'), keytype="ALIAS")
+# org49_down<- select(org.Hs.eg.db, keys=org49_down$genes, columns=c('ENTREZID'), keytype="ALIAS")
+# 
+# org66_up<- select(org.Hs.eg.db, keys=org66_up$genes, columns=c('ENTREZID'), keytype="ALIAS")
+# org66_down<- select(org.Hs.eg.db, keys=org66_down$genes, columns=c('ENTREZID'), keytype="ALIAS")
+# 
+# #selecting gene IDs
+# org38_up<- org38_up[,2]
+# org38_down<- org38_down[,2]
+# 
+# org49_up<- org49_up[,2]
+# org49_down<- org49_down[,2]
+# 
+# org66_up<- org66_up[,2]
+# org66_down<- org66_down[,2]
+# 
+# #running GO enrichment and Generating dotplots
+# options(enrichplot.colours = c("blue","red"))
+# 
+# edo <- enrichGO(org38_up, OrgDb = 'org.Hs.eg.db', pAdjustMethod = 'none', ont = 'ALL')
+# org38s_up <- barplot(edo) + ggtitle('ORG38')
+# edo <- enrichGO(org38_down, OrgDb = 'org.Hs.eg.db', pAdjustMethod = 'none', ont = 'ALL')
+# org38s_down <- barplot(edo) + ggtitle('ORG38')
+# 
+# edo <- enrichGO(org49_up, OrgDb = 'org.Hs.eg.db', pAdjustMethod = 'none', ont = 'ALL')
+# org49s_up <- barplot(edo) + ggtitle('ORG49')
+# edo <- enrichGO(org49_down, OrgDb = 'org.Hs.eg.db', pAdjustMethod = 'none', ont = 'ALL')
+# org49s_down <- barplot(edo) + ggtitle('ORG49')
+# 
+# edo <- enrichGO(org66_up, OrgDb = 'org.Hs.eg.db', pAdjustMethod = 'none', ont = 'ALL')
+# org66s_up <- barplot(edo) + ggtitle('ORG66')
+# edo <- enrichGO(org66_down, OrgDb = 'org.Hs.eg.db', pAdjustMethod = 'none', ont = 'ALL')
+# org66s_down <- barplot(edo) + ggtitle('ORG66')
+# 
+# p3<- ggarrange(org38s_up, org49s_up, org66s_up, ncol = 3, nrow = 1, common.legend = TRUE, legend = 'right')
+# c <- annotate_figure(p3, top=text_grob('C. Upregulated GO pathways enriched after treatment with SN38 IC50 at 48H', face = 'bold', size = 25))
+# 
+# p4<- ggarrange(org38s_down, org49s_down, org66s_down, ncol = 3, nrow = 1, common.legend = TRUE, legend = 'right')
+# d <- annotate_figure(p4, top=text_grob('D. Downregulated GO pathways enriched after treatment with SN38 IC50 at 48H', face = 'bold', size = 25))
+
 ```
+
