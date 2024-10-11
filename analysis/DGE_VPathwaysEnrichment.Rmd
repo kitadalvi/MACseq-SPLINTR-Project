@@ -54,7 +54,7 @@ ORG66_SN3850_48H_DE <- read_delim('/Users/dalvinikita/Documents/GitHub/MACseq-SP
 
 ## ORG 38 
 ### 48H timepoint comparisons
-```{r, label=org38_48H_plots, fig.height=10, fig,width=15}
+```{r, label=org38_48H_plots, fig.height=10, fig,width=25}
 
 #ORG38 Paclitaxel plot summary 
 ORG38_PAC50_48H_DE <- as.data.frame(ORG38_PAC50_48H_DE)
@@ -94,7 +94,7 @@ p2 + scale_color_gradientn(colours = c("red3", "blue"))
 
 ## ORG 49
 ### 48H timepoint comparisons
-```{r, label=org49_48H_plots, fig.height=10, fig,width=10}
+```{r, label=org49_48H_plots, fig.height=10, fig,width=25}
 
 #ORG49 Paclitaxel plot summary 
 ORG49_PAC50_48H_DE <- as.data.frame(ORG49_PAC50_48H_DE)
@@ -134,7 +134,7 @@ p2 + scale_color_gradientn(colours = c("red3", "blue"))
 
 ## ORG 66
 ### 48H timepoint comparisons
-```{r, label=org66_48H_plots, fig.height=12, fig,width=10}
+```{r, label=org66_48H_plots, fig.height=12, fig,width=25}
 
 #ORG66 Paclitaxel plot summary 
 ORG66_PAC50_48H_DE <- as.data.frame(ORG66_PAC50_48H_DE)

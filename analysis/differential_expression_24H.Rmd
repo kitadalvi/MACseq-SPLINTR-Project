@@ -148,7 +148,7 @@ DGE_summary
 ### ORG38 {.tabset}
 
 #### Paclitaxel IC12.5 24H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG38.Paclitaxel_IC12.5.24H"
 treatment_2<-"ORG38.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -163,7 +163,7 @@ datatable(DEgenes)
 ```
 
 #### Paclitaxel IC25.0 24H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG38.Paclitaxel_IC25.24H"
 treatment_2<-"ORG38.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -205,12 +205,12 @@ Enriched pathways for differentially expressed genes:
 # rownames(output)<- NULL
 # write.table(output, row.names = FALSE, quote=FALSE, col.names = TRUE, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/enrichedPathways/ORG38/PAC_IC25_24H.txt', sep='\t')
 
-output <- read.delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/enrichedPathways/ORG38/PAC_IC25_24H.txt', header = TRUE)
-datatable(output[,c(3,4,5,7,12)])
+# output <- read.delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/enrichedPathways/ORG38/PAC_IC25_24H.txt', header = TRUE)
+# datatable(output[,c(3,4,5,7,12)])
 ```
 
 #### Paclitaxel IC50 24H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG38.Paclitaxel_IC50.24H"
 treatment_2<-"ORG38.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -225,7 +225,7 @@ At 24H, 0 differentially expressed genes were identified after treatment with Pa
 
 
 #### SN38 IC12.5 24H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG38.SN38_IC12.5.24H"
 treatment_2<-"ORG38.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -236,7 +236,7 @@ DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$lo
 At 24H, 0 differentially expressed genes were identified after treatment with SM38 at IC12.5.
 
 #### SN38 IC25.0 24H -24HDMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG38.SN38_IC25.24H"
 treatment_2<-"ORG38.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -245,7 +245,7 @@ plot_volcano(DEgenes)  + ggtitle("ORG38 SN38 IC25 VS DMSO")
 DEgenes<- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
 
 DEgenes['genes']<- rownames(DEgenes)
-write.table(DEgenes,row.names = F, quote=F, col.names=T, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG38/SN38_IC25_24H.txt', sep='\t')
+# write.table(DEgenes,row.names = F, quote=F, col.names=T, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG38/SN38_IC25_24H.txt', sep='\t')
 ```
 
 In summary: 337 genes differentially expressed between SN38 IC25 and DMSO at 24H:
@@ -278,13 +278,13 @@ Enriched pathways for differentially expressed genes:
 # rownames(output)<- NULL
 # write.table(output, row.names = FALSE, quote=FALSE, col.names = TRUE, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/enrichedPathways/ORG38/SN38_IC25_24H.txt', sep='\t')
 
-output <- read.delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/enrichedPathways/ORG38/SN38_IC25_24H.txt', header = TRUE)
-datatable(output[,c(3,4,5,7,12)])
+# output <- read.delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/enrichedPathways/ORG38/SN38_IC25_24H.txt', header = TRUE)
+# datatable(output[,c(3,4,5,7,12)])
 
 ```
 
 #### SN38 IC50 24H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG38.SN38_IC50.24H"
 treatment_2<-"ORG38.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -302,7 +302,7 @@ At 24H, 0 differentially expressed genes were identified after treatment with SN
 ### ORG49 {.tabset}
 
 #### Paclitaxel IC12.5 24H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG49.Paclitaxel_IC12.5.24H"
 treatment_2<-"ORG49.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -318,7 +318,7 @@ datatable(DEgenes)
 ```
 
 #### Paclitaxel IC25.0 24H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG49.Paclitaxel_IC25.24H"
 treatment_2<-"ORG49.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -359,13 +359,13 @@ Enriched pathways for differentially expressed genes:
 # rownames(output)<- NULL
 # write.table(output, row.names = FALSE, quote=FALSE, col.names = TRUE, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/enrichedPathways/ORG49/PAC_IC25_24H.txt', sep='\t')
 
-output <- read.delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/enrichedPathways/ORG49/PAC_IC25_24H.txt', header = TRUE)
-datatable(output[,c(3,4,5,7,12)])
+# output <- read.delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/enrichedPathways/ORG49/PAC_IC25_24H.txt', header = TRUE)
+# datatable(output[,c(3,4,5,7,12)])
 
 ```
 
 #### Paclitaxel IC50 24H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG49.Paclitaxel_IC50.24H"
 treatment_2<-"ORG49.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -379,7 +379,7 @@ write.table(DEgenes,row.names = F, quote=F, col.names=T, file='/Users/dalvinikit
 At 24H, 0 differentially expressed genes were identified after treatment with Paclitaxel at IC50.
 
 #### SN38 IC12.5 24H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG49.SN38_IC12.5.24H"
 treatment_2<-"ORG49.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -390,7 +390,7 @@ DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$lo
 At 24H, no differentially expressed genes were identified after treatment with SN38 at IC12.5.
 
 #### SN38 IC25 24H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG49.SN38_IC25.24H"
 treatment_2<-"ORG49.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -432,12 +432,12 @@ Enriched pathways for differentially expressed genes:
 # rownames(output)<- NULL
 # write.table(output, row.names = FALSE, quote=FALSE, col.names = TRUE, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/enrichedPathways/ORG49/SN38_IC25_24H.txt', sep='\t')
 
-output <- read.delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/enrichedPathways/ORG49/SN38_IC25_24H.txt', header = TRUE)
-datatable(output[,c(3,4,5,7,12)])
+# output <- read.delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/enrichedPathways/ORG49/SN38_IC25_24H.txt', header = TRUE)
+# datatable(output[,c(3,4,5,7,12)])
 ```
 
 #### SN38 IC50 24H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG49.SN38_IC50.24H"
 treatment_2<-"ORG49.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -455,7 +455,7 @@ At 24H, 0 differentially expressed genes were identified after treatment with SN
 ### ORG66 {.tabset}
 
 #### Paclitaxel IC12.5 24H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG66.Paclitaxel_IC12.5.24H"
 treatment_2<-"ORG66.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -467,7 +467,7 @@ DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$lo
 At 24H, 0 differentially expressed genes were identified after treatment with Paclitaxel at IC12.5.
 
 #### Paclitaxel IC25.0 24H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG66.Paclitaxel_IC25.24H"
 treatment_2<-"ORG66.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -481,7 +481,7 @@ write.table(DEgenes,row.names = F, quote=F, col.names=T, file='/Users/dalvinikit
 At 24H, 0 differentially expressed genes were identified after treatment with Paclitaxel at IC25.
 
 #### Paclitaxel IC50 24H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG66.Paclitaxel_IC50.24H"
 treatment_2<-"ORG66.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -495,7 +495,7 @@ write.table(DEgenes,row.names = F, quote=F, col.names=T, file='/Users/dalvinikit
 At 24H, 0 differentially expressed genes were identified after treatment with Paclitaxel at IC50.
 
 #### SN38 IC12.5 24H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG66.SN38_IC12.5.24H"
 treatment_2<-"ORG66.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -506,7 +506,7 @@ DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$lo
 At 24H, 0 differentially expressed genes were identified after treatment with SN38 at IC12.5.
 
 #### SN38 IC25.0 24H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG66.SN38_IC25.24H"
 treatment_2<-"ORG66.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -520,7 +520,7 @@ write.table(DEgenes,row.names = F, quote=F, col.names=T, file='/Users/dalvinikit
 At 24H, 0 differentially expressed genes were identified after treatment with SN38 at IC25.
 
 #### SN38 IC50 24H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG66.SN38_IC50.24H"
 treatment_2<-"ORG66.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
