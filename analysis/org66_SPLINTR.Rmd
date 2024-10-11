@@ -16,6 +16,7 @@ library(dplyr)
 library(reshape2)
 library(tidyr)
 library(ggpubr)
+library(patchwork)
 ```
 
 ## Loading Data
@@ -174,4 +175,48 @@ Comparing proportion of Barcodes in each ORG66 well across at 24H VS at 48H:
 
 ```{r, fig.height=10, fig.width=15}
 ggarrange(p6,p7, ncol=2)
+```
+
+### IC50 48H Barcode histograms
+```{r, fig.height=5, fig.width=10}
+org_data <- org_data[c("H19",'H20','H21','H22','D19','D20','D21','D22','K19','K20','K21','K22'),]
+
+treatments<- c(org_data$Well_ID)
+org_data_combined <- data.frame(barcode=character())
+
+for (well in treatments){
+  df <- individual_counts(org_data, well)
+  org_data_combined<- merge(org_data_combined, df, all=TRUE)
+}
+
+org_data_combined[is.na(org_data_combined)]<- 0
+end <- dim(org_data_combined)[2]
+barcode_data <- DGEList(counts=org_data_combined[,2:end])
+rownames(barcode_data$counts)<- org_data_combined[,1]
+
+#adding samplesheet information to DGElist object
+barcode_data$samples$Sample <- org_data$Well_ID
+barcode_data$samples$Treatment <- org_data$Treatment_1
+barcode_data$samples$Time <- org_data$Time
+barcode_data$samples$ORG <- org_data$Organoid
+barcode_data <- barcode_data[rowSums(barcode_data$counts) != 0, ]
+
+treatment <- paste(rep(c('DMSO','DMSO','DMSO','DMSO','Paclitaxel','Paclitaxel','Paclitaxel','Paclitaxel','SN38','SN38','SN38','SN38'),28))
+barcode_plot <- plotBarcodeHistogram(barcode_data, topN = 10, alphaLowFreq = 0) 
+
+data <- barcode_plot[["data"]]
+data$treatment <- treatment
+data <- data[order(data$barcode, decreasing = T),]
+data <- data[1:120,]
+
+plot <- ggplot(data, aes(fill=barcode, y=freq, x=sample)) + 
+  geom_bar(position="stack", stat="identity", width=0.5,show.legend = FALSE) + 
+  theme_light()
+
+plot + facet_wrap(~treatment, scales='free', switch='x') + 
+  xlab('Treatment') + ylab('Barcode proportion') + 
+  ggtitle("Distribution of top 10 barcodes in ORG66") + 
+  expand_limits(y = c(0,1)) + 
+  scale_fill_manual(values=c('#6b0071','#a9c4ff','#af0406','#93c300','#0093c3','#d7ff5c','#ffa95c','#fffb5c','#ffa9ef','#ff5c60'))+
+  plot_spacer() 
 ```

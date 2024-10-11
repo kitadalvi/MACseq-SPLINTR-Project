@@ -407,7 +407,7 @@ div.tocify {
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
 <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
-workflowr <span class="glyphicon glyphicon-ok text-success"
+workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger"
 aria-hidden="true"></span>
 </button>
 </p>
@@ -418,8 +418,8 @@ aria-hidden="true"></span>
 </li>
 <li>
 <a data-toggle="tab" href="#checks"> Checks <span
-class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
-</a>
+class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> </a>
 </li>
 <li>
 <a data-toggle="tab" href="#versions">Past versions</a>
@@ -428,13 +428,13 @@ class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2024-09-26
+<strong>Last updated:</strong> 2024-10-11
 </p>
 <p>
 <strong>Checks:</strong> <span
-class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6
 <span class="glyphicon glyphicon-exclamation-sign text-danger"
-aria-hidden="true"></span> 0
+aria-hidden="true"></span> 1
 </p>
 <p>
 <strong>Knit directory:</strong> <code>MACseq-SPLINTR-Project/</code>
@@ -457,18 +457,21 @@ versions</em> tab lists the development history.
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate">
-<span class="glyphicon glyphicon-ok text-success"
-aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date
-</a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges">
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted
+changes </a>
 </p>
 </div>
-<div id="strongRMarkdownfilestronguptodate"
+<div id="strongRMarkdownfilestronguncommittedchanges"
 class="panel-collapse collapse">
 <div class="panel-body">
-<p>Great! Since the R Markdown file has been committed to the Git
-repository, you know the exact version of the code that produced these
-results.</p>
+<p>The R Markdown file has unstaged changes. To know which version of
+the R Markdown file created these results, you’ll want to first commit
+it to the Git repo. If you’re still working on the analysis, you can
+ignore this warning. When you’re finished, you can run
+<code>wflow_publish</code> to commit the R Markdown file and build the
+HTML.</p>
 </div>
 </div>
 </div>
@@ -559,15 +562,15 @@ project makes it easier to run your code on other machines.</p>
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomkitadalviMACseqSPLINTRProjecttreed69a7173236199a64dea09b683d5c973d0a2bb3atargetblankd69a717a">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomkitadalviMACseqSPLINTRProjecttree1e38a388c026060327df71eef9545c37e36afdb2targetblank1e38a38a">
 <span class="glyphicon glyphicon-ok text-success"
 aria-hidden="true"></span> <strong>Repository version:</strong>
-<a href="https://github.com/kitadalvi/MACseq-SPLINTR-Project/tree/d69a7173236199a64dea09b683d5c973d0a2bb3a" target="_blank">d69a717</a>
+<a href="https://github.com/kitadalvi/MACseq-SPLINTR-Project/tree/1e38a388c026060327df71eef9545c37e36afdb2" target="_blank">1e38a38</a>
 </a>
 </p>
 </div>
 <div
-id="strongRepositoryversionstrongahrefhttpsgithubcomkitadalviMACseqSPLINTRProjecttreed69a7173236199a64dea09b683d5c973d0a2bb3atargetblankd69a717a"
+id="strongRepositoryversionstrongahrefhttpsgithubcomkitadalviMACseqSPLINTRProjecttree1e38a388c026060327df71eef9545c37e36afdb2targetblank1e38a38a"
 class="panel-collapse collapse">
 <div class="panel-body">
 <p>
@@ -577,7 +580,7 @@ reproducibility.
 </p>
 <p>
 The results in this page were generated with repository version
-<a href="https://github.com/kitadalvi/MACseq-SPLINTR-Project/tree/d69a7173236199a64dea09b683d5c973d0a2bb3a" target="_blank">d69a717</a>.
+<a href="https://github.com/kitadalvi/MACseq-SPLINTR-Project/tree/1e38a388c026060327df71eef9545c37e36afdb2" target="_blank">1e38a38</a>.
 See the <em>Past versions</em> tab to see a history of the changes made
 to the R Markdown and HTML files.
 </p>
@@ -598,11 +601,15 @@ Ignored files:
     Ignored:    data/.DS_Store
     Ignored:    data/DEgenes/
     Ignored:    data/enrichedPathways/
+    Ignored:    data/images/
     Ignored:    data/rObjects/
 
 Unstaged changes:
     Modified:   analysis/DGE_VPathwaysEnrichment.Rmd
     Modified:   analysis/differential_expression.Rmd
+    Modified:   analysis/org38_SPLINTR.Rmd
+    Modified:   analysis/org49_SPLINTR.Rmd
+    Modified:   analysis/org66_SPLINTR.Rmd
 
 </code></pre>
 <p>
@@ -648,6 +655,23 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/kitadalvi/MACseq-SPLINTR-Project/e49d6f459589a0995085f51d99a5bcc480c1549c/docs/org38_SPLINTR.html" target="_blank">e49d6f4</a>
+</td>
+<td>
+kitadalvi
+</td>
+<td>
+2024-09-26
+</td>
+<td>
+added cnet plots for mac seq
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -730,7 +754,8 @@ library(SingleCellExperiment)
 library(dplyr)
 library(reshape2)
 library(tidyr)
-library(ggpubr)</code></pre>
+library(ggpubr)
+library(patchwork)</code></pre>
 <div id="loading-data" class="section level2">
 <h2>Loading Data</h2>
 <pre class="r"><code>##Loading data 
@@ -1126,6 +1151,11 @@ kitadalvi
 </table>
 </div>
 </div>
+</div>
+</div>
+<div id="ic50-48h-barcode-histograms" class="section level3">
+<h3>IC50 48H Barcode histograms</h3>
+<p><img src="figure/org38_SPLINTR.Rmd/unnamed-chunk-11-1.png" width="960" style="display: block; margin: auto;" /></p>
 <br>
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
@@ -1153,17 +1183,18 @@ attached base packages:
 [8] base     
 
 other attached packages:
- [1] ggpubr_0.6.0                tidyr_1.3.1                
- [3] reshape2_1.4.4              dplyr_1.1.4                
- [5] SingleCellExperiment_1.27.2 SummarizedExperiment_1.35.1
- [7] Biobase_2.65.0              GenomicRanges_1.57.1       
- [9] GenomeInfoDb_1.41.1         IRanges_2.39.2             
-[11] S4Vectors_0.43.2            BiocGenerics_0.51.0        
-[13] MatrixGenerics_1.17.0       matrixStats_1.3.0          
-[15] Seurat_5.1.0                SeuratObject_5.0.2         
-[17] sp_2.1-4                    bartools_1.0.0             
-[19] ggplot2_3.5.1               edgeR_4.3.7                
-[21] limma_3.61.7                workflowr_1.7.1            
+ [1] patchwork_1.2.0             ggpubr_0.6.0               
+ [3] tidyr_1.3.1                 reshape2_1.4.4             
+ [5] dplyr_1.1.4                 SingleCellExperiment_1.27.2
+ [7] SummarizedExperiment_1.35.1 Biobase_2.65.0             
+ [9] GenomicRanges_1.57.1        GenomeInfoDb_1.41.1        
+[11] IRanges_2.39.2              S4Vectors_0.43.2           
+[13] BiocGenerics_0.51.0         MatrixGenerics_1.17.0      
+[15] matrixStats_1.3.0           Seurat_5.1.0               
+[17] SeuratObject_5.0.2          sp_2.1-4                   
+[19] bartools_1.0.0              ggplot2_3.5.1              
+[21] edgeR_4.3.7                 limma_3.61.7               
+[23] workflowr_1.7.1            
 
 loaded via a namespace (and not attached):
   [1] RcppAnnoy_0.0.22        splines_4.4.0           later_1.3.2            
@@ -1209,11 +1240,10 @@ loaded via a namespace (and not attached):
 [121] getPass_0.2-4           plyr_1.8.9              fs_1.6.4               
 [124] stringi_1.8.4           viridisLite_0.4.2       deldir_2.0-4           
 [127] munsell_0.5.1           lazyeval_0.2.2          spatstat.geom_3.3-2    
-[130] Matrix_1.7-0            RcppHNSW_0.6.0          patchwork_1.2.0        
-[133] future_1.34.0           statmod_1.5.0           shiny_1.9.1            
-[136] highr_0.11              ROCR_1.0-11             ineq_0.2-13            
-[139] broom_1.0.6             igraph_2.0.3            bslib_0.8.0            </code></pre>
-</div>
+[130] Matrix_1.7-0            RcppHNSW_0.6.0          future_1.34.0          
+[133] statmod_1.5.0           shiny_1.9.1             highr_0.11             
+[136] ROCR_1.0-11             ineq_0.2-13             broom_1.0.6            
+[139] igraph_2.0.3            bslib_0.8.0            </code></pre>
 </div>
 </div>
 </div>

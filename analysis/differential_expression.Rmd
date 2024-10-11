@@ -39,7 +39,7 @@ metadata<-read.csv("/Volumes/bioinf/home/ndalvi/MACseq_PMC228/metadata/PMC228.cs
 raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/MACseq_PMC228/raw/PMC228/starsolo/SA_PMC228-null.Solo.out/Gene/raw')
 
 #filter by cpm>10 in at least 2 samples
-keep <- rowSums(cpm(raw_counts)>10) >= 2
+keep <- rowSums(edgeR::cpm(raw_counts)>10) >= 2
 raw_counts <- raw_counts[keep,]
 
 #filter for the minimum number of reads per gene per sample, as per edgeR
@@ -149,7 +149,7 @@ DGE_summary
 ### ORG38 {.tabset}
 
 #### Paclitaxel IC12.5 48H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG38.Paclitaxel_IC12.5.48H"
 treatment_2<-"ORG38.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -164,7 +164,7 @@ datatable(DEgenes)
 ```
 
 #### Paclitaxel IC25.0 48H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG38.Paclitaxel_IC25.48H"
 treatment_2<-"ORG38.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -182,7 +182,7 @@ datatable(DEgenes)
 ```
 
 #### Paclitaxel IC50 48H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG38.Paclitaxel_IC50.48H"
 treatment_2<-"ORG38.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -229,7 +229,7 @@ datatable(output[,c(3,4,5,7,12)])
 ```
 
 #### SN38 IC12.5 48H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG38.SN38_IC12.5.48H"
 treatment_2<-"ORG38.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -246,7 +246,7 @@ datatable(DEgenes)
 
 
 #### SN38 IC25.0 48H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG38.SN38_IC25.48H"
 treatment_2<-"ORG38.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -265,7 +265,7 @@ datatable(DEgenes)
 
 
 #### SN38 IC50 48H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG38.SN38_IC50.48H"
 treatment_2<-"ORG38.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -316,7 +316,7 @@ datatable(output[,c(3,4,5,7,12)])
 ### ORG49 {.tabset}
 
 #### Paclitaxel IC12.5 48H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG49.Paclitaxel_IC12.5.48H"
 treatment_2<-"ORG49.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -328,7 +328,7 @@ DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$lo
 In summary: 0 genes differentially expressed between Paclitaxel IC12.5 and DMSO at 48H
 
 #### Paclitaxel IC25.0 48H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG49.Paclitaxel_IC25.48H"
 treatment_2<-"ORG49.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -346,7 +346,7 @@ datatable(DEgenes)
 
 
 #### Paclitaxel IC50 48H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG49.Paclitaxel_IC50.48H"
 treatment_2<-"ORG49.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -390,7 +390,7 @@ datatable(output[,c(3,4,5,7,12)])
 ```
 
 #### SN38 IC12.5 48H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG49.SN38_IC12.5.48H"
 treatment_2<-"ORG49.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -403,7 +403,7 @@ DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$lo
 In summary: 0 genes differentially expressed between SN38 IC12.5 and DMSO at 48H
 
 #### SN38 IC25 48H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG49.SN38_IC25.48H"
 treatment_2<-"ORG49.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -420,7 +420,7 @@ datatable(DEgenes)
 ```
 
 #### SN38 IC50 48H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG49.SN38_IC50.48H"
 treatment_2<-"ORG49.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -470,7 +470,7 @@ datatable(output[,c(3,4,5,7,12)])
 ### ORG66 {.tabset}
 
 #### Paclitaxel IC12.5 48H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG66.Paclitaxel_IC12.5.48H"
 treatment_2<-"ORG66.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -485,7 +485,7 @@ datatable(DEgenes)
 ```
 
 #### Paclitaxel IC25.0 48H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG66.Paclitaxel_IC25.48H"
 treatment_2<-"ORG66.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -502,7 +502,7 @@ datatable(DEgenes)
 ```
 
 #### Paclitaxel IC50 48H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG66.Paclitaxel_IC50.48H"
 treatment_2<-"ORG66.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -546,7 +546,7 @@ datatable(output[,c(3,4,5,7,12)])
 ```
 
 #### SN38 IC12.5 48H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG66.SN38_IC12.5.48H"
 treatment_2<-"ORG66.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -562,7 +562,7 @@ datatable(DEgenes)
 
 
 #### SN38 IC25.0 48H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG66.SN38_IC25.48H"
 treatment_2<-"ORG66.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -578,7 +578,7 @@ datatable(DEgenes)
 ```
 
 #### SN38 IC50 48H -DMSO 48H
-```{r, fig.height=10, fig.width=18,warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
 treatment_1<-"ORG66.SN38_IC50.48H"
 treatment_2<-"ORG66.DMSO.48H"
 coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
@@ -621,87 +621,102 @@ output <- read.delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project
 datatable(output[,c(3,4,5,7,12)])
 ```
 
-### Heatmaps
-#### Organoids 
-```{r, fig.height=5, fig.width=5,warning=FALSE, message=FALSE, echo=FALSE}
-treatment_1<-"ORG38.Paclitaxel_IC50.48H"
-treatment_2<-"ORG38.DMSO.48H"
-coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
-DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
-DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
-gene_names <- c(rownames(DEgenes))
-gene_names <- gene_names[1:15]
-cd <- mac@assays$RNA$counts[gene_names,grepl(paste0(treatment_1),coldata$condition)]
-cd <- as.data.frame(cd)
-lcpm <- cpm(cd, log = T)
-pheatmap(lcpm)
+<!-- ### Heatmaps -->
+<!-- #### Organoids  -->
+<!-- ```{r, fig.height=5, fig.width=5,warning=FALSE, message=FALSE, echo=FALSE} -->
+<!-- treatment_1<-"ORG38.Paclitaxel_IC50.48H" -->
+<!-- treatment_2<-"ORG38.DMSO.48H" -->
+<!-- coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition) -->
+<!-- DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2) -->
+<!-- DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,] -->
+<!-- gene_names <- c(rownames(DEgenes)) -->
+<!-- gene_names <- gene_names[1:15] -->
+<!-- cd <- mac@assays$RNA$counts[gene_names,grepl(paste0(treatment_1),coldata$condition)] -->
+<!-- cd <- as.data.frame(cd) -->
+<!-- lcpm <- cpm(cd, log = T) -->
+<!-- pheatmap(lcpm) -->
 
-treatment_1<-"ORG49.Paclitaxel_IC50.48H"
-treatment_2<-"ORG49.DMSO.48H"
-coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
-DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
-DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
-gene_names <- c(rownames(DEgenes))
-gene_names <- gene_names[1:15]
-cd <- mac@assays$RNA$counts[gene_names,grepl(paste0(treatment_1),coldata$condition)]
-cd <- as.data.frame(cd)
-lcpm <- cpm(cd, log = T)
-pheatmap(lcpm)
+<!-- treatment_1<-"ORG49.Paclitaxel_IC50.48H" -->
+<!-- treatment_2<-"ORG49.DMSO.48H" -->
+<!-- coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition) -->
+<!-- DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2) -->
+<!-- DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,] -->
+<!-- gene_names <- c(rownames(DEgenes)) -->
+<!-- gene_names <- gene_names[1:15] -->
+<!-- cd <- mac@assays$RNA$counts[gene_names,grepl(paste0(treatment_1),coldata$condition)] -->
+<!-- cd <- as.data.frame(cd) -->
+<!-- lcpm <- cpm(cd, log = T) -->
+<!-- pheatmap(lcpm) -->
 
-treatment_1<-"ORG66.Paclitaxel_IC50.48H"
-treatment_2<-"ORG66.DMSO.48H"
-coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition)
-DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
-DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,]
-gene_names <- c(rownames(DEgenes))
-gene_names <- gene_names[1:15]
-cd <- mac@assays$RNA$counts[gene_names,grepl(paste0(treatment_1),coldata$condition)]
-cd <- as.data.frame(cd)
-lcpm <- cpm(cd, log = T)
-pheatmap(lcpm)
-```
-#### 24H vs 48H 
-ORG38 expression of differentially expressed genes (at 48H) at 24H and 48H after Paclitaxel IC50
+<!-- treatment_1<-"ORG66.Paclitaxel_IC50.48H" -->
+<!-- treatment_2<-"ORG66.DMSO.48H" -->
+<!-- coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition) -->
+<!-- DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2) -->
+<!-- DEgenes <- DEgenes[DEgenes$logFC>=1 & DEgenes$adj.P.Val<=FDR_cutoff | DEgenes$logFC<=-1 & DEgenes$adj.P.Val<=FDR_cutoff ,] -->
+<!-- gene_names <- c(rownames(DEgenes)) -->
+<!-- gene_names <- gene_names[1:15] -->
+<!-- cd <- mac@assays$RNA$counts[gene_names,grepl(paste0(treatment_1),coldata$condition)] -->
+<!-- cd <- as.data.frame(cd) -->
+<!-- lcpm <- cpm(cd, log = T) -->
+<!-- pheatmap(lcpm) -->
+<!-- ``` -->
 
-```{r, fig.height=5, fig.width=5,warning=FALSE, message=FALSE, echo=FALSE}
-# treatment_1<-"ORG38.Paclitaxel_IC50.48H"
-# treatment_2<-"ORG38.Paclitaxel_IC50.24H"
-# treatment_3<-"ORG38.DMSO.48H"
-# coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition, well=mac$Well_ID)
-# gene_names <- gene_names[1:10]
-# cd <- mac@assays$RNA$counts[gene_names,grepl(paste0(treatment_1,"|",treatment_2,"|",treatment_3),coldata$condition)]
-# cd <- as.data.frame(cd)
-# lcpm <- cpm(cd, log = T)
-# pheatmap(lcpm,border_color = 'NA')
+```{r}
+#ORG38
+resistance_genes <- c('MFAP2','CLDN1','TSPAN9','MLLT11','CCL26')
+counts <-  mac@assays$RNA$counts[resistance_genes,]
+barcodes <- metadata[metadata$Organoid=='ORG38' &
+                                metadata$Time=='48H',] 
+barcodes <- c(barcodes[barcodes$Treatment_1== 'DMSO' |barcodes$Treatment_1== 'Paclitaxel_IC50'|barcodes$Treatment_1== 'SN38_IC50'  , c("Barcode")])
+counts <- counts[,barcodes]
+counts <- as.data.frame(counts)
+pheatmap(counts)
 
-```
-
-ORG49 expression of differentially expressed genes (at 48H) at 24H and 48H after Paclitaxel IC50
-
-```{r, fig.height=5, fig.width=5,warning=FALSE, message=FALSE, echo=FALSE}
-# treatment_1<-"ORG49.Paclitaxel_IC50.48H"
-# treatment_2<-"ORG49.Paclitaxel_IC50.24H"
-# treatment_3<-"ORG49.DMSO.48H"
-# coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition, well=mac$Well_ID)
-# gene_names <- gene_names[1:108]
-# cd <- mac@assays$RNA$counts[gene_names,grepl(paste0(treatment_1,"|",treatment_2,"|",treatment_3),coldata$condition)]
-# cd <- as.data.frame(cd)
-# lcpm <- cpm(cd, log = T)
-# pheatmap(lcpm, border_color = 'NA')
-
+counts <-  mac@assays$RNA$counts[resistance_genes,]
+barcodes <- metadata[metadata$Organoid=='ORG38' &
+                                metadata$Time=='24H',] 
+barcodes <- c(barcodes[barcodes$Treatment_1== 'DMSO' |barcodes$Treatment_1== 'Paclitaxel_IC50'|barcodes$Treatment_1== 'SN38_IC50'  , c("Barcode")])
+counts <- counts[,barcodes]
+counts <- as.data.frame(counts)
+pheatmap(counts)
 ```
 
-ORG66 expression of differentially expressed genes (at 48H) at 24H and 48H after Paclitaxel IC50
+```{r}
+#ORG49
+resistance_genes <- c('MFAP2','CLDN1','TSPAN9','MLLT11','CCL26')
+counts <-  mac@assays$RNA$counts[resistance_genes,]
+barcodes <- metadata[metadata$Organoid=='ORG49' &
+                                metadata$Time=='48H',] 
+barcodes <- c(barcodes[barcodes$Treatment_1== 'DMSO' |barcodes$Treatment_1== 'Paclitaxel_IC50'|barcodes$Treatment_1== 'SN38_IC50'  , c("Barcode")])
+counts <- counts[,barcodes]
+counts <- as.data.frame(counts)
+pheatmap(counts)
 
-```{r, fig.height=5, fig.width=5,warning=FALSE, message=FALSE, echo=FALSE}
-# treatment_1<-"ORG66.Paclitaxel_IC50.48H"
-# treatment_2<-"OR66.Paclitaxel_IC50.24H"
-# treatment_3<-"ORG66.DMSO.48H"
-# coldata<-data.frame(batch=rep(1:4,each=96),condition=mac$analysis_condition, well=mac$Well_ID)
-# gene_names <- gene_names[1:100]
-# cd <- mac@assays$RNA$counts[gene_names,grepl(paste0(treatment_1,"|",treatment_2,"|",treatment_3),coldata$condition)]
-# cd <- as.data.frame(cd)
-# lcpm <- cpm(cd, log = T)
-# pheatmap(lcpm,border_color = 'NA')
+counts <-  mac@assays$RNA$counts[resistance_genes,]
+barcodes <- metadata[metadata$Organoid=='ORG49' &
+                                metadata$Time=='24H',] 
+barcodes <- c(barcodes[barcodes$Treatment_1== 'DMSO' |barcodes$Treatment_1== 'Paclitaxel_IC50'|barcodes$Treatment_1== 'SN38_IC50'  , c("Barcode")])
+counts <- counts[,barcodes]
+counts <- as.data.frame(counts)
+pheatmap(counts)
+```
 
+```{r}
+#ORG66
+resistance_genes <- c('MFAP2','CLDN1','TSPAN9','MLLT11','CCL26')
+counts <-  mac@assays$RNA$counts[resistance_genes,]
+barcodes <- metadata[metadata$Organoid=='ORG66' &
+                                metadata$Time=='48H',] 
+barcodes <- c(barcodes[barcodes$Treatment_1== 'DMSO' |barcodes$Treatment_1== 'Paclitaxel_IC50'|barcodes$Treatment_1== 'SN38_IC50'  , c("Barcode")])
+counts <- counts[,barcodes]
+counts <- as.data.frame(counts)
+pheatmap(counts)
+
+counts <-  mac@assays$RNA$counts[resistance_genes,]
+barcodes <- metadata[metadata$Organoid=='ORG66' &
+                                metadata$Time=='24H',] 
+barcodes <- c(barcodes[barcodes$Treatment_1== 'DMSO' |barcodes$Treatment_1== 'Paclitaxel_IC50'|barcodes$Treatment_1== 'SN38_IC50'  , c("Barcode")])
+counts <- counts[,barcodes]
+counts <- as.data.frame(counts)
+pheatmap(counts)
 ```

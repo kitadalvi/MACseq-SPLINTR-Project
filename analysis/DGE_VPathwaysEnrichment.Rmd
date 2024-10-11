@@ -54,7 +54,7 @@ ORG66_SN3850_48H_DE <- read_delim('/Users/dalvinikita/Documents/GitHub/MACseq-SP
 
 ## ORG 38 
 ### 48H timepoint comparisons
-```{r, label=org38_48H_plots, fig.height=15, fig,width=15}
+```{r, label=org38_48H_plots, fig.height=10, fig,width=15}
 
 #ORG38 Paclitaxel plot summary 
 ORG38_PAC50_48H_DE <- as.data.frame(ORG38_PAC50_48H_DE)
