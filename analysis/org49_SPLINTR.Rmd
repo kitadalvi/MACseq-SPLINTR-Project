@@ -80,8 +80,21 @@ barcode_data <- barcode_data[rowSums(barcode_data$counts) != 0, ]
 
 ### Entire Plate 
 Visualising proportion of barcodes in all ORG49 wells across both timepoints:
-```{r, fig.height=6, fig.width=10}
+```{r, fig.height=4, fig.width=5}
 plotBarcodeHistogram(barcode_data, topN = 10, alphaLowFreq = 0)
+
+dge.filtered <-
+  thresholdCounts(
+    barcode_data,
+    type = "absolute",
+    threshold = 10,
+    minSamples = 1,
+    plot = F
+  )
+
+p2 <- plotBarcodeHistogram(dge.filtered[,c("H05",'H06','H07','H08','D05','D06','D07','D08','K05','K06','K07','K08')], topN = 25, alphaLowFreq = 0)  
+
+p2 + geom_bar(position="stack", stat="identity", width=,show.legend = FALSE)
 ```
 
 ## Proportional Bubble Plots 

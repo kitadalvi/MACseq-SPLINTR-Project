@@ -83,6 +83,17 @@ barcode_data <- barcode_data[rowSums(barcode_data$counts) != 0, ]
 Visualising proportion of barcodes in all ORG38 wells across both timepoints:
 ```{r, fig.height=6, fig.width=10}
 plotBarcodeHistogram(barcode_data, topN = 10, alphaLowFreq = 0)  
+
+dge.filtered <-
+  thresholdCounts(
+    barcode_data,
+    type = "absolute",
+    threshold = 10,
+    minSamples = 1,
+    plot = F
+  )
+
+plotBarcodeHistogram(dge.filtered[,c("H12",'H13','H14','H15','D12','D13','D14','D15','K12','K13','K14','K15')], topN = 20, alphaLowFreq = 0)   
 ```
 
 ## Proportional Bubble Plots 
@@ -100,6 +111,7 @@ p1<- plotBarcodeBubble(barcode_data,
                   group='Treatment')
 
 p1
+
 ```
 
 #### Paclitaxel

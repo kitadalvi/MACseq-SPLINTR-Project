@@ -52,10 +52,11 @@ ORG66_SN3850_48H_DE <- read_delim('/Users/dalvinikita/Documents/GitHub/MACseq-SP
 
 • p value threshold for GSEA analysis = 0.005
 
+
+
 ## ORG 38 
 ### 48H timepoint comparisons
 ```{r, label=org38_48H_plots, fig.height=10, fig,width=25}
-
 #ORG38 Paclitaxel plot summary 
 ORG38_PAC50_48H_DE <- as.data.frame(ORG38_PAC50_48H_DE)
 
@@ -90,6 +91,11 @@ p2 <- cnetplot(ORG38_SN3850_48H_gse,
          color.params=list(category='black'))+ ggtitle('ORG38 SN38 IC50')
 
 p2 + scale_color_gradientn(colours = c("red3", "blue"))
+
+### Dotplots
+```{r, fig.height=8, fig,width=3}
+dotplot(ORG38_PAC50_48H_gse,showCategory=20) + ggtitle("ORG38, Paclitaxel IC50 dotplot")
+dotplot(ORG38_SN3850_48H_gse,showCategory=20) + ggtitle("ORG38, SN38 IC50 dotplot")
 ```
 
 ## ORG 49
@@ -132,6 +138,12 @@ p2 <- cnetplot(ORG49_SN3850_48H_gse,
 p2 + scale_color_gradientn(colours = c("red3", "blue"))
 ```
 
+### Dotplots
+```{r, label=dotplots, fig.height=8, fig,width=3}
+dotplot(ORG49_PAC50_48H_gse,showCategory=20) + ggtitle("ORG49, Paclitaxel IC50 dotplot")
+dotplot(ORG49_SN3850_48H_gse,showCategory=20) + ggtitle("ORG49, SN38 IC50 dotplot")
+```
+
 ## ORG 66
 ### 48H timepoint comparisons
 ```{r, label=org66_48H_plots, fig.height=12, fig,width=25}
@@ -170,4 +182,9 @@ p2 <- cnetplot(ORG66_SN3850_48H_gse,
 
 p2 + scale_color_gradientn(colours = c("red3", "blue"))
 
+```
+### Dotplots
+```{r, label= dotplots66, fig.height=8, fig,width=3}
+dotplot(ORG66_PAC50_48H_gse,showCategory=20) + ggtitle("ORG66, Paclitaxel IC50 dotplot")
+dotplot(ORG66_SN3850_48H_gse,showCategory=20) + ggtitle("ORG66, SN38 IC50 dotplot")
 ```
