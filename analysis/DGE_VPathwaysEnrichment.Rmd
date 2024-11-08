@@ -56,7 +56,7 @@ ORG66_SN3850_48H_DE <- read_delim('/Users/dalvinikita/Documents/GitHub/MACseq-SP
 
 ## ORG 38 
 ### 48H timepoint comparisons
-```{r, label=org38_48H_plots, fig.height=10, fig,width=25}
+```{r, label=org38_48H_plots, fig.height=15, fig,width=20}
 #ORG38 Paclitaxel plot summary 
 ORG38_PAC50_48H_DE <- as.data.frame(ORG38_PAC50_48H_DE)
 
@@ -93,9 +93,11 @@ p2 <- cnetplot(ORG38_SN3850_48H_gse,
 p2 + scale_color_gradientn(colours = c("red3", "blue"))
 
 ### Dotplots
-```{r, fig.height=8, fig,width=3}
+
 dotplot(ORG38_PAC50_48H_gse,showCategory=20) + ggtitle("ORG38, Paclitaxel IC50 dotplot")
 dotplot(ORG38_SN3850_48H_gse,showCategory=20) + ggtitle("ORG38, SN38 IC50 dotplot")
+
+
 ```
 
 ## ORG 49
@@ -175,7 +177,8 @@ names(fc) <- gene_names
 p2 <- cnetplot(ORG66_SN3850_48H_gse, 
          foldChange=fc,
          node_label='gene',
-         showCategory=c('cell division','mitotic cell cycle','chromosome segregation','spindle assembly','organelle fission','cell cycle process'),
+         showCategory=6,
+         #showCategory=c('cell division','mitotic cell cycle','chromosome segregation','spindle assembly','organelle fission','cell cycle process'),
          colorEdge=TRUE,
          cex.params = list(category_label=1.5),
          color.params=list(category='black')) + ggtitle('ORG66 SN38 IC50')

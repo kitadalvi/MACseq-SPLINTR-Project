@@ -81,7 +81,7 @@ barcode_data <- barcode_data[rowSums(barcode_data$counts) != 0, ]
 
 ### Entire Plate 
 Visualising proportion of barcodes in all ORG38 wells across both timepoints:
-```{r, fig.height=6, fig.width=10}
+```{r, fig.height=5, fig.width=6}
 plotBarcodeHistogram(barcode_data, topN = 10, alphaLowFreq = 0)  
 
 dge.filtered <-
@@ -93,7 +93,7 @@ dge.filtered <-
     plot = F
   )
 
-plotBarcodeHistogram(dge.filtered[,c("H12",'H13','H14','H15','D12','D13','D14','D15','K12','K13','K14','K15')], topN = 20, alphaLowFreq = 0)   
+plotBarcodeHistogram(dge.filtered[,c("H12",'H13','H14','H15','D12','D13','D14','D15','K12','K13','K14','K15')], topN = 20, alphaLowFreq = 0) + ggtitle("Top 20 barcodes in ORG38")
 ```
 
 ## Proportional Bubble Plots 
