@@ -838,6 +838,7 @@ EnhancedVolcano(DEgenes,
                 legendPosition = 'right')
 ```
 ### In-built MAC-seq function by treatment within an organoid {.tabset}
+
 #### ORG38 
 ```{r}
 #DE analysis of ORG38 barcodes in Paclitaxel at 48H
@@ -868,7 +869,7 @@ EnhancedVolcano(DEgenes,
                 lab=rownames(DEgenes),
                 pCutoff = 0.05,
                 FCcutoff = 1.0, 
-                title= "ORG38 Paclitaxel IC50 48H",
+                title= "ORG38 SN38 IC50 48H",
                 subtitle="SPLINTR vs unlabelled samples", 
                 legendPosition = 'right')
 ```
