@@ -766,7 +766,7 @@ diff_exprs_voomLmFit<-function(treatment_1,treatment_2,max.overlaps=30){
 ```
 
 #### Whole plate
-```{r}
+```{r, echo=TRUE}
 #DE analysis of entire plate
 treatment_1<-"no_barcodes"
 treatment_2<-"barcodes"
@@ -784,7 +784,7 @@ EnhancedVolcano(DEgenes,
 ```
 
 #### ORG38
-```{r}
+```{r, echo=TRUE}
 #DE analysis of ORG38 barcodes VS no barcodes
 treatment_1<-"ORG38.no_barcodes.48H"
 treatment_2<-"ORG38.barcodes.48H"
@@ -802,7 +802,7 @@ EnhancedVolcano(DEgenes,
 ```
 
 #### ORG49
-```{r}
+```{r, echo=TRUE}
 #DE analysis of ORG49 barcodes VS no barcodes
 treatment_1<-"ORG49.no_barcodes.48H"
 treatment_2<-"ORG49.barcodes.48H"
@@ -820,7 +820,7 @@ EnhancedVolcano(DEgenes,
 ```
 
 #### ORG66
-```{r, fig.width=10}
+```{r, fig.width=10, echo =TRUE}
 #DE analysis of ORG49 barcodes VS no barcodes
 treatment_1<-"ORG66.no_barcodes.48H"
 treatment_2<-"ORG66.barcodes.48H"
@@ -840,7 +840,7 @@ EnhancedVolcano(DEgenes,
 ### In-built MAC-seq function by treatment within an organoid {.tabset}
 
 #### ORG38 
-```{r}
+```{r, echo=TRUE}
 #DE analysis of ORG38 barcodes in Paclitaxel at 48H
 treatment_1<-"ORG38.barcodes.Paclitaxel_IC50.48H"
 treatment_2<-"ORG38.no_barcodes.Paclitaxel_IC50.48H"
@@ -876,37 +876,37 @@ EnhancedVolcano(DEgenes,
 
 #### ORG49
 ```{r}
-#DE analysis of ORG49 barcodes in Paclitaxel at 48H
-treatment_1<-"ORG49.barcodes.Paclitaxel_IC50.48H"
-treatment_2<-"ORG49.no_barcodes.Paclitaxel_IC50.48H"
-coldata<-data.frame(batch=rep(1,384),condition=mac$barcode_treatment_condition)
-DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
-
-EnhancedVolcano(DEgenes, 
-                x='logFC',
-                y='adj.P.Val', 
-                lab=rownames(DEgenes),
-                pCutoff = 0.05,
-                FCcutoff = 1.0, 
-                title= "ORG49 Paclitaxel IC50 48H",
-                subtitle="SPLINTR vs unlabelled samples", 
-                legendPosition = 'right')
-
-#DE analysis of ORG49 barcodes in SN38 at 48H
-treatment_1<-"ORG49.barcodes.SN38_IC50.48H"
-treatment_2<-"ORG49.no_barcodes.SN38_IC50.48H"
-coldata<-data.frame(batch=rep(1,384),condition=mac$barcode_treatment_condition)
-DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
-
-EnhancedVolcano(DEgenes, 
-                x='logFC',
-                y='adj.P.Val', 
-                lab=rownames(DEgenes),
-                pCutoff = 0.05,
-                FCcutoff = 1.0, 
-                title= "ORG49 Paclitaxel IC50 48H",
-                subtitle="SPLINTR vs unlabelled samples", 
-                legendPosition = 'right')
+# #DE analysis of ORG49 barcodes in Paclitaxel at 48H
+# treatment_1<-"ORG49.barcodes.Paclitaxel_IC50.48H"
+# treatment_2<-"ORG49.no_barcodes.Paclitaxel_IC50.48H"
+# coldata<-data.frame(batch=rep(1,384),condition=mac$barcode_treatment_condition)
+# DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
+# 
+# EnhancedVolcano(DEgenes, 
+#                 x='logFC',
+#                 y='adj.P.Val', 
+#                 lab=rownames(DEgenes),
+#                 pCutoff = 0.05,
+#                 FCcutoff = 1.0, 
+#                 title= "ORG49 Paclitaxel IC50 48H",
+#                 subtitle="SPLINTR vs unlabelled samples", 
+#                 legendPosition = 'right')
+# 
+# #DE analysis of ORG49 barcodes in SN38 at 48H
+# treatment_1<-"ORG49.barcodes.SN38_IC50.48H"
+# treatment_2<-"ORG49.no_barcodes.SN38_IC50.48H"
+# coldata<-data.frame(batch=rep(1,384),condition=mac$barcode_treatment_condition)
+# DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
+# 
+# EnhancedVolcano(DEgenes, 
+#                 x='logFC',
+#                 y='adj.P.Val', 
+#                 lab=rownames(DEgenes),
+#                 pCutoff = 0.05,
+#                 FCcutoff = 1.0, 
+#                 title= "ORG49 Paclitaxel IC50 48H",
+#                 subtitle="SPLINTR vs unlabelled samples", 
+#                 legendPosition = 'right')
 ```
 
 #### ORG 66
