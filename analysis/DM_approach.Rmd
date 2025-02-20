@@ -5,7 +5,7 @@ date: "2025-01-15"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, message = FALSE, fig.height = 7, fig.width = 7)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning=FALSE, fig.height = 7, fig.width = 7)
 ```
 
 ```{r}
@@ -104,7 +104,7 @@ colnames(mac)<- mac$label
 
 ## Visualisation {.tabset}
 
-###ORG38
+### ORG38
 
 ORG 38 PCA plots grouped by SPLINTR label:
 ```{r, fig.height=12, fig.width=16, fig.align='left'}
@@ -159,7 +159,7 @@ Looking at the difference between labelled and unlabelled samples in ONLY ORG38 
 ```{r}
 ### selecting metadata and countdata relevant for ORG 38
 ### subset metadata to include only ORG38 cells at 48H
-columns <- metadata[metadata$Organoid=='ORG38',]
+columns <- metadata[metadata$Organoid=='ORG38'& metadata$Time=='48H',]
 
 ### select only metadata relating to treatment concentration of interest (IC50)
 columns <- columns[columns$Treatment_1!='STAUR',]
@@ -177,18 +177,18 @@ Design Matrix, including factors for:
 
 • Concentration (IC12.5, IC25, IC50)
 
-• Time (24H, 48H)
+
+Design Matrix:
 
 ```{r, echo=TRUE}
 ### factors to include in deisgn matrix: SPLINTR group and treatment
 group <- sampleinfo$SPLINTR
 treatment <- sampleinfo$Drug
 concentration <- sampleinfo$Concentration
-time <- sampleinfo$Time
 
 ### set up design matrix
 ### without intercept (means model)
-design <- model.matrix(~0+group+treatment+concentration+time)
+design <- model.matrix(~0+group+treatment+concentration)
 rownames(design) <- rownames(sampleinfo)
 datatable(design)
 ```
@@ -218,7 +218,7 @@ Creating a design matrix to assess whether there is an interaction ocurring betw
 
 • Concentration 
 
-• Time
+Design Matrix:
 
 ```{r, echo=TRUE}
 ### Creating new design matrix for interaction between barcode and drug
@@ -227,7 +227,7 @@ group <- sampleinfo$interaction_condition
 
 ### set up design matrix
 ### without intercept (means model)
-design <- model.matrix(~0+group+concentration+time)
+design <- model.matrix(~0+group+concentration)
 rownames(design) <- rownames(sampleinfo)
 datatable(design)
 ```
@@ -273,11 +273,12 @@ datatable(SN38andBC_interaction)
 ### ORG49 {.tabset .tabset-pills}
 
 #### Labelled VS Unlabeled
+
 Looking at the difference between labelled and unlabelled samples in ONLY ORG49 cells.
 ```{r}
 ### selecting metadata and countdata relevant for ORG 49
 ### subset metadata to include only ORG49 cells at 48H
-columns <- metadata[metadata$Organoid=='ORG49',]
+columns <- metadata[metadata$Organoid=='ORG49'& metadata$Time=='48H',]
 
 ### select only metadata relating to treatment concentration of interest (IC50)
 columns <- columns[columns$Treatment_1!='STAUR',]
@@ -295,18 +296,17 @@ Design Matrix, including factors for:
 
 • Concentration (IC12.5, IC25, IC50)
 
-• Time (24H, 48H)
+Design Matrix:
 
 ```{r, echo=TRUE}
 ### factors to include in deisgn matrix: SPLINTR group and treatment
 group <- sampleinfo$SPLINTR
 treatment <- sampleinfo$Drug
 concentration <- sampleinfo$Concentration
-time <- sampleinfo$Time
 
 ### set up design matrix
 ### without intercept (means model)
-design <- model.matrix(~0+group+treatment+concentration+time)
+design <- model.matrix(~0+group+treatment+concentration)
 rownames(design) <- rownames(sampleinfo)
 datatable(design)
 ```
@@ -337,7 +337,7 @@ Creating a design matrix to assess whether there is an interaction ocurring betw
 
 • Concentration 
 
-• Time
+Design Matrix:
 
 ```{r, echo=TRUE}
 ### Creating new design matrix for interaction between barcode and drug
@@ -346,7 +346,7 @@ group <- sampleinfo$interaction_condition
 
 ### set up design matrix
 ### without intercept (means model)
-design <- model.matrix(~0+group+concentration+time)
+design <- model.matrix(~0+group+concentration)
 rownames(design) <- rownames(sampleinfo)
 datatable(design)
 ```
@@ -397,7 +397,7 @@ Looking at the difference between labelled and unlabelled samples in ONLY ORG66 
 ```{r}
 ### selecting metadata and countdata relevant for ORG66
 ### subset metadata to include only ORG66 cells at 48H
-columns <- metadata[metadata$Organoid=='ORG66',]
+columns <- metadata[metadata$Organoid=='ORG66'& metadata$Time=='48H',]
 
 ### select only metadata relating to treatment concentration of interest (IC50)
 columns <- columns[columns$Treatment_1!='STAUR',]
@@ -415,18 +415,17 @@ Design Matrix, including factors for:
 
 • Concentration (IC12.5, IC25, IC50)
 
-• Time (24H, 48H)
+Design Matrix:
 
 ```{r, echo=TRUE}
 ### factors to include in deisgn matrix: SPLINTR group and treatment
 group <- sampleinfo$SPLINTR
 treatment <- sampleinfo$Drug
 concentration <- sampleinfo$Concentration
-time<- sampleinfo$Time
 
 ### set up design matrix
 ### without intercept (means model)
-design <- model.matrix(~0+group+treatment+concentration+time)
+design <- model.matrix(~0+group+treatment+concentration)
 rownames(design) <- rownames(sampleinfo)
 datatable(design)
 ```
@@ -457,7 +456,7 @@ Creating a design matrix to assess whether there is an interaction ocurring betw
 
 • Concentration 
 
-• Time
+Design Matrix:
 
 ```{r, echo=TRUE}
 ### Creating new design matrix for interaction between barcode and drug
@@ -466,8 +465,9 @@ group <- sampleinfo$interaction_condition
 
 ### set up design matrix
 ### without intercept (means model)
-design <- model.matrix(~0+group+concentration+time)
+design <- model.matrix(~0+group+concentration)
 rownames(design) <- rownames(sampleinfo)
+datatable(design)
 ```
 
 Creating contrasts to look at the difference between (SPLINTR label + Drug) and (No SPLINTR label + Drug) for both Paclitaxel and SN38 :
@@ -521,7 +521,6 @@ Looking at differences between labelled and unlabelled samples across the entire
 
 • Concentration (IC12.5, IC25, IC50)
 
-• Time (24H, 48H)
 ```{r}
 ### selecting metadata and countdata relevant for ORG38 and ORG49
 ### subset metadata to include only  cells at 48H
@@ -544,6 +543,9 @@ concentration <- sampleinfo$Concentration
 ```
 
 ### SPLINTR Labels
+
+Design Matrix:
+
 ```{r}
 ### set up design matrix
 ### without intercept (means model)
@@ -553,6 +555,7 @@ datatable(design)
 ```
 
 Creating contrast to look at difference between (SPL1 + SPL2) and unlabelled samples across the entire plate:
+
 ```{r, echo=TRUE}
 ### make contrasts
 ### control VS the rest
@@ -570,6 +573,9 @@ datatable(unlabelledVSlabelled_genes)
 ```
 
 ### Label + Drug interaction
+
+Design Matrix:
+
 ```{r, echo=TRUE}
 ### Creating new design matrix for interaction between barcode and drug
 ### factors to include = interaction treatment and concentration
@@ -591,6 +597,7 @@ sn38VSdmso<-makeContrasts(((groupSN38.SPL1+groupSN38.SPL2)/2-(groupDMSO.SPL1+gro
 ```
 
 For Paclitaxel + Barcode interaction:
+
 ```{r, echo=TRUE}
 ### following limma workflow
 ### interaction between PAC and barcodes
@@ -605,6 +612,7 @@ datatable(PACandBC_interaction)
 ```
 
 For SN38 + Barcode interaction:
+
 ```{r, echo=TRUE}
 ### following limma workflow
 ### interaction between SN38 and barcodes
@@ -947,6 +955,6 @@ p1 <- cnetplot(output,
 p1 + scale_color_gradientn(colours = c("red3", "blue")) 
 ```
 
-#### Comparing Results
-### Research > Cellomics data > Cytation 10 
+### Comparing Results
+
 
