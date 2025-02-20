@@ -26,6 +26,7 @@ library(clusterProfiler)
 library(dplyr)
 library(pheatmap)
 library(EnhancedVolcano)
+library(msigdbr)
 ```
 
 ```{r, warning=FALSE}
@@ -35,8 +36,6 @@ metadata<-read.csv("/Volumes/bioinf/home/ndalvi/MACseq_PMC228/metadata/PMC228.cs
   mutate(id=gsub("Plate","",Plate_ID)) %>%
   mutate(label=paste0(Treatment_1,
                       " ","(",Well_ID,")")) %>%
-  mutate(barcode_condition=paste0(Organoid,".",SPLINTR,".",Time)) %>%
-  mutate(barcode_treatment_condition=paste0(Organoid,".",SPLINTR,".",Treatment_1,".",Time)) %>%
   mutate(analysis_condition=paste0(Organoid,".",Treatment_1,".",Time))
 
 #load in count data 
@@ -155,7 +154,7 @@ DGE_summary
 ### ORG38 {.tabset}
 #### Paclitaxel IC12.5 48H -DMSO 48H
 ```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
-treatment_1<-"ORG38.Paclitaxel_IC12.5.48H"
+treatment_1<-"ORG38.PAC_IC12.5.48H"
 treatment_2<-"ORG38.DMSO.48H"
 coldata<-data.frame(batch=rep(1,384),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
@@ -170,13 +169,13 @@ datatable(DEgenes)
 
 #### Paclitaxel IC25.0 48H -DMSO 48H
 ```{r, fig.height=7, fig.width=7,warning=FALSE, message=FALSE, echo=FALSE}
-treatment_1<-"ORG38.Paclitaxel_IC25.48H"
+treatment_1<-"ORG38.PAC_IC25.48H"
 treatment_2<-"ORG38.DMSO.48H"
 coldata<-data.frame(batch=rep(1,384),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
 
 
- EnhancedVolcano(DEgenes,
+EnhancedVolcano(DEgenes,
                 lab = rownames(DEgenes),
                 x = 'logFC',
                 y = 'adj.P.Val')
@@ -195,7 +194,7 @@ datatable(DEgenes)
 
 #### Paclitaxel IC50 48H -DMSO 48H
 ```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
-treatment_1<-"ORG38.Paclitaxel_IC50.48H"
+treatment_1<-"ORG38.PAC_IC50.48H"
 treatment_2<-"ORG38.DMSO.48H"
 coldata<-data.frame(batch=rep(1,384),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
@@ -329,7 +328,7 @@ datatable(output[,c(3,4,5,7,12)])
 
 #### Paclitaxel IC12.5 48H -DMSO 48H
 ```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
-treatment_1<-"ORG49.Paclitaxel_IC12.5.48H"
+treatment_1<-"ORG49.PAC_IC12.5.48H"
 treatment_2<-"ORG49.DMSO.48H"
 coldata<-data.frame(batch=rep(1,384),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
@@ -341,7 +340,7 @@ In summary: 0 genes differentially expressed between Paclitaxel IC12.5 and DMSO 
 
 #### Paclitaxel IC25.0 48H -DMSO 48H
 ```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
-treatment_1<-"ORG49.Paclitaxel_IC25.48H"
+treatment_1<-"ORG49.PAC_IC25.48H"
 treatment_2<-"ORG49.DMSO.48H"
 coldata<-data.frame(batch=rep(1,384),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
@@ -359,7 +358,7 @@ datatable(DEgenes)
 
 #### Paclitaxel IC50 48H -DMSO 48H
 ```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
-treatment_1<-"ORG49.Paclitaxel_IC50.48H"
+treatment_1<-"ORG49.PAC_IC50.48H"
 treatment_2<-"ORG49.DMSO.48H"
 coldata<-data.frame(batch=rep(1,384),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
@@ -483,7 +482,7 @@ datatable(output[,c(3,4,5,7,12)])
 
 #### Paclitaxel IC12.5 48H -DMSO 48H
 ```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
-treatment_1<-"ORG66.Paclitaxel_IC12.5.48H"
+treatment_1<-"ORG66.PAC_IC12.5.48H"
 treatment_2<-"ORG66.DMSO.48H"
 coldata<-data.frame(batch=rep(1,384),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
@@ -498,7 +497,7 @@ datatable(DEgenes)
 
 #### Paclitaxel IC25.0 48H -DMSO 48H
 ```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
-treatment_1<-"ORG66.Paclitaxel_IC25.48H"
+treatment_1<-"ORG66.PAC_IC25.48H"
 treatment_2<-"ORG66.DMSO.48H"
 coldata<-data.frame(batch=rep(1,384),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
@@ -515,7 +514,7 @@ datatable(DEgenes)
 
 #### Paclitaxel IC50 48H -DMSO 48H
 ```{r, fig.height=10, fig.width=10,warning=FALSE, message=FALSE, echo=FALSE}
-treatment_1<-"ORG66.Paclitaxel_IC50.48H"
+treatment_1<-"ORG66.PAC_IC50.48H"
 treatment_2<-"ORG66.DMSO.48H"
 coldata<-data.frame(batch=rep(1,384),condition=mac$analysis_condition)
 DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
@@ -534,24 +533,24 @@ datatable(DEgenes)
 Enriched pathways for differentially expressed genes:
 ```{r}
 #enrichment analysis#
-gene_list <- DEgenes[,c(1)]
-names(gene_list) <- DEgenes$genes
-gene_list = sort(gene_list, decreasing = TRUE)
-
-gse <- gseGO(geneList=gene_list,
-             ont ="ALL",
-             keyType = "ALIAS",
-             minGSSize = 3,
-             maxGSSize = 400,
-             pvalueCutoff = 0.005,
-             verbose = TRUE,
-             OrgDb = "org.Hs.eg.db",
-             pAdjustMethod = "none")
-saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG66/PAC_50_48H_gse.rds')
-output <- as.data.frame(gse@result)
-output <- output[order(output$pvalue),]
-rownames(output)<- NULL
-write.table(output, row.names = FALSE, quote=FALSE, col.names = TRUE, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/enrichedPathways/ORG66/PAC_IC50_48H.txt', sep='\t')
+# gene_list <- DEgenes[,c(1)]
+# names(gene_list) <- DEgenes$genes
+# gene_list = sort(gene_list, decreasing = TRUE)
+# 
+# gse <- gseGO(geneList=gene_list,
+#              ont ="ALL",
+#              keyType = "ALIAS",
+#              minGSSize = 3,
+#              maxGSSize = 400,
+#              pvalueCutoff = 0.005,
+#              verbose = TRUE,
+#              OrgDb = "org.Hs.eg.db",
+#              pAdjustMethod = "none")
+# saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG66/PAC_50_48H_gse.rds')
+# output <- as.data.frame(gse@result)
+# output <- output[order(output$pvalue),]
+# rownames(output)<- NULL
+# write.table(output, row.names = FALSE, quote=FALSE, col.names = TRUE, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/enrichedPathways/ORG66/PAC_IC50_48H.txt', sep='\t')
 
 output <- read.delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/enrichedPathways/ORG66/PAC_IC50_48H.txt', header = TRUE)
 datatable(output[,c(3,4,5,7,12)])
@@ -659,7 +658,7 @@ Looking specifically at genes involved in resistance and drug transport (ABS, SL
 • EIF4A2, EEF1D
 
 ```{r}
-# re-load count data because we ant to keep all genes:
+# re-load count data because we want to keep all genes:
 #load in count data 
 raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/MACseq_PMC228/raw/PMC228/starsolo/SA_PMC228-null.Solo.out/Gene/raw')
 
@@ -692,8 +691,7 @@ colnames(data)<- data$label
 for (organoid in orgs) {
   counts <-  data@assays$RNA$counts[transport_genes,]
   columns <- metadata[metadata$Organoid==organoid &
-                                metadata$Time=='48H' &
-                        !metadata$Labelled=='unlabelled',]
+                                metadata$Time=='48H',]
   columns <- c(columns[columns$Treatment_1== 'DMSO' |columns$Treatment_1== 'Paclitaxel_IC50'|columns$Treatment_1== 'SN38_IC50', c("label")])
   counts <- counts[,columns] %>%
     as.data.frame() 
@@ -708,9 +706,8 @@ for (organoid in orgs) {
 for (organoid in orgs) {
   counts <-  data@assays$RNA$counts[paclitaxel_resistance_genes,]
   columns <- metadata[metadata$Organoid==organoid &
-                                metadata$Time=='48H' &
-                        !metadata$Labelled=='unlabelled',]
-  columns <- c(columns[columns$Treatment_1== 'DMSO' |columns$Treatment_1== 'Paclitaxel_IC50', c("label")])
+                                metadata$Time=='48H',]
+  columns <- c(columns[columns$Treatment_1== 'DMSO' |columns$Treatment_1== 'SN38_IC50'|columns$Treatment_1== 'Paclitaxel_IC50', c("label")])
   counts <- counts[,columns] %>%
     as.data.frame() 
   counts <- counts[!is.infinite(rowSums(counts)),]
@@ -724,8 +721,7 @@ for (organoid in orgs) {
 for (organoid in orgs) {
   counts <-  data@assays$RNA$counts[sn38_resistance_genes,]
   columns <- metadata[metadata$Organoid==organoid &
-                                metadata$Time=='48H' &
-                        !metadata$Labelled=='unlabelled',]
+                                metadata$Time=='48H',]
   columns <- c(columns[columns$Treatment_1== 'DMSO' |columns$Treatment_1== 'SN38_IC50'|columns$Treatment_1== 'Paclitaxel_IC50', c("label")])
   counts <- counts[,columns] %>%
     as.data.frame() 
@@ -733,268 +729,120 @@ for (organoid in orgs) {
   paste(a)
 }
 ```
+#### Housekeeping Genes 
+```{r}
+# load human gene sets from MSigDB
+# select genes from "HOUSEKEEPING GENES" gene set only
+cgp_gene_sets = msigdbr(species = "human", category = "C2", subcategory = "CGP")
+housekeeping_genes <- cgp_gene_sets[cgp_gene_sets$gs_name=='HSIAO_HOUSEKEEPING_GENES',c('gene_symbol')]
 
-## Labelled VS Unlabelled expression profiles
-### In-built MAC-seq function by organoid {.tabset}
-Function used in MAC-seq package for differential expression analysis:
-```{r, echo=TRUE}
-#Editing MAC-seq DE function to return topTable object instead of dataframe
-diff_exprs_voomLmFit<-function(treatment_1,treatment_2,max.overlaps=30){
-  countData<-mac@assays$RNA$counts[,grepl(paste0(treatment_1,"|",treatment_2),coldata$condition)]
-  coldata_temp<-coldata[grepl(paste0(treatment_1,"|",treatment_2),coldata$condition),]
-  group = coldata_temp$condition
-# batch = coldata_temp$batch
-  design = model.matrix(~0+group)
-  edgeR<-DGEList(
-    counts = countData+1,
-    samples = coldata_temp$condition,
-    group = coldata_temp$condition
-  )
-  edgeR <- calcNormFactors(edgeR,methods="TMMwsp")
-  edgeR <- estimateDisp(edgeR,design)
-  cpm <- edgeR::cpm(edgeR,log=T)
-  #fit <- glmQLFit(edgeR, design)
-  fit <- edgeR::voomLmFit(edgeR, design)
-  myargs = list(paste0("group",treatment_1,"-",paste0("group",treatment_2)), levels=design)
-  contrasts <- do.call(makeContrasts, myargs)
-  tmp <- contrasts.fit(fit, contrasts)
-  tmp <- eBayes(tmp)
-  top.table <- topTable(tmp, sort.by = "P", n = Inf)
+# keep only genes in the geneset that also appear in filtered counts data
+gene_names <- c(rownames(data@assays$RNA$counts))
+housekeeping_genes <- subset(housekeeping_genes, gene_symbol %in% gene_names)
+housekeeping_genes <- c(housekeeping_genes$gene_symbol)
 
-  return(top.table)
+#Creating heatmaps
+for (organoid in orgs) {
+  counts <-  data@assays$RNA$counts[housekeeping_genes,]
+  columns <- metadata[metadata$Organoid==organoid &
+                                metadata$Time=='48H',]
+  new_metadata <-columns[columns$Organoid==paste0(organoid),]
+  columns <- c(columns[columns$Treatment_1== 'DMSO' |columns$Treatment_1== 'SN38_IC50'|columns$Treatment_1== 'Paclitaxel_IC50', c("label")])
+  counts <- counts[,columns] %>%
+    as.data.frame() 
+  counts <- counts[!is.infinite(rowSums(counts)),]
+  sample_annotation_df <- data.frame(SPLINTR = new_metadata$SPLINTR) 
+  rownames(sample_annotation_df) <- new_metadata$label
+  a <- pheatmap(counts,
+                annotation_col = sample_annotation_df,
+                main = paste('MSigDB human housekeeping genes in',organoid))
+  paste(a)
+}
+
+### Using HKGs from Bulk RNA-seq
+# load HKGs from bulk RNAseq
+hkg = read.table('/Users/dalvinikita/Downloads/HK_genes.txt', header = FALSE)
+housekeeping_genes <- data.frame(gene_symbol=hkg$V1)
+
+# keep only genes in the geneset that also appear in filtered counts data
+gene_names <- c(rownames(data@assays$RNA$counts))
+housekeeping_genes <- subset(housekeeping_genes, gene_symbol %in% gene_names)
+housekeeping_genes <- c(housekeeping_genes$gene_symbol)
+
+#Creating heatmaps
+for (organoid in orgs) {
+  counts <-  data@assays$RNA$counts[housekeeping_genes,]
+  columns <- metadata[metadata$Organoid==organoid &
+                                metadata$Time=='48H',]
+  new_metadata <-columns[columns$Organoid==paste0(organoid),]
+  columns <- c(columns[columns$Treatment_1== 'DMSO' |columns$Treatment_1== 'SN38_IC50'|columns$Treatment_1== 'Paclitaxel_IC50', c("label")])
+  counts <- counts[,columns] %>%
+    as.data.frame() 
+  counts <- counts[!is.infinite(rowSums(counts)),]
+  sample_annotation_df <- data.frame(SPLINTR = new_metadata$SPLINTR) 
+  rownames(sample_annotation_df) <- new_metadata$label
+  a <- pheatmap(counts,
+                annotation_col = sample_annotation_df,
+                main = paste('HKGs from RNAseq in',organoid))
+  paste(a)
+}
+```
+#### DE Genes 
+```{r}
+# load DE genes for Paclitaxel IC50 at 48H
+org38_pacDE <- read.delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG38/PAC_IC50_48H.txt', header = TRUE)
+org49_pacDE <- read.delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG49/PAC_IC50_48H.txt', header = TRUE)
+org66_pacDE <- read.delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG66/PAC_IC50_48H.txt', header = TRUE)
+pac <- list(ORG38=org38_pacDE,ORG49=org49_pacDE,ORG66=org66_pacDE)
+
+# load DE genes for SN38 IC50 at 48H
+org38_sn38DE <- read.delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG38/SN38_IC50_48H.txt', header = TRUE)
+org49_sn38DE <- read.delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG49/SN38_IC50_48H.txt', header = TRUE)
+org66_sn38DE <- read.delim('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/DEgenes/ORG66/SN38_IC50_48H.txt', header = TRUE)
+sn38 <- list(ORG38=org38_sn38DE,ORG49=org49_sn38DE,ORG66=org66_sn38DE )
+
+for (organoid in orgs) {
+  DEgenes <- pac[paste(organoid)]
+  DEgenes <- c(DEgenes[[1]]$genes)
+  counts <-  data@assays$RNA$counts[DEgenes,]
+  columns <- metadata[metadata$Organoid==organoid &
+                                metadata$Time=='48H',]
+  new_metadata <-columns[columns$Organoid==paste0(organoid),]
+  columns <- c(columns[columns$Treatment_1== 'DMSO' |columns$Treatment_1== 'SN38_IC50'|columns$Treatment_1== 'Paclitaxel_IC50', c("label")])
+  counts <- counts[,columns] %>%
+    as.data.frame() 
+  counts <- counts[!is.infinite(rowSums(counts)),]
+  sample_annotation_df <- data.frame(SPLINTR = new_metadata$SPLINTR) 
+  rownames(sample_annotation_df) <- new_metadata$label
+  a <- pheatmap(counts,
+                annotation_col = sample_annotation_df,
+                main = paste('Paclitaxel DE genes in',organoid),
+                border_color = 'NA',
+                cellwidth = 10)
+  paste(a)
+}
+
+for (organoid in orgs) {
+  DEgenes <- sn38[paste(organoid)]
+  DEgenes <- c(DEgenes[[1]]$genes)
+  counts <-  data@assays$RNA$counts[DEgenes,]
+  columns <- metadata[metadata$Organoid==organoid &
+                                metadata$Time=='48H',]
+  new_metadata <-columns[columns$Organoid==paste0(organoid),]
+  columns <- c(columns[columns$Treatment_1== 'DMSO' |columns$Treatment_1== 'SN38_IC50'|columns$Treatment_1== 'Paclitaxel_IC50', c("label")])
+  counts <- counts[,columns] %>%
+    as.data.frame() 
+  counts <- counts[!is.infinite(rowSums(counts)),]
+  sample_annotation_df <- data.frame(SPLINTR = new_metadata$SPLINTR) 
+  rownames(sample_annotation_df) <- new_metadata$label
+  a <- pheatmap(counts,
+                annotation_col = sample_annotation_df,
+                main = paste('SN38 DE genes in',organoid),
+                border_color = 'NA',
+                cellwidth = 10)
+  paste(a)
 }
 ```
 
-#### Whole plate
-```{r, echo=TRUE}
-#DE analysis of entire plate
-treatment_1<-"no_barcodes"
-treatment_2<-"barcodes"
-coldata<-data.frame(batch=rep(1,384),condition=mac$SPLINTR)
-DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
-EnhancedVolcano(DEgenes, 
-                x='logFC',
-                y='adj.P.Val', 
-                lab=rownames(DEgenes),
-                pCutoff = 0.05,
-                FCcutoff = 1.0, 
-                title= "Volcano plot of SPLINTR labelled VS unlabelled samples",
-                subtitle="In entire 384 well plate")
-
-```
-
-#### ORG38
-```{r, echo=TRUE}
-#DE analysis of ORG38 barcodes VS no barcodes
-treatment_1<-"ORG38.no_barcodes.48H"
-treatment_2<-"ORG38.barcodes.48H"
-coldata<-data.frame(batch=rep(1,384),condition=mac$barcode_condition)
-DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
-
-EnhancedVolcano(DEgenes, 
-                x='logFC',
-                y='adj.P.Val', 
-                lab=rownames(DEgenes),
-                pCutoff = 0.05,
-                FCcutoff = 1.0, 
-                title= "Volcano plot of SPLINTR labelled VS unlabelled samples",
-                subtitle="In ORG38 samples")
-```
-
-#### ORG49
-```{r, echo=TRUE}
-#DE analysis of ORG49 barcodes VS no barcodes
-treatment_1<-"ORG49.no_barcodes.48H"
-treatment_2<-"ORG49.barcodes.48H"
-coldata<-data.frame(batch=rep(1,384),condition=mac$barcode_condition)
-DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
-
-EnhancedVolcano(DEgenes, 
-                x='logFC',
-                y='adj.P.Val', 
-                lab=rownames(DEgenes),
-                pCutoff = 0.05,
-                FCcutoff = 1.0, 
-                title= "Volcano plot of SPLINTR labelled VS unlabelled samples",
-                subtitle="In ORG49 samples")
-```
-
-#### ORG66
-```{r, fig.width=10, echo =TRUE}
-#DE analysis of ORG49 barcodes VS no barcodes
-treatment_1<-"ORG66.no_barcodes.48H"
-treatment_2<-"ORG66.barcodes.48H"
-coldata<-data.frame(batch=rep(1,384),condition=mac$barcode_condition)
-DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
-
-EnhancedVolcano(DEgenes, 
-                x='logFC',
-                y='adj.P.Val', 
-                lab=rownames(DEgenes),
-                pCutoff = 0.05,
-                FCcutoff = 1.0, 
-                title= "Volcano plot of SPLINTR labelled VS unlabelled samples",
-                subtitle="In ORG66 samples", 
-                legendPosition = 'right')
-```
-### In-built MAC-seq function by treatment within an organoid {.tabset}
-
-#### ORG38 
-```{r, echo=TRUE}
-#DE analysis of ORG38 barcodes in Paclitaxel at 48H
-treatment_1<-"ORG38.barcodes.Paclitaxel_IC50.48H"
-treatment_2<-"ORG38.no_barcodes.Paclitaxel_IC50.48H"
-coldata<-data.frame(batch=rep(1,384),condition=mac$barcode_treatment_condition)
-DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
-
-EnhancedVolcano(DEgenes, 
-                x='logFC',
-                y='adj.P.Val', 
-                lab=rownames(DEgenes),
-                pCutoff = 0.05,
-                FCcutoff = 1.0, 
-                title= "ORG38 Paclitaxel IC50 48H",
-                subtitle="SPLINTR vs unlabelled samples", 
-                legendPosition = 'right')
-
-#DE analysis of ORG38 barcodes in SN38 at 48H
-treatment_1<-"ORG38.barcodes.SN38_IC50.48H"
-treatment_2<-"ORG38.no_barcodes.SN38_IC50.48H"
-coldata<-data.frame(batch=rep(1,384),condition=mac$barcode_treatment_condition)
-DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
-
-EnhancedVolcano(DEgenes, 
-                x='logFC',
-                y='adj.P.Val', 
-                lab=rownames(DEgenes),
-                pCutoff = 0.05,
-                FCcutoff = 1.0, 
-                title= "ORG38 SN38 IC50 48H",
-                subtitle="SPLINTR vs unlabelled samples", 
-                legendPosition = 'right')
-```
-
-#### ORG49
-```{r}
-# #DE analysis of ORG49 barcodes in Paclitaxel at 48H
-# treatment_1<-"ORG49.barcodes.Paclitaxel_IC50.48H"
-# treatment_2<-"ORG49.no_barcodes.Paclitaxel_IC50.48H"
-# coldata<-data.frame(batch=rep(1,384),condition=mac$barcode_treatment_condition)
-# DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
-# 
-# EnhancedVolcano(DEgenes, 
-#                 x='logFC',
-#                 y='adj.P.Val', 
-#                 lab=rownames(DEgenes),
-#                 pCutoff = 0.05,
-#                 FCcutoff = 1.0, 
-#                 title= "ORG49 Paclitaxel IC50 48H",
-#                 subtitle="SPLINTR vs unlabelled samples", 
-#                 legendPosition = 'right')
-# 
-# #DE analysis of ORG49 barcodes in SN38 at 48H
-# treatment_1<-"ORG49.barcodes.SN38_IC50.48H"
-# treatment_2<-"ORG49.no_barcodes.SN38_IC50.48H"
-# coldata<-data.frame(batch=rep(1,384),condition=mac$barcode_treatment_condition)
-# DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
-# 
-# EnhancedVolcano(DEgenes, 
-#                 x='logFC',
-#                 y='adj.P.Val', 
-#                 lab=rownames(DEgenes),
-#                 pCutoff = 0.05,
-#                 FCcutoff = 1.0, 
-#                 title= "ORG49 Paclitaxel IC50 48H",
-#                 subtitle="SPLINTR vs unlabelled samples", 
-#                 legendPosition = 'right')
-```
-
-#### ORG 66
-```{r}
-#DE analysis of ORG66 barcodes in Paclitaxel at 48H
-treatment_1<-"ORG66.barcodes.Paclitaxel_IC50.48H"
-treatment_2<-"ORG66.no_barcodes.Paclitaxel_IC50.48H"
-coldata<-data.frame(batch=rep(1,384),condition=mac$barcode_treatment_condition)
-DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
-
-EnhancedVolcano(DEgenes, 
-                x='logFC',
-                y='adj.P.Val', 
-                lab=rownames(DEgenes),
-                pCutoff = 0.05,
-                FCcutoff = 1.0, 
-                title= "ORG66 Paclitaxel IC50 48H",
-                subtitle="SPLINTR vs unlabelled samples", 
-                legendPosition = 'right')
-
-#DE analysis of ORG66 barcodes in SN38 at 48H
-treatment_1<-"ORG66.barcodes.SN38_IC50.48H"
-treatment_2<-"ORG66.no_barcodes.SN38_IC50.48H"
-coldata<-data.frame(batch=rep(1,384),condition=mac$barcode_treatment_condition)
-DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
-
-EnhancedVolcano(DEgenes, 
-                x='logFC',
-                y='adj.P.Val', 
-                lab=rownames(DEgenes),
-                pCutoff = 0.05,
-                FCcutoff = 1.0, 
-                title= "ORG66 Paclitaxel IC50 48H",
-                subtitle="SPLINTR vs unlabelled samples", 
-                legendPosition = 'right')
-```
-
-### Manually
-```{r}
-#Barcodes VS no barcodes in the entire plate
-#Taking into consideration: Organoid, treatment, Barcodes, Time
-coldata<-data.frame(batch=rep(1,384),barcodes=mac$SPLINTR, org=mac$Organoid, treatment=mac$Treatment_1, time=as.character(mac$Time))
-treatment_1<-"barcodes"
-treatment_2<-"no_barcodes"
-treatment_3<- "Paclitaxel_IC50"
-treatment_4 <- "SN38_IC50"
-treatment_5 <- "DMSO"
-treatment_6 <- "48H"
 
 
-coldata_temp<-coldata[coldata$barcodes=='barcodes' |coldata$barcodes== 'no_barcodes',]
-coldata_temp<-coldata_temp[coldata_temp$time=="48H",]
-coldata_temp<-coldata_temp[coldata_temp$treatment=="Paclitaxel_IC50" | coldata_temp$treatment=="SN38_IC50" |coldata_temp$treatment=="DMSO",]
-
-rows_of_interest <- rownames(coldata_temp)
-countData<-mac@assays$RNA$counts[,c(rows_of_interest)]
-
-group = coldata_temp$barcodes
-org = coldata_temp$org
-time = coldata_temp$time
-treatment = coldata_temp$treatment
-design = model.matrix(~0+group+org+treatment)
-edgeR<-DGEList(
-    counts = countData+1,
-    time = coldata_temp$time,
-    organoid = coldata_temp$org,
-    treatment=coldata$treatment,
-    group = coldata_temp$barcodes
-  )
-edgeR <- calcNormFactors(edgeR,methods="TMMwsp")
-edgeR <- estimateDisp(edgeR,design)
-cpm <- edgeR::cpm(edgeR,log=T)
-fit <- edgeR::voomLmFit(edgeR, design)
-myargs = list(paste0("group",treatment_1,"-",paste0("group",treatment_2)), levels=design)
-contrasts <- do.call(makeContrasts, myargs)
-tmp <- contrasts.fit(fit, contrasts)
-tmp <- eBayes(tmp)
-top.table <- topTable(tmp, sort.by = "P", n = Inf)
-
-EnhancedVolcano(DEgenes, 
-                x='logFC',
-                y='adj.P.Val', 
-                lab=rownames(DEgenes),
-                pCutoff = 0.05,
-                FCcutoff = 1.0, 
-                title= "Volcano plot of SPLINTR labelled VS unlabelled samples",
-                subtitle="In entire plate", 
-                legendPosition = 'right')
-
-DEgenes <- top.table[top.table$logFC>1 | top.table$logFC< -1 & top.table$adj.P.Val<0.05,]
-```

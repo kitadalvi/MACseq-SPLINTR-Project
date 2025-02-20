@@ -135,10 +135,15 @@ pca_plots <- function(df, type){
   p7<-DimPlot(seurat_object, group.by= 'Cell_type',pt.size = 2)
   p8 <- DimPlot(seurat_object, group.by = 'Treatment_1',pt.size = 2)
   p9 <- DimPlot(seurat_object, group.by = 'seurat_clusters',pt.size = 2)
-  ggarrange(p1,p2,p3,p4,p5,p6,p7,p8,p9, nrow=3, ncol=3)
+  p10<- DimPlot(seurat_object, group.by= 'Treatment_1',pt.size = 2, dims = c(3,4))
+  p11<-DimPlot(seurat_object, group.by= 'Treatment_1',pt.size = 2, dims = c(5,6))
+  p12<-DimPlot(seurat_object, group.by= 'Treatment_1',pt.size = 2, dims = c(7,8))
+  ggarrange(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12, nrow=4, ncol=3)
 }
 
 pca_plots(mac, 'all')
+
+
 ```
 
 #### ORG49
@@ -169,7 +174,13 @@ pca_plots <- function(df, type){
   p7<-DimPlot(seurat_object, group.by= 'Cell_type',pt.size = 2)
   p8 <- DimPlot(seurat_object, group.by = 'Treatment_1',pt.size = 2)
   p9 <- DimPlot(seurat_object, group.by = 'seurat_clusters',pt.size = 2)
-  ggarrange(p1,p2,p3,p4,p5,p6,p7,p8,p9, nrow=3, ncol=3)
+  p10<- DimPlot(seurat_object, group.by= 'Treatment_1',pt.size = 2, dims = c(3,4))
+  p11<-DimPlot(seurat_object, group.by= 'Treatment_1',pt.size = 2, dims = c(5,6))
+  p12<-DimPlot(seurat_object, group.by= 'Treatment_1',pt.size = 2, dims = c(7,8))
+  ggarrange(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12, nrow=4, ncol=3)
+  
+  #p10 <- DimPlot(seurat_object, pt.size = 4, group.by = 'Cell_type', split.by='Treatment_1', ncol=4, shape.by = "Time")
+  
 }
 
 pca_plots(mac, 'ORG49')
