@@ -509,7 +509,7 @@ datatable(SN38andBC_interaction)
 ```
 
 
-## Combined Design Matrix (all ORGs) {.tabset . tabset-pills}
+## Combined Design Matrix (all ORGs) {.tabset .tabset-pills}
 
 Looking at differences between labelled and unlabelled samples across the entire plate. Factors to include in design matrix:
 
@@ -626,9 +626,9 @@ SN38andBC_interaction <- topTable(fit, n=Inf, p.value = 1.00)
 datatable(SN38andBC_interaction)
 ```
 
-### Replicating DE results {.tabset .tabset-pills}
-#### Entire Plate 
-##### Differential Expression
+## Replicating DE results {.tabset .tabset-pills}
+### Entire Plate 
+#### Differential Expression
 ```{r, fig.height=8, fig.width=15}
 ### Creating new contrast to look at difference between paclitaxel and DMSO 
 ### Across all ORGS
@@ -653,7 +653,7 @@ pacVSdmso_genes <- pacVSdmso_genes[pacVSdmso_genes$adj.P.Val<0.05,]
 pheatmap(v[rownames(pacVSdmso_genes),])
 ```
 
-##### Pathway Analysis
+#### Pathway Analysis
 ```{r, fig.height=20, fig.width=20}
 # ### Running enrichment analysis
 # gene_list <- pacVSdmso_genes[,c(1)]
@@ -696,8 +696,8 @@ p1 <- cnetplot(output,
 p1 + scale_color_gradientn(colours = c("red3", "blue")) 
 ```
 
-#### ORG38 
-##### Differential Expression
+### ORG38 
+#### Differential Expression
 ```{r}
 ### selecting metadata and countdata relevant for ORG 38
 ### subset metadata to include only ORG38 cells at 48H
@@ -739,7 +739,7 @@ EnhancedVolcano(pacVSdmso_genes, lab=rownames(pacVSdmso_genes), x='logFC', y='ad
 pacVSdmso_genes['genes']<- rownames(pacVSdmso_genes)
 pacVSdmso_genes <- pacVSdmso_genes[pacVSdmso_genes$adj.P.Val<0.05,]
 ```
-##### Pathway Analysis
+#### Pathway Analysis
 ```{r}
 # gene_list <- pacVSdmso_genes[,c(1)]
 # names(gene_list) <- pacVSdmso_genes$genes
@@ -782,8 +782,8 @@ p1 <- cnetplot(output,
 p1 + scale_color_gradientn(colours = c("red3", "blue")) 
 ```
 
-#### ORG49
-##### Differential Expression
+### ORG49
+#### Differential Expression
 ```{r}
 ### selecting metadata and countdata relevant for ORG 49
 ### subset metadata to include only ORG49 cells at 48H
@@ -826,7 +826,7 @@ pacVSdmso_genes['genes']<- rownames(pacVSdmso_genes)
 pacVSdmso_genes <- pacVSdmso_genes[pacVSdmso_genes$adj.P.Val<0.05,]
 ```
 
-##### Pathway Analysis
+#### Pathway Analysis
 ```{r}
 # gene_list <- pacVSdmso_genes[,c(1)]
 # names(gene_list) <- pacVSdmso_genes$genes
@@ -869,8 +869,8 @@ p1 <- cnetplot(output,
 p1 + scale_color_gradientn(colours = c("red3", "blue")) 
 ```
 
-#### ORG66
-##### Differential Expression
+### ORG66
+#### Differential Expression
 ```{r}
 ### selecting metadata and countdata relevant for ORG66
 ### subset metadata to include only ORG66 cells at 48H
@@ -913,7 +913,7 @@ pacVSdmso_genes['genes']<- rownames(pacVSdmso_genes)
 pacVSdmso_genes <- pacVSdmso_genes[pacVSdmso_genes$adj.P.Val<0.05,]
 ```
 
-##### Pathway Analysis
+#### Pathway Analysis
 ```{r}
 # gene_list <- pacVSdmso_genes[,c(1)]
 # names(gene_list) <- pacVSdmso_genes$genes
