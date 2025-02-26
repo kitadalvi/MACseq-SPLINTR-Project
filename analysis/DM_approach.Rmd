@@ -739,6 +739,7 @@ EnhancedVolcano(pacVSdmso_genes, lab=rownames(pacVSdmso_genes), x='logFC', y='ad
 pacVSdmso_genes['genes']<- rownames(pacVSdmso_genes)
 pacVSdmso_genes <- pacVSdmso_genes[pacVSdmso_genes$adj.P.Val<0.05,]
 ```
+
 #### Pathway Analysis
 ```{r}
 # gene_list <- pacVSdmso_genes[,c(1)]
@@ -954,7 +955,3 @@ p1 <- cnetplot(output,
 
 p1 + scale_color_gradientn(colours = c("red3", "blue")) 
 ```
-
-### Comparing Results
-
-
