@@ -210,6 +210,29 @@ unlabelledVSlabelled_genes <- topTable(fit, n=Inf, p.value = 1)
 datatable(unlabelledVSlabelled_genes)
 ```
 
+```{r}
+### Pathway analysis of genes 
+genes <- unlabelledVSlabelled_genes[unlabelledVSlabelled_genes$adj.P.Val<0.05,]
+genes['genes']<- rownames(genes)
+
+gene_list <- genes[,c(1)]
+names(gene_list) <- genes$genes
+gene_list = sort(gene_list, decreasing = TRUE)
+
+gse <- gseGO(geneList=gene_list,
+             ont ="BP",
+             keyType = "ALIAS",
+             minGSSize = 3,
+             maxGSSize = 500,
+             pvalueCutoff = 0.05,
+             verbose = TRUE,
+             OrgDb = "org.Hs.eg.db",
+             pAdjustMethod = "none")
+
+p1<- dotplot(gse) 
+p1+ scale_color_gradientn(colours = c("red3", "blue")) 
+```
+
 #### Drug + SPLINTR Labels Interaction
 
 Creating a design matrix to assess whether there is an interaction ocurring between a drug + the SPLINTR label that is affecting gene transcription. Factors:
@@ -268,6 +291,23 @@ fit <- contrasts.fit(fit, sn38VSdmso)
 fit <- eBayes(fit)
 SN38andBC_interaction <- topTable(fit, n=Inf, p.value = 1)
 datatable(SN38andBC_interaction)
+```
+
+Both drugs together:
+```{r}
+### make contrast
+drugsVSdmso <- makeContrasts(((groupPACLITAXEL.SPL1+groupPACLITAXEL.SPL2+groupSN38.SPL1+groupSN38.SPL2)/4-(groupDMSO.SPL1+groupDMSO.SPL2)/2)-((groupPACLITAXEL.UNLABELLED+groupSN38.UNLABELLED)/2-groupDMSO.UNLABELLED), levels=colnames(design))
+
+### following limma workflow
+### interaction between both drugs together and barcodes
+counts <- mac[,columns]
+counts<-counts@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, drugsVSdmso)
+fit <- eBayes(fit)
+drugsandBC_interaction <- topTable(fit, n=Inf, p.value = 1)
+datatable(drugsandBC_interaction)
 ```
 
 ### ORG49 {.tabset .tabset-pills}
@@ -329,6 +369,29 @@ unlabelledVSlabelled_genes <- topTable(fit, n=Inf, p.value = 1)
 datatable(unlabelledVSlabelled_genes)
 ```
 
+```{r}
+### Pathway analysis of genes 
+genes <- unlabelledVSlabelled_genes[unlabelledVSlabelled_genes$adj.P.Val<0.05,]
+genes['genes']<- rownames(genes)
+
+gene_list <- genes[,c(1)]
+names(gene_list) <- genes$genes
+gene_list = sort(gene_list, decreasing = TRUE)
+
+gse <- gseGO(geneList=gene_list,
+             ont ="BP",
+             keyType = "ALIAS",
+             minGSSize = 3,
+             maxGSSize = 500,
+             pvalueCutoff = 0.05,
+             verbose = TRUE,
+             OrgDb = "org.Hs.eg.db",
+             pAdjustMethod = "none")
+
+p1<- dotplot(gse) 
+p1+ scale_color_gradientn(colours = c("red3", "blue")) 
+```
+
 #### Drug + SPLINTR Labels Interaction
 
 Creating a design matrix to assess whether there is an interaction ocurring between a drug + the SPLINTR label that is affecting gene transcription. Factors:
@@ -387,6 +450,23 @@ fit <- contrasts.fit(fit, sn38VSdmso)
 fit <- eBayes(fit)
 SN38andBC_interaction <- topTable(fit, n=Inf, p.value = 1)
 datatable(SN38andBC_interaction)
+```
+
+Both drugs together:
+```{r}
+### make contrast
+drugsVSdmso <- makeContrasts(((groupPACLITAXEL.SPL1+groupPACLITAXEL.SPL2+groupSN38.SPL1+groupSN38.SPL2)/4-(groupDMSO.SPL1+groupDMSO.SPL2)/2)-((groupPACLITAXEL.UNLABELLED+groupSN38.UNLABELLED)/2-groupDMSO.UNLABELLED), levels=colnames(design))
+
+### following limma workflow
+### interaction between both drugs together and barcodes
+counts <- mac[,columns]
+counts<-counts@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, drugsVSdmso)
+fit <- eBayes(fit)
+drugsandBC_interaction <- topTable(fit, n=Inf, p.value = 1)
+datatable(drugsandBC_interaction)
 ```
 
 ### ORG66 {.tabset .tabset-pills}
@@ -448,6 +528,29 @@ unlabelledVSlabelled_genes <- topTable(fit, n=Inf, p.value = 1.00)
 datatable(unlabelledVSlabelled_genes)
 ```
 
+```{r}
+### Pathway analysis of genes 
+genes <- unlabelledVSlabelled_genes[unlabelledVSlabelled_genes$adj.P.Val<0.05,]
+genes['genes']<- rownames(genes)
+
+gene_list <- genes[,c(1)]
+names(gene_list) <- genes$genes
+gene_list = sort(gene_list, decreasing = TRUE)
+
+gse <- gseGO(geneList=gene_list,
+             ont ="BP",
+             keyType = "ALIAS",
+             minGSSize = 3,
+             maxGSSize = 500,
+             pvalueCutoff = 0.05,
+             verbose = TRUE,
+             OrgDb = "org.Hs.eg.db",
+             pAdjustMethod = "none")
+
+p1<- dotplot(gse) 
+p1+ scale_color_gradientn(colours = c("red3", "blue")) 
+```
+
 #### Drug + SPLINTR Labels Interaction
 
 Creating a design matrix to assess whether there is an interaction ocurring between a drug + the SPLINTR label that is affecting gene transcription. Factors:
@@ -508,6 +611,22 @@ SN38andBC_interaction <- topTable(fit, n=Inf, p.value = 1)
 datatable(SN38andBC_interaction)
 ```
 
+Both drugs together:
+```{r}
+### make contrast
+drugsVSdmso <- makeContrasts(((groupPACLITAXEL.SPL1+groupPACLITAXEL.SPL2+groupSN38.SPL1+groupSN38.SPL2)/4-(groupDMSO.SPL1+groupDMSO.SPL2)/2)-((groupPACLITAXEL.UNLABELLED+groupSN38.UNLABELLED)/2-groupDMSO.UNLABELLED), levels=colnames(design))
+
+### following limma workflow
+### interaction between both drugs together and barcodes
+counts <- mac[,columns]
+counts<-counts@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, drugsVSdmso)
+fit <- eBayes(fit)
+drugsandBC_interaction <- topTable(fit, n=Inf, p.value = 1)
+datatable(drugsandBC_interaction)
+```
 
 ## Combined Design Matrix (all ORGs) {.tabset .tabset-pills}
 
