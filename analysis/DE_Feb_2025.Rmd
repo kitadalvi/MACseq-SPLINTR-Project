@@ -4,8 +4,8 @@ output: html_document
 date: "2025-02-25"
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning=FALSE, fig.height = 7, fig.width = 7)
+```{r setup, include=FALSE, echo = FALSE, message =FALSE, warning=FALSE,fig.height=10, fig.width=8}
+knitr::opts_chunk$set(echo = FALSE, message =FALSE, warning=FALSE,fig.height=10, fig.width=8)
 ```
 
 ```{r}
@@ -89,12 +89,17 @@ mac<-mac[!grepl("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA",rownames(mac))]
 # mac@assays$RNA$counts <- log1p(mac@assays$RNA$counts)
 colnames(mac)<- mac$label
 
+### removing edge wells 
+### removing wells treated with STAUR
+metadata <- metadata[metadata$Treatment_1!='STAUR', ]
+metadata <- metadata[metadata$interaction_condition!='.', ]
+mac <- mac[,c(metadata$label)]
 ```
 
 ## Design Matrix 
 Design Matrix:
 
-```{r, echo=TRUE}
+```{r}
 ### factors to include in deisgn matrix: SPLINTR group and treatment
 group <- metadata$interaction_condition
 treatment <- metadata$Drug
@@ -112,13 +117,13 @@ datatable(design)
 ```{r}
 ### make contrasts
 ### contrast = (Drug_L - DMSO_L) - (Drug_U - DMSO_U)
-pacVSdmso <- makeContrasts((groupPACLITAXEL.SPL1+ groupPACLITAXEL.SPL2+ groupPACLITAXEL.UNLABELLED/3) -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED/3), levels = colnames(design))
+pacVSdmso <- makeContrasts((groupPACLITAXEL.SPL1+ groupPACLITAXEL.SPL2+ groupPACLITAXEL.UNLABELLED)/3 -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED)/3, levels = colnames(design))
 
-sn38VSdmso<-makeContrasts((groupSN38.SPL1+ groupSN38.SPL2+ groupSN38.UNLABELLED/3) -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED/3), levels = colnames(design))
+sn38VSdmso<-makeContrasts((groupSN38.SPL1+ groupSN38.SPL2+ groupSN38.UNLABELLED)/3 -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED)/3, levels = colnames(design))
 ```
 
 #### Paclitaxel
-```{r, echo=TRUE}
+```{r}
 ### following limma workflow
 ### interaction between PAC and barcodes
 counts <- mac
@@ -127,12 +132,50 @@ v <- voom(counts, design)
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, pacVSdmso)
 fit <- eBayes(fit)
-pac_genes <- topTable(fit, n=Inf, p.value = 0.05)
-create_dt(pac_genes)
+pac_genes <- topTable(fit, n=Inf, p.value = 1.00)
+create_dt(pac_genes[abs(pac_genes$logFC)>1,] )
+
+keyvals <- ifelse(
+    pac_genes$logFC < -1, 'darkred',
+      ifelse(pac_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+
+volcano_plot <- EnhancedVolcano(pac_genes,
+                                title="Paclitaxel VS DMSO",
+                                subtitle="Entire Plate",
+                                lab=rownames(pac_genes),
+                                selectLab = c("MSLN","S100P","LGALS1","KRT13","SNRPN","LCN2","MSMB","PSCA","CYSRT1","GDF15"),
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+
+volcano_plot
+```
+
+```{r}
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',sum(pac_genes$adj.P.Val<0.05 & abs(pac_genes$logFC)>1))
+up <- paste('• UPREGULATED:',sum(pac_genes$adj.P.Val<0.05 & pac_genes$logFC>1))
+down <- paste('• DOWNREGULATED:',sum(pac_genes$adj.P.Val<0.05 & pac_genes$logFC< -1))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
 ```
 
 #### SN38 
-```{r, echo=TRUE}
+```{r}
 ### following limma workflow
 ### interaction between PAC and barcodes
 counts <- mac
@@ -141,8 +184,46 @@ v <- voom(counts, design)
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, sn38VSdmso)
 fit <- eBayes(fit)
-sn38_genes <- topTable(fit, n=Inf, p.value = 0.05)
-create_dt(sn38_genes)
+sn38_genes <- topTable(fit, n=Inf, p.value = 1.00)
+create_dt(sn38_genes[abs(sn38_genes$logFC)>1 & sn38_genes$adj.P.Val<0.05,] )
+
+keyvals <- ifelse(
+    sn38_genes$logFC < -1, 'darkred',
+      ifelse(sn38_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+
+volcano_plot <- EnhancedVolcano(sn38_genes,
+                                title="SN38 VS DMSO",
+                                subtitle="Entire Plate",
+                                lab=rownames(sn38_genes),
+                                selectLab = c("TFF2","TFF3","CAVIN3","PTMS","BEX3","CCK","PAX8-AS1","PRSS2","ADIRF","GDPD3"),
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+
+volcano_plot
+```
+
+```{r}
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',sum(sn38_genes$adj.P.Val<0.05 & abs(sn38_genes$logFC)>1))
+up <- paste('• UPREGULATED:',sum(sn38_genes$adj.P.Val<0.05 & sn38_genes$logFC>1))
+down <- paste('• DOWNREGULATED:',sum(sn38_genes$adj.P.Val<0.05 & sn38_genes$logFC< -1))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
 ```
 
 ## ORG 38
@@ -160,10 +241,10 @@ Factors to include in design matrix:
 ```{r}
 ### selecting metadata and countdata relevant for ORG 38
 ### subset metadata to include only ORG38 cells at 48H
-columns <- metadata[metadata$Organoid=='ORG38'& metadata$Time=='48H',]
+columns <- metadata[metadata$Organoid=='ORG38'&metadata$Time=='48H',]
 
 ### select only metadata relating to treatment concentration of interest (IC50)
-columns <- columns[columns$Treatment_1!='STAUR',]
+#columns <- columns[columns$Treatment_1!='STAUR',]
 sampleinfo <- columns
 columns <- c(columns[,c("label")])
 
@@ -174,10 +255,11 @@ counts <- mac[,columns]
 group <- sampleinfo$interaction_condition
 treatment<- sampleinfo$Drug
 concentration <- sampleinfo$Concentration
+time <- sampleinfo$Time_2
 
 ### set up design matrix
 ### without intercept (means model)
-design <- model.matrix(~0+group+concentration)
+design <- model.matrix(~0+group+concentration+time)
 rownames(design) <- rownames(sampleinfo)
 datatable(design)
 ```
@@ -190,7 +272,7 @@ Volcano plot of differentially expressed genes between Paclitaxel (all concentra
 ### create contrast
 ### PAC VS DMSO across all concentrations and times
 ### Only ORG 38
-pacVSdmso <- makeContrasts((groupPACLITAXEL.SPL1+ groupPACLITAXEL.SPL2+ groupPACLITAXEL.UNLABELLED/3) -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED/3), levels = colnames(design))
+pacVSdmso <- makeContrasts((groupPACLITAXEL.SPL1+ groupPACLITAXEL.SPL2+ groupPACLITAXEL.UNLABELLED)/3 -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED)/3, levels = colnames(design))
 
 ### following limma workflow
 ### difference between PAC and DMSO across concentrations, at 48H only
@@ -202,23 +284,55 @@ fit <- contrasts.fit(fit, pacVSdmso)
 fit <- eBayes(fit)
 pacVSdmso_genes <- topTable(fit, n=Inf)
 
-volcano_plot <- EnhancedVolcano(pacVSdmso_genes, lab=rownames(pacVSdmso_genes), x='logFC', y='adj.P.Val', pCutoff=0.05, border="full")
+keyvals <- ifelse(
+    pacVSdmso_genes$logFC < -1, 'darkred',
+      ifelse(pacVSdmso_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+volcano_plot <- EnhancedVolcano(pacVSdmso_genes,
+                                title="Paclitaxel VS DMSO",
+                                subtitle="ORG38",
+                                lab=rownames(pacVSdmso_genes),
+                                selectLab = c("KRT13","PRSS22","MUC4","SLC2A6","SPNS2","ANXA11","MEA1","RAD51AP1","RNASEH2A","PDLIM4"),
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                xlim=c(-3,4), 
+                                ylim=c(0,6),
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
 volcano_plot
+
 ```
-In total: 560 genes differentially expressed:
 
-• 313 upregulated.
-
-• 247 downregulated. 
-
-Datatable of Differentially expressed genes:
 ```{r}
 ### Datatable of DE genes
-pacVSdmso_genes <- pacVSdmso_genes[pacVSdmso_genes$adj.P.Val<0.05,]
+pacVSdmso_genes <- pacVSdmso_genes[pacVSdmso_genes$adj.P.Val<0.05 & abs(pacVSdmso_genes$logFC)>1,]
 create_dt(pacVSdmso_genes)
 
 ### Preparing data for pathway analysis
 pacVSdmso_genes['genes']<- rownames(pacVSdmso_genes)
+```
+
+
+```{r}
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',sum(pacVSdmso_genes$adj.P.Val<0.05 & abs(pacVSdmso_genes$logFC)>1))
+up <- paste('• UPREGULATED:',sum(pacVSdmso_genes$adj.P.Val<0.05 & pacVSdmso_genes$logFC>1))
+down <- paste('• DOWNREGULATED:',sum(pacVSdmso_genes$adj.P.Val<0.05 & pacVSdmso_genes$logFC< -1))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
 ```
 
 #### SN38
@@ -227,7 +341,7 @@ Volcano plot of differentially expressed genes between SN38 (all concentrations)
 ### create contrast
 ### SN38 VS DMSO across all concentrations and times
 ### Only ORG 38
-sn38VSdmso <- makeContrasts((groupSN38.SPL1+ groupSN38.SPL2+ groupSN38.UNLABELLED/3) -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED/3), levels = colnames(design))
+sn38VSdmso <- makeContrasts((groupSN38.SPL1+ groupSN38.SPL2+ groupSN38.UNLABELLED)/3 -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED)/3, levels = colnames(design))
 
 ### following limma workflow
 ### difference between SN38 and DMSO across concentrations, at 48H only
@@ -239,123 +353,154 @@ fit <- contrasts.fit(fit, sn38VSdmso)
 fit <- eBayes(fit)
 sn38VSdmso_genes <- topTable(fit, n=Inf)
 
-volcano_plot <- EnhancedVolcano(sn38VSdmso_genes, lab=rownames(sn38VSdmso_genes), x='logFC', y='adj.P.Val', pCutoff=0.05, border="full", ylim=c(0,2.5))
+keyvals <- ifelse(
+    sn38VSdmso_genes$logFC < -1, 'darkred',
+      ifelse(sn38VSdmso_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+volcano_plot <- EnhancedVolcano(sn38VSdmso_genes,
+                                title="SN38 VS DMSO",
+                                subtitle="ORG38",
+                                lab=rownames(sn38VSdmso_genes),
+                                selectLab = c("UROD","ASF1B","AURKB","RNASEH2A","SOX17","FER","HMGN5","PLXNB2","PDLIM4","BCL2L12"),
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                xlim=c(-2,3), 
+                                ylim=c(0,3),
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
 volcano_plot
 ```
-In total: 17 genes differentially expressed:
 
-• 5 upregulated.
-
-• 12 downregulated. 
-
-Datatable of Differentially expressed genes:
+Datatable of differentially expressed genes:
 ```{r}
 ### Datatable of DE genes
-sn38VSdmso_genes <- sn38VSdmso_genes[sn38VSdmso_genes$adj.P.Val<0.05,]
+sn38VSdmso_genes <- sn38VSdmso_genes[sn38VSdmso_genes$adj.P.Val<0.05 & abs(sn38VSdmso_genes$logFC)>1,]
 create_dt(sn38VSdmso_genes)
 
 ### Preparing data for pathway analysis
 sn38VSdmso_genes['genes']<- rownames(sn38VSdmso_genes)
 ```
 
-### Pathway Analysis {.tabset}
-
-#### Paclitaxel
-GO  analysis of enriched pathways:
-
 ```{r}
-# gene_list <- pacVSdmso_genes[,c(1)]
-# names(gene_list) <- pacVSdmso_genes$genes
-# gene_list = sort(gene_list, decreasing = TRUE)
-# 
-# gse <- gseGO(geneList=gene_list,
-#              ont ="ALL",
-#              keyType = "ALIAS",
-#              minGSSize = 3,
-#              maxGSSize = 800,
-#              pvalueCutoff = 0.05,
-#              verbose = TRUE,
-#              OrgDb = "org.Hs.eg.db",
-#              pAdjustMethod = "none")
-# 
-# ### Saving results
-# saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG38_PAC_48H_gse.rds')
-
-### Loading GSE result
-output <- readRDS('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG38_PAC_48H_gse.rds')
-create_dt(as.data.frame(output@result))
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',sum(sn38VSdmso_genes$adj.P.Val<0.05 & abs(sn38VSdmso_genes$logFC)>1))
+up <- paste('• UPREGULATED:',sum(sn38VSdmso_genes$adj.P.Val<0.05 & sn38VSdmso_genes$logFC>1))
+down <- paste('• DOWNREGULATED:',sum(sn38VSdmso_genes$adj.P.Val<0.05 & sn38VSdmso_genes$logFC< -1))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
 ```
 
-Catergory net plot of enrichment results:
-```{r, fig.height=10, fig.width=10}
-### Visualisation
-### Paclitaxel plot summary 
-pacVSdmso_genes <- as.data.frame(pacVSdmso_genes)
+<!-- ### Pathway Analysis {.tabset} -->
 
-fc <- pacVSdmso_genes[order(pacVSdmso_genes$logFC, decreasing = TRUE),]
-gene_names <- fc$genes
-fc<- fc[,c("logFC")]
-names(fc) <- gene_names
+<!-- #### Paclitaxel -->
+<!-- GO  analysis of enriched pathways: -->
 
-p1 <- cnetplot(output, 
-         foldChange=fc,
-         node_label='gene',
-         showCategory=10,
-         colorEdge=TRUE,
-         cex.params = list(category_label=1),
-         color.params=list(category='black')) + ggtitle('DE genes between PAC-DMSO in ORG38')
+<!-- ```{r} -->
+<!-- # gene_list <- pacVSdmso_genes[,c(1)] -->
+<!-- # names(gene_list) <- pacVSdmso_genes$genes -->
+<!-- # gene_list = sort(gene_list, decreasing = TRUE) -->
+<!-- #  -->
+<!-- # gse <- gseGO(geneList=gene_list, -->
+<!-- #              ont ="ALL", -->
+<!-- #              keyType = "ALIAS", -->
+<!-- #              minGSSize = 3, -->
+<!-- #              maxGSSize = 800, -->
+<!-- #              pvalueCutoff = 0.05, -->
+<!-- #              verbose = TRUE, -->
+<!-- #              OrgDb = "org.Hs.eg.db", -->
+<!-- #              pAdjustMethod = "none") -->
+<!-- #  -->
+<!-- # ### Saving results -->
+<!-- # saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG38_PAC_48H_gse.rds') -->
 
-p1 + scale_color_gradientn(colours = c("red3", "blue")) 
-```
+<!-- ### Loading GSE result -->
+<!-- output <- readRDS('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG38_PAC_48H_gse.rds') -->
+<!-- create_dt(as.data.frame(output@result)) -->
+<!-- ``` -->
 
-#### SN38
-#### Paclitaxel
-GO  analysis of enriched pathways:
+<!-- Catergory net plot of enrichment results: -->
+<!-- ```{r, fig.height=10, fig.width=10} -->
+<!-- ### Visualisation -->
+<!-- ### Paclitaxel plot summary  -->
+<!-- pacVSdmso_genes <- as.data.frame(pacVSdmso_genes) -->
 
-```{r}
-# gene_list <- sn38VSdmso_genes[,c(1)]
-# names(gene_list) <- sn38VSdmso_genes$genes
-# gene_list = sort(gene_list, decreasing = TRUE)
-# 
-# gse <- gseGO(geneList=gene_list,
-#              ont ="ALL",
-#              keyType = "ALIAS",
-#              minGSSize = 3,
-#              maxGSSize = 800,
-#              pvalueCutoff = 0.05,
-#              verbose = TRUE,
-#              OrgDb = "org.Hs.eg.db",
-#              pAdjustMethod = "none")
+<!-- fc <- pacVSdmso_genes[order(pacVSdmso_genes$logFC, decreasing = TRUE),] -->
+<!-- gene_names <- fc$genes -->
+<!-- fc<- fc[,c("logFC")] -->
+<!-- names(fc) <- gene_names -->
 
-# ### Saving results
-# saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG38_SN38_48H_gse.rds')
+<!-- p1 <- cnetplot(output,  -->
+<!--          foldChange=fc, -->
+<!--          node_label='gene', -->
+<!--          showCategory=10, -->
+<!--          colorEdge=TRUE, -->
+<!--          cex.params = list(category_label=1), -->
+<!--          color.params=list(category='black')) + ggtitle('DE genes between PAC-DMSO in ORG38') -->
 
-### Loading GSE result
-output <- readRDS('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG38_SN38_48H_gse.rds')
-create_dt(as.data.frame(output@result))
-```
+<!-- p1 + scale_color_gradientn(colours = c("red3", "blue"))  -->
+<!-- ``` -->
 
-Catergory net plot of enrichment results:
-```{r, fig.height=10, fig.width=10}
-### Visualisation
-### SN38 plot summary 
-sn38VSdmso_genes <- as.data.frame(sn38VSdmso_genes)
+<!-- #### SN38 -->
+<!-- #### Paclitaxel -->
+<!-- GO  analysis of enriched pathways: -->
 
-fc <- sn38VSdmso_genes[order(sn38VSdmso_genes$logFC, decreasing = TRUE),]
-gene_names <- fc$genes
-fc<- fc[,c("logFC")]
-names(fc) <- gene_names
+<!-- ```{r} -->
+<!-- # gene_list <- sn38VSdmso_genes[,c(1)] -->
+<!-- # names(gene_list) <- sn38VSdmso_genes$genes -->
+<!-- # gene_list = sort(gene_list, decreasing = TRUE) -->
+<!-- #  -->
+<!-- # gse <- gseGO(geneList=gene_list, -->
+<!-- #              ont ="ALL", -->
+<!-- #              keyType = "ALIAS", -->
+<!-- #              minGSSize = 3, -->
+<!-- #              maxGSSize = 800, -->
+<!-- #              pvalueCutoff = 0.05, -->
+<!-- #              verbose = TRUE, -->
+<!-- #              OrgDb = "org.Hs.eg.db", -->
+<!-- #              pAdjustMethod = "none") -->
 
-p1 <- cnetplot(output, 
-         foldChange=fc,
-         node_label='gene',
-         showCategory=10,
-         colorEdge=TRUE,
-         cex.params = list(category_label=1),
-         color.params=list(category='black')) + ggtitle('DE genes between SN38-DMSO in ORG38')
+<!-- # ### Saving results -->
+<!-- # saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG38_SN38_48H_gse.rds') -->
 
-p1 + scale_color_gradientn(colours = c("red3", "blue")) 
-```
+<!-- ### Loading GSE result -->
+<!-- output <- readRDS('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG38_SN38_48H_gse.rds') -->
+<!-- create_dt(as.data.frame(output@result)) -->
+<!-- ``` -->
+
+<!-- Catergory net plot of enrichment results: -->
+<!-- ```{r, fig.height=10, fig.width=10} -->
+<!-- ### Visualisation -->
+<!-- ### SN38 plot summary  -->
+<!-- sn38VSdmso_genes <- as.data.frame(sn38VSdmso_genes) -->
+
+<!-- fc <- sn38VSdmso_genes[order(sn38VSdmso_genes$logFC, decreasing = TRUE),] -->
+<!-- gene_names <- fc$genes -->
+<!-- fc<- fc[,c("logFC")] -->
+<!-- names(fc) <- gene_names -->
+
+<!-- p1 <- cnetplot(output,  -->
+<!--          foldChange=fc, -->
+<!--          node_label='gene', -->
+<!--          showCategory=10, -->
+<!--          colorEdge=TRUE, -->
+<!--          cex.params = list(category_label=1), -->
+<!--          color.params=list(category='black')) + ggtitle('DE genes between SN38-DMSO in ORG38') -->
+
+<!-- p1 + scale_color_gradientn(colours = c("red3", "blue"))  -->
+<!-- ``` -->
 
 ## ORG 49 
 ### Differential Expression {.tabset}
@@ -399,7 +544,7 @@ Volcano plot of differentially expressed genes between Paclitaxel (all concentra
 ### create contrast
 ### PAC VS DMSO across all concentrations and times
 ### Only ORG 49
-pacVSdmso <- makeContrasts((groupPACLITAXEL.SPL1+ groupPACLITAXEL.SPL2+ groupPACLITAXEL.UNLABELLED/3) -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED/3), levels = colnames(design))
+pacVSdmso <- makeContrasts((groupPACLITAXEL.SPL1+ groupPACLITAXEL.SPL2+ groupPACLITAXEL.UNLABELLED)/3 -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED)/3, levels = colnames(design))
 
 ### following limma workflow
 ### difference between PAC and DMSO across concentrations, at 48H only
@@ -411,23 +556,55 @@ fit <- contrasts.fit(fit, pacVSdmso)
 fit <- eBayes(fit)
 pacVSdmso_genes <- topTable(fit, n=Inf)
 
-volcano_plot <- EnhancedVolcano(pacVSdmso_genes, lab=rownames(pacVSdmso_genes), x='logFC', y='adj.P.Val', pCutoff=0.05, border="full", ylim=c(0,4.5))
+keyvals <- ifelse(
+    pacVSdmso_genes$logFC < -1, 'darkred',
+      ifelse(pacVSdmso_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+volcano_plot <- EnhancedVolcano(pacVSdmso_genes,
+                                title="Paclitaxel VS DMSO",
+                                subtitle="ORG49",
+                                lab=rownames(pacVSdmso_genes),
+                                selectLab = c("CCL20","TNFAIP2","CXCL1","MUC6","CXCL8","TRIP6","C4orf48","TMEM98","KCTD12","CXCL3"),
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                               #xlim=c(-2,3), 
+                                ylim=c(0,6),
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
 volcano_plot
 ```
-In total: 133 genes differentially expressed:
 
-• 57 upregulated.
-
-• 76 downregulated. 
 
 Datatable of Differentially expressed genes:
 ```{r}
 ### Datatable of DE genes
-pacVSdmso_genes <- pacVSdmso_genes[pacVSdmso_genes$adj.P.Val<0.05,]
+pacVSdmso_genes <- pacVSdmso_genes[pacVSdmso_genes$adj.P.Val<0.05 & abs(pacVSdmso_genes$logFC)>1,]
 create_dt(pacVSdmso_genes)
 
 ### Preparing data for pathway analysis
 pacVSdmso_genes['genes']<- rownames(pacVSdmso_genes)
+```
+
+```{r}
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',sum(pacVSdmso_genes$adj.P.Val<0.05 & abs(pacVSdmso_genes$logFC)>1))
+up <- paste('• UPREGULATED:',sum(pacVSdmso_genes$adj.P.Val<0.05 & pacVSdmso_genes$logFC>1))
+down <- paste('• DOWNREGULATED:',sum(pacVSdmso_genes$adj.P.Val<0.05 & pacVSdmso_genes$logFC< -1))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
 ```
 
 #### SN38
@@ -438,7 +615,7 @@ Volcano plot of differentially expressed genes between SN38 (all concentrations)
 ### create contrast
 ### SN38 VS DMSO across all concentrations and times
 ### Only ORG 49
-sn38VSdmso <- makeContrasts((groupSN38.SPL1+ groupSN38.SPL2+ groupSN38.UNLABELLED/3) -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED/3), levels = colnames(design))
+sn38VSdmso <- makeContrasts((groupSN38.SPL1+ groupSN38.SPL2+ groupSN38.UNLABELLED)/3 -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED)/3, levels = colnames(design))
 
 ### following limma workflow
 ### difference between SN38 and DMSO across concentrations, at 48H only
@@ -450,124 +627,157 @@ fit <- contrasts.fit(fit, sn38VSdmso)
 fit <- eBayes(fit)
 sn38VSdmso_genes <- topTable(fit, n=Inf)
 
-volcano_plot <- EnhancedVolcano(sn38VSdmso_genes, lab=rownames(sn38VSdmso_genes), x='logFC', y='adj.P.Val', pCutoff=0.05, border="full", ylim=c(0,5))
+keyvals <- ifelse(
+    sn38VSdmso_genes$logFC < -1, 'darkred',
+      ifelse(sn38VSdmso_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+volcano_plot <- EnhancedVolcano(sn38VSdmso_genes,
+                                title="SN38 VS DMSO",
+                                subtitle="ORG49",
+                                lab=rownames(sn38VSdmso_genes),
+                                selectLab = c("EPS8L3","LINC01133","LCN2","ASCC2","TIMP4","CCND2","TGFB1I1","NBR2","SNHG4","PLSCR1"),
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                ylim=c(0,5),
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
 volcano_plot
 ```
-In total: 97 genes differentially expressed:
 
-• 52 upregulated.
-
-• 45 downregulated. 
 
 Datatable of Differentially expressed genes:
 ```{r}
 ### Datatable of DE genes
-sn38VSdmso_genes <- sn38VSdmso_genes[sn38VSdmso_genes$adj.P.Val<0.05,]
+sn38VSdmso_genes <- sn38VSdmso_genes[sn38VSdmso_genes$adj.P.Val<0.05 & abs(sn38VSdmso_genes$logFC)>1,]
 create_dt(sn38VSdmso_genes)
 
 ### Preparing data for pathway analysis
 sn38VSdmso_genes['genes']<- rownames(sn38VSdmso_genes)
 ```
 
-### Pathway Analysis {.tabset}
-
-#### Paclitaxel
-
-GO  analysis of enriched pathways:
-
 ```{r}
-# gene_list <- pacVSdmso_genes[,c(1)]
-# names(gene_list) <- pacVSdmso_genes$genes
-# gene_list = sort(gene_list, decreasing = TRUE)
-# 
-# gse <- gseGO(geneList=gene_list,
-#              ont ="ALL",
-#              keyType = "ALIAS",
-#              minGSSize = 3,
-#              maxGSSize = 800,
-#              pvalueCutoff = 0.05,
-#              verbose = TRUE,
-#              OrgDb = "org.Hs.eg.db",
-#              pAdjustMethod = "none")
-# 
-# ### Saving results
-# saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG49_PAC_48H_gse.rds')
-
-### Loading GSE result
-output <- readRDS('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG49_PAC_48H_gse.rds')
-create_dt(as.data.frame(output@result))
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',sum(sn38VSdmso_genes$adj.P.Val<0.05 & abs(sn38VSdmso_genes$logFC)>1))
+up <- paste('• UPREGULATED:',sum(sn38VSdmso_genes$adj.P.Val<0.05 & sn38VSdmso_genes$logFC>1))
+down <- paste('• DOWNREGULATED:',sum(sn38VSdmso_genes$adj.P.Val<0.05 & sn38VSdmso_genes$logFC< -1))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
 ```
 
-Catergory net plot of enrichment results:
-```{r, fig.height=10, fig.width=10}
-### Visualisation
-### Paclitaxel plot summary 
-pacVSdmso_genes <- as.data.frame(pacVSdmso_genes)
 
-fc <- pacVSdmso_genes[order(pacVSdmso_genes$logFC, decreasing = TRUE),]
-gene_names <- fc$genes
-fc<- fc[,c("logFC")]
-names(fc) <- gene_names
+<!-- ### Pathway Analysis {.tabset} -->
 
-p1 <- cnetplot(output, 
-         foldChange=fc,
-         node_label='gene',
-         showCategory=10,
-         colorEdge=TRUE,
-         cex.params = list(category_label=1),
-         color.params=list(category='black')) + ggtitle('DE genes between PAC-DMSO in ORG49')
+<!-- #### Paclitaxel -->
 
-p1 + scale_color_gradientn(colours = c("red3", "blue")) 
-```
+<!-- GO  analysis of enriched pathways: -->
 
-#### SN38
+<!-- ```{r} -->
+<!-- # gene_list <- pacVSdmso_genes[,c(1)] -->
+<!-- # names(gene_list) <- pacVSdmso_genes$genes -->
+<!-- # gene_list = sort(gene_list, decreasing = TRUE) -->
+<!-- # -->
+<!-- # gse <- gseGO(geneList=gene_list, -->
+<!-- #              ont ="ALL", -->
+<!-- #              keyType = "ALIAS", -->
+<!-- #              minGSSize = 3, -->
+<!-- #              maxGSSize = 800, -->
+<!-- #              pvalueCutoff = 0.05, -->
+<!-- #              verbose = TRUE, -->
+<!-- #              OrgDb = "org.Hs.eg.db", -->
+<!-- #              pAdjustMethod = "none") -->
+<!-- # -->
+<!-- # ### Saving results -->
+<!-- # saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG49_PAC_48H_gse.rds') -->
 
-GO  analysis of enriched pathways:
+<!-- ### Loading GSE result -->
+<!-- output <- readRDS('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG49_PAC_48H_gse.rds') -->
+<!-- create_dt(as.data.frame(output@result)) -->
+<!-- ``` -->
 
-```{r}
-# gene_list <- sn38VSdmso_genes[,c(1)]
-# names(gene_list) <- sn38VSdmso_genes$genes
-# gene_list = sort(gene_list, decreasing = TRUE)
-# 
-# gse <- gseGO(geneList=gene_list,
-#              ont ="ALL",
-#              keyType = "ALIAS",
-#              minGSSize = 3,
-#              maxGSSize = 800,
-#              pvalueCutoff = 0.05,
-#              verbose = TRUE,
-#              OrgDb = "org.Hs.eg.db",
-#              pAdjustMethod = "none")
-# 
-# ### Saving results
-# saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG49_SN38_48H_gse.rds')
+<!-- Catergory net plot of enrichment results: -->
+<!-- ```{r, fig.height=10, fig.width=10} -->
+<!-- ### Visualisation -->
+<!-- ### Paclitaxel plot summary -->
+<!-- pacVSdmso_genes <- as.data.frame(pacVSdmso_genes) -->
 
-### Loading GSE result
-output <- readRDS('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG49_SN38_48H_gse.rds')
-create_dt(as.data.frame(output@result))
-```
+<!-- fc <- pacVSdmso_genes[order(pacVSdmso_genes$logFC, decreasing = TRUE),] -->
+<!-- gene_names <- fc$genes -->
+<!-- fc<- fc[,c("logFC")] -->
+<!-- names(fc) <- gene_names -->
 
-Catergory net plot of enrichment results:
-```{r, fig.height=10, fig.width=10}
-### Visualisation
-### SN38 plot summary 
-sn38VSdmso_genes <- as.data.frame(sn38VSdmso_genes)
+<!-- p1 <- cnetplot(output, -->
+<!--          foldChange=fc, -->
+<!--          node_label='gene', -->
+<!--          showCategory=10, -->
+<!--          colorEdge=TRUE, -->
+<!--          cex.params = list(category_label=1), -->
+<!--          color.params=list(category='black')) + ggtitle('DE genes between PAC-DMSO in ORG49') -->
 
-fc <- sn38VSdmso_genes[order(sn38VSdmso_genes$logFC, decreasing = TRUE),]
-gene_names <- fc$genes
-fc<- fc[,c("logFC")]
-names(fc) <- gene_names
+<!-- p1 + scale_color_gradientn(colours = c("red3", "blue")) -->
+<!-- ``` -->
 
-p1 <- cnetplot(output, 
-         foldChange=fc,
-         node_label='gene',
-         showCategory=10,
-         colorEdge=TRUE,
-         cex.params = list(category_label=1),
-         color.params=list(category='black')) + ggtitle('DE genes between SN38-DMSO in ORG49')
+<!-- #### SN38 -->
 
-p1 + scale_color_gradientn(colours = c("red3", "blue")) 
-```
+<!-- GO  analysis of enriched pathways: -->
+
+<!-- ```{r} -->
+<!-- # gene_list <- sn38VSdmso_genes[,c(1)] -->
+<!-- # names(gene_list) <- sn38VSdmso_genes$genes -->
+<!-- # gene_list = sort(gene_list, decreasing = TRUE) -->
+<!-- # -->
+<!-- # gse <- gseGO(geneList=gene_list, -->
+<!-- #              ont ="ALL", -->
+<!-- #              keyType = "ALIAS", -->
+<!-- #              minGSSize = 3, -->
+<!-- #              maxGSSize = 800, -->
+<!-- #              pvalueCutoff = 0.05, -->
+<!-- #              verbose = TRUE, -->
+<!-- #              OrgDb = "org.Hs.eg.db", -->
+<!-- #              pAdjustMethod = "none") -->
+<!-- # -->
+<!-- # ### Saving results -->
+<!-- # saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG49_SN38_48H_gse.rds') -->
+
+<!-- ### Loading GSE result -->
+<!-- output <- readRDS('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG49_SN38_48H_gse.rds') -->
+<!-- create_dt(as.data.frame(output@result)) -->
+<!-- ``` -->
+
+<!-- Catergory net plot of enrichment results: -->
+<!-- ```{r, fig.height=10, fig.width=10} -->
+<!-- ### Visualisation -->
+<!-- ### SN38 plot summary -->
+<!-- sn38VSdmso_genes <- as.data.frame(sn38VSdmso_genes) -->
+
+<!-- fc <- sn38VSdmso_genes[order(sn38VSdmso_genes$logFC, decreasing = TRUE),] -->
+<!-- gene_names <- fc$genes -->
+<!-- fc<- fc[,c("logFC")] -->
+<!-- names(fc) <- gene_names -->
+
+<!-- p1 <- cnetplot(output, -->
+<!--          foldChange=fc, -->
+<!--          node_label='gene', -->
+<!--          showCategory=10, -->
+<!--          colorEdge=TRUE, -->
+<!--          cex.params = list(category_label=1), -->
+<!--          color.params=list(category='black')) + ggtitle('DE genes between SN38-DMSO in ORG49') -->
+
+<!-- p1 + scale_color_gradientn(colours = c("red3", "blue")) -->
+<!-- ``` -->
+
 
 ## ORG 66
 
@@ -613,7 +823,7 @@ Volcano plot of differentially expressed genes between Paclitaxel (all concentra
 ### create contrast
 ### PAC VS DMSO across all concentrations and times
 ### Only ORG 66
-pacVSdmso <- makeContrasts((groupPACLITAXEL.SPL1+ groupPACLITAXEL.SPL2+ groupPACLITAXEL.UNLABELLED/3) -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED/3), levels = colnames(design))
+pacVSdmso <- makeContrasts((groupPACLITAXEL.SPL1+ groupPACLITAXEL.SPL2+ groupPACLITAXEL.UNLABELLED)/3 -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED)/3, levels = colnames(design))
 
 ### following limma workflow
 ### difference between PAC and DMSO across concentrations, at 48H only
@@ -625,23 +835,54 @@ fit <- contrasts.fit(fit, pacVSdmso)
 fit <- eBayes(fit)
 pacVSdmso_genes <- topTable(fit, n=Inf)
 
-volcano_plot <- EnhancedVolcano(pacVSdmso_genes, lab=rownames(pacVSdmso_genes), x='logFC', y='adj.P.Val', pCutoff=0.05, border = "full", ylim=c(0,15))
+keyvals <- ifelse(
+    pacVSdmso_genes$logFC < -1, 'darkred',
+      ifelse(pacVSdmso_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+volcano_plot <- EnhancedVolcano(pacVSdmso_genes,
+                                title="Paclitaxel VS DMSO",
+                                subtitle="ORG66",
+                                lab=rownames(pacVSdmso_genes),
+                                selectLab = c("CD74","PHPT1","CEACAM6","HLA-DRA","HLA-DRB1","AGPAT2","HLA-DPA1","TUBB4B","WFDC2","HLA-DQB1"),
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                ylim=c(0,17),
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition ="bottom",
+                                colCustom = keyvals)
 volcano_plot
+
 ```
-In total: 137 genes differentially expressed:
-
-• 81 upregulated.
-
-• 56 downregulated. 
 
 Datatable of Differentially expressed genes:
 ```{r}
 ### Datatable of DE genes
-pacVSdmso_genes <- pacVSdmso_genes[pacVSdmso_genes$adj.P.Val<0.05,]
+pacVSdmso_genes <- pacVSdmso_genes[pacVSdmso_genes$adj.P.Val<0.05 & abs(pacVSdmso_genes$logFC)>1,]
 create_dt(pacVSdmso_genes)
 
 ### Preparing data for pathway analysis
 pacVSdmso_genes['genes']<- rownames(pacVSdmso_genes)
+```
+
+```{r}
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',sum(pacVSdmso_genes$adj.P.Val<0.05 & abs(pacVSdmso_genes$logFC)>1))
+up <- paste('• UPREGULATED:',sum(pacVSdmso_genes$adj.P.Val<0.05 & pacVSdmso_genes$logFC>1))
+down <- paste('• DOWNREGULATED:',sum(pacVSdmso_genes$adj.P.Val<0.05 & pacVSdmso_genes$logFC< -1))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
 ```
 
 #### SN38
@@ -652,7 +893,7 @@ Volcano plot of differentially expressed genes between SN38 (all concentrations)
 ### create contrast
 ### SN38 VS DMSO across all concentrations and times
 ### Only ORG 66
-sn38VSdmso <- makeContrasts((groupSN38.SPL1+ groupSN38.SPL2+ groupSN38.UNLABELLED/3) -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED/3), levels = colnames(design))
+sn38VSdmso <- makeContrasts((groupSN38.SPL1+ groupSN38.SPL2+ groupSN38.UNLABELLED)/3-(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED)/3, levels = colnames(design))
 
 ### following limma workflow
 ### difference between SN38 and DMSO across concentrations, at 48H only
@@ -664,121 +905,152 @@ fit <- contrasts.fit(fit, sn38VSdmso)
 fit <- eBayes(fit)
 sn38VSdmso_genes <- topTable(fit, n=Inf)
 
-volcano_plot <- EnhancedVolcano(sn38VSdmso_genes, lab=rownames(sn38VSdmso_genes), x='logFC', y='adj.P.Val', pCutoff=0.05, border="full",ylim=c(0,20))
+keyvals <- ifelse(
+    sn38VSdmso_genes$logFC < -1, 'darkred',
+      ifelse(sn38VSdmso_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+volcano_plot <- EnhancedVolcano(sn38VSdmso_genes,
+                                title="SN38 VS DMSO",
+                                subtitle="ORG66",
+                                lab=rownames(sn38VSdmso_genes),
+                                selectLab = c("NIFK","IER2","CCL20","CDC6","RRM2","LINC03061","IER3","SDC4","H1-2","DPCD","TMSB10","KRT19"),
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition ="bottom",
+                                colCustom = keyvals)
 volcano_plot
 ```
-In total: 35 genes differentially expressed:
-
-• 13 upregulated.
-
-• 22 downregulated. 
 
 Datatable of Differentially expressed genes:
 ```{r}
 ### Datatable of DE genes
-sn38VSdmso_genes <- sn38VSdmso_genes[sn38VSdmso_genes$adj.P.Val<0.05,]
+sn38VSdmso_genes <- sn38VSdmso_genes[sn38VSdmso_genes$adj.P.Val<0.05 & abs(sn38VSdmso_genes$logFC)>1,]
 create_dt(sn38VSdmso_genes)
 
 ### Preparing data for pathway analysis
 sn38VSdmso_genes['genes']<- rownames(sn38VSdmso_genes)
 ```
 
-### Pathway Analysis {.tabset}
-
-#### Paclitaxel
-
-GO  analysis of enriched pathways:
-
 ```{r}
-# gene_list <- pacVSdmso_genes[,c(1)]
-# names(gene_list) <- pacVSdmso_genes$genes
-# gene_list = sort(gene_list, decreasing = TRUE)
-# 
-# gse <- gseGO(geneList=gene_list,
-#              ont ="ALL",
-#              keyType = "ALIAS",
-#              minGSSize = 3,
-#              maxGSSize = 800,
-#              pvalueCutoff = 0.05,
-#              verbose = TRUE,
-#              OrgDb = "org.Hs.eg.db",
-#              pAdjustMethod = "none")
-# 
-# ### Saving results
-# saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG66_PAC_48H_gse.rds')
-
-### Loading GSE result
-output <- readRDS('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG66_PAC_48H_gse.rds')
-create_dt(as.data.frame(output@result))
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',sum(sn38VSdmso_genes$adj.P.Val<0.05 & abs(sn38VSdmso_genes$logFC)>1))
+up <- paste('• UPREGULATED:',sum(sn38VSdmso_genes$adj.P.Val<0.05 & sn38VSdmso_genes$logFC>1))
+down <- paste('• DOWNREGULATED:',sum(sn38VSdmso_genes$adj.P.Val<0.05 & sn38VSdmso_genes$logFC< -1))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
 ```
 
-Catergory net plot of enrichment results:
-```{r, fig.height=10, fig.width=10}
-### Visualisation
-### Paclitaxel plot summary 
-pacVSdmso_genes <- as.data.frame(pacVSdmso_genes)
+<!-- ### Pathway Analysis {.tabset} -->
 
-fc <- pacVSdmso_genes[order(pacVSdmso_genes$logFC, decreasing = TRUE),]
-gene_names <- fc$genes
-fc<- fc[,c("logFC")]
-names(fc) <- gene_names
+<!-- #### Paclitaxel -->
 
-p1 <- cnetplot(output, 
-         foldChange=fc,
-         node_label='gene',
-         showCategory=10,
-         colorEdge=TRUE,
-         cex.params = list(category_label=1),
-         color.params=list(category='black')) + ggtitle('DE genes between PAC-DMSO in ORG66')
+<!-- GO  analysis of enriched pathways: -->
 
-p1 + scale_color_gradientn(colours = c("red3", "blue")) 
-```
+<!-- ```{r} -->
+<!-- # gene_list <- pacVSdmso_genes[,c(1)] -->
+<!-- # names(gene_list) <- pacVSdmso_genes$genes -->
+<!-- # gene_list = sort(gene_list, decreasing = TRUE) -->
+<!-- #  -->
+<!-- # gse <- gseGO(geneList=gene_list, -->
+<!-- #              ont ="ALL", -->
+<!-- #              keyType = "ALIAS", -->
+<!-- #              minGSSize = 3, -->
+<!-- #              maxGSSize = 800, -->
+<!-- #              pvalueCutoff = 0.05, -->
+<!-- #              verbose = TRUE, -->
+<!-- #              OrgDb = "org.Hs.eg.db", -->
+<!-- #              pAdjustMethod = "none") -->
+<!-- #  -->
+<!-- # ### Saving results -->
+<!-- # saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG66_PAC_48H_gse.rds') -->
 
-#### SN38
+<!-- ### Loading GSE result -->
+<!-- output <- readRDS('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG66_PAC_48H_gse.rds') -->
+<!-- create_dt(as.data.frame(output@result)) -->
+<!-- ``` -->
 
-GO  analysis of enriched pathways:
+<!-- Catergory net plot of enrichment results: -->
+<!-- ```{r, fig.height=10, fig.width=10} -->
+<!-- ### Visualisation -->
+<!-- ### Paclitaxel plot summary  -->
+<!-- pacVSdmso_genes <- as.data.frame(pacVSdmso_genes) -->
 
-```{r}
-# gene_list <- sn38VSdmso_genes[,c(1)]
-# names(gene_list) <- sn38VSdmso_genes$genes
-# gene_list = sort(gene_list, decreasing = TRUE)
-# 
-# gse <- gseGO(geneList=gene_list,
-#              ont ="ALL",
-#              keyType = "ALIAS",
-#              minGSSize = 3,
-#              maxGSSize = 800,
-#              pvalueCutoff = 0.05,
-#              verbose = TRUE,
-#              OrgDb = "org.Hs.eg.db",
-#              pAdjustMethod = "none")
-# 
-# ### Saving results
-# saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG66_SN38_48H_gse.rds')
+<!-- fc <- pacVSdmso_genes[order(pacVSdmso_genes$logFC, decreasing = TRUE),] -->
+<!-- gene_names <- fc$genes -->
+<!-- fc<- fc[,c("logFC")] -->
+<!-- names(fc) <- gene_names -->
 
-### Loading GSE result
-output <- readRDS('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG66_SN38_48H_gse.rds')
-create_dt(as.data.frame(output@result))
-```
+<!-- p1 <- cnetplot(output,  -->
+<!--          foldChange=fc, -->
+<!--          node_label='gene', -->
+<!--          showCategory=10, -->
+<!--          colorEdge=TRUE, -->
+<!--          cex.params = list(category_label=1), -->
+<!--          color.params=list(category='black')) + ggtitle('DE genes between PAC-DMSO in ORG66') -->
 
-Catergory net plot of enrichment results:
-```{r, fig.height=10, fig.width=10}
-### Visualisation
-### SN38 plot summary 
-sn38VSdmso_genes <- as.data.frame(sn38VSdmso_genes)
+<!-- p1 + scale_color_gradientn(colours = c("red3", "blue"))  -->
+<!-- ``` -->
 
-fc <- sn38VSdmso_genes[order(sn38VSdmso_genes$logFC, decreasing = TRUE),]
-gene_names <- fc$genes
-fc<- fc[,c("logFC")]
-names(fc) <- gene_names
+<!-- #### SN38 -->
 
-p1 <- cnetplot(output, 
-         foldChange=fc,
-         node_label='gene',
-         showCategory=10,
-         colorEdge=TRUE,
-         cex.params = list(category_label=1),
-         color.params=list(category='black')) + ggtitle('DE genes between SN38-DMSO in ORG66')
+<!-- GO  analysis of enriched pathways: -->
 
-p1 + scale_color_gradientn(colours = c("red3", "blue")) 
-```
+<!-- ```{r} -->
+<!-- # gene_list <- sn38VSdmso_genes[,c(1)] -->
+<!-- # names(gene_list) <- sn38VSdmso_genes$genes -->
+<!-- # gene_list = sort(gene_list, decreasing = TRUE) -->
+<!-- #  -->
+<!-- # gse <- gseGO(geneList=gene_list, -->
+<!-- #              ont ="ALL", -->
+<!-- #              keyType = "ALIAS", -->
+<!-- #              minGSSize = 3, -->
+<!-- #              maxGSSize = 800, -->
+<!-- #              pvalueCutoff = 0.05, -->
+<!-- #              verbose = TRUE, -->
+<!-- #              OrgDb = "org.Hs.eg.db", -->
+<!-- #              pAdjustMethod = "none") -->
+<!-- #  -->
+<!-- # ### Saving results -->
+<!-- # saveRDS(gse, file='/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG66_SN38_48H_gse.rds') -->
+
+<!-- ### Loading GSE result -->
+<!-- output <- readRDS('/Users/dalvinikita/Documents/GitHub/MACseq-SPLINTR-Project/data/rObjects/ORG66_SN38_48H_gse.rds') -->
+<!-- create_dt(as.data.frame(output@result)) -->
+<!-- ``` -->
+
+<!-- Catergory net plot of enrichment results: -->
+<!-- ```{r, fig.height=10, fig.width=10} -->
+<!-- ### Visualisation -->
+<!-- ### SN38 plot summary  -->
+<!-- sn38VSdmso_genes <- as.data.frame(sn38VSdmso_genes) -->
+
+<!-- fc <- sn38VSdmso_genes[order(sn38VSdmso_genes$logFC, decreasing = TRUE),] -->
+<!-- gene_names <- fc$genes -->
+<!-- fc<- fc[,c("logFC")] -->
+<!-- names(fc) <- gene_names -->
+
+<!-- p1 <- cnetplot(output,  -->
+<!--          foldChange=fc, -->
+<!--          node_label='gene', -->
+<!--          showCategory=10, -->
+<!--          colorEdge=TRUE, -->
+<!--          cex.params = list(category_label=1), -->
+<!--          color.params=list(category='black')) + ggtitle('DE genes between SN38-DMSO in ORG66') -->
+
+<!-- p1 + scale_color_gradientn(colours = c("red3", "blue"))  -->
+<!-- ``` -->
+
+

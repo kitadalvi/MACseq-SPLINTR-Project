@@ -211,10 +211,19 @@ datatable(unlabelledVSlabelled_genes)
 ```
 
 ```{r}
-### Pathway analysis of genes 
 genes <- unlabelledVSlabelled_genes[unlabelledVSlabelled_genes$adj.P.Val<0.05,]
 genes['genes']<- rownames(genes)
 
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',sum(genes$adj.P.Val<0.05 & abs(genes$logFC)>1))
+up <- paste('• UPREGULATED:',sum(genes$adj.P.Val<0.05 & genes$logFC>1))
+down <- paste('• DOWNREGULATED:',sum(genes$adj.P.Val<0.05 & genes$logFC< -1))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+```{r}
+### Pathway analysis of genes
 gene_list <- genes[,c(1)]
 names(gene_list) <- genes$genes
 gene_list = sort(gene_list, decreasing = TRUE)
@@ -310,6 +319,15 @@ drugsandBC_interaction <- topTable(fit, n=Inf, p.value = 1)
 datatable(drugsandBC_interaction)
 ```
 
+```{r}
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',sum(drugsandBC_interaction$adj.P.Val<0.05 & abs(drugsandBC_interaction$logFC)>1.5))
+up <- paste('• UPREGULATED:',sum(drugsandBC_interaction$adj.P.Val<0.05 & drugsandBC_interaction$logFC>1.5))
+down <- paste('• DOWNREGULATED:',sum(drugsandBC_interaction$adj.P.Val<0.05 & drugsandBC_interaction$logFC< -1.5))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
 ### ORG49 {.tabset .tabset-pills}
 
 #### Labelled VS Unlabeled
@@ -370,10 +388,19 @@ datatable(unlabelledVSlabelled_genes)
 ```
 
 ```{r}
-### Pathway analysis of genes 
 genes <- unlabelledVSlabelled_genes[unlabelledVSlabelled_genes$adj.P.Val<0.05,]
 genes['genes']<- rownames(genes)
 
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',sum(genes$adj.P.Val<0.05 & abs(genes$logFC)>1))
+up <- paste('• UPREGULATED:',sum(genes$adj.P.Val<0.05 & genes$logFC>1))
+down <- paste('• DOWNREGULATED:',sum(genes$adj.P.Val<0.05 & genes$logFC< -1))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+```{r}
+### Pathway analysis of genes 
 gene_list <- genes[,c(1)]
 names(gene_list) <- genes$genes
 gene_list = sort(gene_list, decreasing = TRUE)
@@ -529,10 +556,19 @@ datatable(unlabelledVSlabelled_genes)
 ```
 
 ```{r}
-### Pathway analysis of genes 
 genes <- unlabelledVSlabelled_genes[unlabelledVSlabelled_genes$adj.P.Val<0.05,]
 genes['genes']<- rownames(genes)
 
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',sum(genes$adj.P.Val<0.05 & abs(genes$logFC)>1))
+up <- paste('• UPREGULATED:',sum(genes$adj.P.Val<0.05 & genes$logFC>1))
+down <- paste('• DOWNREGULATED:',sum(genes$adj.P.Val<0.05 & genes$logFC< -1))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+```{r}
+### Pathway analysis of genes 
 gene_list <- genes[,c(1)]
 names(gene_list) <- genes$genes
 gene_list = sort(gene_list, decreasing = TRUE)
@@ -753,7 +789,7 @@ datatable(SN38andBC_interaction)
 ### Across all ORGS
 ### Across all concentrations
 
-pacVSdmso <- makeContrasts((groupPACLITAXEL.SPL1+ groupPACLITAXEL.SPL2+ groupPACLITAXEL.UNLABELLED/3) -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED/3), levels = colnames(design))
+pacVSdmso <- makeContrasts((groupPACLITAXEL.SPL1+ groupPACLITAXEL.SPL2+ groupPACLITAXEL.UNLABELLED)/3 -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED)/3, levels = colnames(design))
 
 ### following limma workflow
 ### difference between PAC and DMSO across concentrations, and across both ORGs
@@ -843,7 +879,7 @@ datatable(design)
 ### create contrast
 ### PAC VS DMSO across all concentrations and times
 ### Only ORG 38
-pacVSdmso <- makeContrasts((groupPACLITAXEL.SPL1+ groupPACLITAXEL.SPL2+ groupPACLITAXEL.UNLABELLED/3) -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED/3), levels = colnames(design))
+pacVSdmso <- makeContrasts((groupPACLITAXEL.SPL1+ groupPACLITAXEL.SPL2+ groupPACLITAXEL.UNLABELLED)/3 -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED)/3, levels = colnames(design))
 
 ### following limma workflow
 ### difference between PAC and DMSO across concentrations, at 48H only
@@ -857,6 +893,14 @@ pacVSdmso_genes <- topTable(fit, n=Inf)
 EnhancedVolcano(pacVSdmso_genes, lab=rownames(pacVSdmso_genes), x='logFC', y='adj.P.Val', pCutoff=0.05)
 pacVSdmso_genes['genes']<- rownames(pacVSdmso_genes)
 pacVSdmso_genes <- pacVSdmso_genes[pacVSdmso_genes$adj.P.Val<0.05,]
+```
+```{r}
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',sum(pacVSdmso_genes$adj.P.Val<0.05 & abs(pacVSdmso_genes$logFC)>1.5))
+up <- paste('• UPREGULATED:',sum(pacVSdmso_genes$adj.P.Val<0.05 & pacVSdmso_genes$logFC>1.5))
+down <- paste('• DOWNREGULATED:',sum(pacVSdmso_genes$adj.P.Val<0.05 & pacVSdmso_genes$logFC< -1.5))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
 ```
 
 #### Pathway Analysis
@@ -930,7 +974,7 @@ datatable(design)
 ### create contrast
 ### PAC VS DMSO across all concentrations and times
 ### Only ORG 49
-pacVSdmso <- makeContrasts((groupPACLITAXEL.SPL1+ groupPACLITAXEL.SPL2+ groupPACLITAXEL.UNLABELLED/3) -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED/3), levels = colnames(design))
+pacVSdmso <- makeContrasts((groupPACLITAXEL.SPL1+ groupPACLITAXEL.SPL2+ groupPACLITAXEL.UNLABELLED)/3 -(groupDMSO.SPL1+ groupDMSO.SPL2+ groupDMSO.UNLABELLED)/3, levels = colnames(design))
 
 ### following limma workflow
 ### difference between PAC and DMSO across concentrations, at 48H only
@@ -944,6 +988,14 @@ pacVSdmso_genes <- topTable(fit, n=Inf)
 EnhancedVolcano(pacVSdmso_genes, lab=rownames(pacVSdmso_genes), x='logFC', y='adj.P.Val', pCutoff=0.05)
 pacVSdmso_genes['genes']<- rownames(pacVSdmso_genes)
 pacVSdmso_genes <- pacVSdmso_genes[pacVSdmso_genes$adj.P.Val<0.05,]
+```
+```{r}
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',sum(pacVSdmso_genes$adj.P.Val<0.05 & abs(pacVSdmso_genes$logFC)>1.5))
+up <- paste('• UPREGULATED:',sum(pacVSdmso_genes$adj.P.Val<0.05 & pacVSdmso_genes$logFC>1.5))
+down <- paste('• DOWNREGULATED:',sum(pacVSdmso_genes$adj.P.Val<0.05 & pacVSdmso_genes$logFC< -1.5))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
 ```
 
 #### Pathway Analysis
@@ -1017,7 +1069,7 @@ datatable(design)
 ### create contrast
 ### PAC VS DMSO across all concentrations and times
 ### Only ORG 66
-pacVSdmso <- makeContrasts((groupPACLITAXEL.SPL1+ groupPACLITAXEL.SPL2/2) -(groupDMSO.SPL1+ groupDMSO.SPL2/2), levels = colnames(design))
+pacVSdmso <- makeContrasts((groupPACLITAXEL.SPL1+ groupPACLITAXEL.SPL2)/2 -(groupDMSO.SPL1+ groupDMSO.SPL2)/2, levels = colnames(design))
 
 ### following limma workflow
 ### difference between PAC and DMSO across concentrations, at 48H only
@@ -1031,6 +1083,14 @@ pacVSdmso_genes <- topTable(fit, n=Inf)
 EnhancedVolcano(pacVSdmso_genes, lab=rownames(pacVSdmso_genes), x='logFC', y='adj.P.Val', pCutoff=0.05)
 pacVSdmso_genes['genes']<- rownames(pacVSdmso_genes)
 pacVSdmso_genes <- pacVSdmso_genes[pacVSdmso_genes$adj.P.Val<0.05,]
+```
+```{r}
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',sum(pacVSdmso_genes$adj.P.Val<0.05 & abs(pacVSdmso_genes$logFC)>1.5))
+up <- paste('• UPREGULATED:',sum(pacVSdmso_genes$adj.P.Val<0.05 & pacVSdmso_genes$logFC>1.5))
+down <- paste('• DOWNREGULATED:',sum(pacVSdmso_genes$adj.P.Val<0.05 & pacVSdmso_genes$logFC< -1.5))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
 ```
 
 #### Pathway Analysis
@@ -1073,4 +1133,369 @@ p1 <- cnetplot(output,
          color.params=list(category='black')) + ggtitle('DE genes between PAC-DMSO in ORG49')
 
 p1 + scale_color_gradientn(colours = c("red3", "blue")) 
+```
+
+
+## 24 + 48 Hr Analysis
+### ORG38
+
+```{r}
+### selecting metadata and countdata relevant for ORG 38
+### subset metadata to include only ORG38 cells at 48H
+columns <- metadata[metadata$Organoid=='ORG38',]
+
+### select only metadata relating to treatment concentration of interest (IC50)
+columns <- columns[columns$Treatment_1!='STAUR',]
+sampleinfo <- columns
+columns <- c(columns[,c("label")])
+
+### subset counts to include only relevant ORG38 cells 
+counts <- mac[,columns]
+```
+
+
+```{r, echo=TRUE}
+### factors to include in deisgn matrix: SPLINTR group and treatment
+group <- sampleinfo$SPLINTR
+treatment <- sampleinfo$Drug
+concentration <- sampleinfo$Concentration
+time <- sampleinfo$Time_2
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+group+treatment+concentration+time)
+rownames(design) <- rownames(sampleinfo)
+datatable(design)
+```
+
+Creating a contrast to look at the difference between SPLINTR labelled and unlabeled samples:
+```{r}
+### make contrasts
+### control VS the rest
+unlabelledVSlabelled <- makeContrasts((groupSPL1+groupSPL2)/2-groupUNLABELLED, levels=colnames(design))
+
+### following limma workflow
+### difference between labelled and unlabeled samples using contrast matrix
+counts<-counts@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, unlabelledVSlabelled)
+fit <- eBayes(fit)
+unlabelledVSlabelled_genes <- topTable(fit, n=Inf, p.value = 1)
+datatable(unlabelledVSlabelled_genes)
+```
+
+```{r}
+genes <- unlabelledVSlabelled_genes[unlabelledVSlabelled_genes$adj.P.Val<0.05,]
+genes['genes']<- rownames(genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',sum(genes$adj.P.Val<0.05 & abs(genes$logFC)>1))
+up <- paste('• UPREGULATED:',sum(genes$adj.P.Val<0.05 & genes$logFC>1))
+down <- paste('• DOWNREGULATED:',sum(genes$adj.P.Val<0.05 & genes$logFC< -1))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+Looking at interaction together:
+```{r, echo=TRUE}
+### Creating new design matrix for interaction between barcode and drug
+### factors to include = interaction treatment and concentration
+group <- sampleinfo$interaction_condition
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+group+concentration + time)
+rownames(design) <- rownames(sampleinfo)
+datatable(design)
+```
+
+Creating contrasts to look at the difference between (SPLINTR label + Drug) and (No SPLINTR label + Drug) for both Paclitaxel and SN38 :
+
+```{r, echo=TRUE}
+### make contrasts
+### contrast = (Drug_L - DMSO_L) - (Drug_U - DMSO_U)
+pacVSdmso <- makeContrasts(((groupPACLITAXEL.SPL1+groupPACLITAXEL.SPL2)/2-(groupDMSO.SPL1+groupDMSO.SPL2)/2)-(groupPACLITAXEL.UNLABELLED-groupDMSO.UNLABELLED), levels=colnames(design))
+
+sn38VSdmso<-makeContrasts(((groupSN38.SPL1+groupSN38.SPL2)/2-(groupDMSO.SPL1+groupDMSO.SPL2)/2)-(groupSN38.UNLABELLED-groupDMSO.UNLABELLED),levels=colnames(design))
+```
+
+For Paclitaxel:
+```{r, echo=TRUE}
+### following limma workflow
+### interaction between PAC and barcodes
+counts <- mac[,columns]
+counts<-counts@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, pacVSdmso)
+fit <- eBayes(fit)
+PACandBC_interaction <- topTable(fit, n=Inf, p.value = 1)
+datatable(PACandBC_interaction)
+```
+
+For SN38:
+```{r, echo=TRUE}
+### following limma workflow
+### interaction between SN38 and barcodes
+counts <- mac[,columns]
+counts<-counts@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, sn38VSdmso)
+fit <- eBayes(fit)
+SN38andBC_interaction <- topTable(fit, n=Inf, p.value = 1)
+datatable(SN38andBC_interaction)
+```
+
+### ORG49
+```{r}
+### selecting metadata and countdata relevant for ORG 49
+### subset metadata to include only ORG38 cells at 48H
+columns <- metadata[metadata$Organoid=='ORG49',]
+
+### select only metadata relating to treatment concentration of interest (IC50)
+columns <- columns[columns$Treatment_1!='STAUR',]
+sampleinfo <- columns
+columns <- c(columns[,c("label")])
+
+### subset counts to include only relevant ORG49 cells 
+counts <- mac[,columns]
+```
+
+
+```{r, echo=TRUE}
+### factors to include in deisgn matrix: SPLINTR group and treatment
+group <- sampleinfo$SPLINTR
+treatment <- sampleinfo$Drug
+concentration <- sampleinfo$Concentration
+time <- sampleinfo$Time_2
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+group+treatment+concentration+time)
+rownames(design) <- rownames(sampleinfo)
+datatable(design)
+```
+
+Creating a contrast to look at the difference between SPLINTR labelled and unlabeled samples:
+```{r}
+### make contrasts
+### control VS the rest
+unlabelledVSlabelled <- makeContrasts((groupSPL1+groupSPL2)/2-groupUNLABELLED, levels=colnames(design))
+
+### following limma workflow
+### difference between labelled and unlabeled samples using contrast matrix
+counts<-counts@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, unlabelledVSlabelled)
+fit <- eBayes(fit)
+unlabelledVSlabelled_genes <- topTable(fit, n=Inf, p.value = 1)
+datatable(unlabelledVSlabelled_genes)
+```
+
+```{r}
+genes <- unlabelledVSlabelled_genes[unlabelledVSlabelled_genes$adj.P.Val<0.05,]
+genes['genes']<- rownames(genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',sum(genes$adj.P.Val<0.05 & abs(genes$logFC)>1))
+up <- paste('• UPREGULATED:',sum(genes$adj.P.Val<0.05 & genes$logFC>1))
+down <- paste('• DOWNREGULATED:',sum(genes$adj.P.Val<0.05 & genes$logFC< -1))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+Looking at interaction together:
+```{r, echo=TRUE}
+### Creating new design matrix for interaction between barcode and drug
+### factors to include = interaction treatment and concentration
+group <- sampleinfo$interaction_condition
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+group+concentration + time)
+rownames(design) <- rownames(sampleinfo)
+datatable(design)
+```
+
+Creating contrasts to look at the difference between (SPLINTR label + Drug) and (No SPLINTR label + Drug) for both Paclitaxel and SN38 :
+
+```{r, echo=TRUE}
+### make contrasts
+### contrast = (Drug_L - DMSO_L) - (Drug_U - DMSO_U)
+pacVSdmso <- makeContrasts(((groupPACLITAXEL.SPL1+groupPACLITAXEL.SPL2)/2-(groupDMSO.SPL1+groupDMSO.SPL2)/2)-(groupPACLITAXEL.UNLABELLED-groupDMSO.UNLABELLED), levels=colnames(design))
+
+sn38VSdmso<-makeContrasts(((groupSN38.SPL1+groupSN38.SPL2)/2-(groupDMSO.SPL1+groupDMSO.SPL2)/2)-(groupSN38.UNLABELLED-groupDMSO.UNLABELLED),levels=colnames(design))
+```
+
+For Paclitaxel:
+```{r, echo=TRUE}
+### following limma workflow
+### interaction between PAC and barcodes
+counts <- mac[,columns]
+counts<-counts@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, pacVSdmso)
+fit <- eBayes(fit)
+PACandBC_interaction <- topTable(fit, n=Inf, p.value = 1)
+datatable(PACandBC_interaction)
+```
+
+For SN38:
+```{r, echo=TRUE}
+### following limma workflow
+### interaction between SN38 and barcodes
+counts <- mac[,columns]
+counts<-counts@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, sn38VSdmso)
+fit <- eBayes(fit)
+SN38andBC_interaction <- topTable(fit, n=Inf, p.value = 1)
+datatable(SN38andBC_interaction)
+```
+
+### ORG66
+```{r}
+### selecting metadata and countdata relevant for ORG 66
+### subset metadata to include only ORG66 cells at 48H
+columns <- metadata[metadata$Organoid=='ORG66',]
+
+### select only metadata relating to treatment concentration of interest (IC50)
+columns <- columns[columns$Treatment_1!='STAUR',]
+sampleinfo <- columns
+columns <- c(columns[,c("label")])
+
+### subset counts to include only relevant ORG38 cells 
+counts <- mac[,columns]
+```
+
+
+```{r, echo=TRUE}
+### factors to include in deisgn matrix: SPLINTR group and treatment
+group <- sampleinfo$SPLINTR
+treatment <- sampleinfo$Drug
+concentration <- sampleinfo$Concentration
+time <- sampleinfo$Time_2
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+group+treatment+concentration+time)
+rownames(design) <- rownames(sampleinfo)
+datatable(design)
+```
+
+Creating a contrast to look at the difference between SPLINTR labelled and unlabeled samples:
+```{r}
+### make contrasts
+### control VS the rest
+unlabelledVSlabelled <- makeContrasts((groupSPL1+groupSPL2)/2-groupUNLABELLED, levels=colnames(design))
+
+### following limma workflow
+### difference between labelled and unlabeled samples using contrast matrix
+counts<-counts@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, unlabelledVSlabelled)
+fit <- eBayes(fit)
+unlabelledVSlabelled_genes <- topTable(fit, n=Inf, p.value = 1)
+datatable(unlabelledVSlabelled_genes)
+```
+
+```{r}
+genes <- unlabelledVSlabelled_genes[unlabelledVSlabelled_genes$adj.P.Val<0.05,]
+genes['genes']<- rownames(genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',sum(genes$adj.P.Val<0.05 & abs(genes$logFC)>1))
+up <- paste('• UPREGULATED:',sum(genes$adj.P.Val<0.05 & genes$logFC>1))
+down <- paste('• DOWNREGULATED:',sum(genes$adj.P.Val<0.05 & genes$logFC< -1))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+Looking at interaction together:
+```{r, echo=TRUE}
+### Creating new design matrix for interaction between barcode and drug
+### factors to include = interaction treatment and concentration
+group <- sampleinfo$interaction_condition
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+group+concentration + time)
+rownames(design) <- rownames(sampleinfo)
+datatable(design)
+```
+
+Creating contrasts to look at the difference between (SPLINTR label + Drug) and (No SPLINTR label + Drug) for both Paclitaxel and SN38 :
+
+```{r, echo=TRUE}
+### make contrasts
+### contrast = (Drug_L - DMSO_L) - (Drug_U - DMSO_U)
+pacVSdmso <- makeContrasts(((groupPACLITAXEL.SPL1+groupPACLITAXEL.SPL2)/2-(groupDMSO.SPL1+groupDMSO.SPL2)/2)-(groupPACLITAXEL.UNLABELLED-groupDMSO.UNLABELLED), levels=colnames(design))
+
+sn38VSdmso<-makeContrasts(((groupSN38.SPL1+groupSN38.SPL2)/2-(groupDMSO.SPL1+groupDMSO.SPL2)/2)-(groupSN38.UNLABELLED-groupDMSO.UNLABELLED),levels=colnames(design))
+```
+
+For Paclitaxel:
+```{r, echo=TRUE}
+### following limma workflow
+### interaction between PAC and barcodes
+counts <- mac[,columns]
+counts<-counts@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, pacVSdmso)
+fit <- eBayes(fit)
+PACandBC_interaction <- topTable(fit, n=Inf, p.value = 1)
+datatable(PACandBC_interaction)
+```
+
+
+For SN38:
+```{r, echo=TRUE}
+### following limma workflow
+### interaction between SN38 and barcodes
+counts <- mac[,columns]
+counts<-counts@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, sn38VSdmso)
+fit <- eBayes(fit)
+SN38andBC_interaction <- topTable(fit, n=Inf, p.value = 1)
+datatable(SN38andBC_interaction)
+```
+
+```{r, fig.width=20, fig.height=30}
+
+columns <- metadata[metadata$Organoid=='ORG66' & metadata$Drug=="DMSO" | metadata$Drug=="SN38",]
+columns <- c(columns[,c("label")])
+
+data<- as.data.frame(mac@assays$RNA$counts)
+genes <- data[de_genes,columns]
+
+type_annotation <- data.frame(Drug=metadata[columns,]$Drug,
+                              SPLINTR = metadata[columns,]$SPLINTR,
+                              Time = metadata[columns,]$Time_2,
+                              Concentration = metadata[columns,]$Concentration)
+rownames(type_annotation)<- metadata[columns,]$label
+pheatmap(genes, border_color = 'NA', cellwidth = 8, annotation_col = type_annotation, cellheight = 10)
+```
+```{r, fig.width=15, fig.height=20}
+
+columns <- metadata[metadata$Organoid=='ORG66' & metadata$Drug=="DMSO" | metadata$Drug=="SN38",]
+columns <- c(columns[,c("label")])
+
+data<- as.data.frame(mac@assays$RNA$counts)
+genes <- v@.Data[[1]][de_genes,]
+
+type_annotation <- data.frame(Drug=metadata$Drug,
+                              SPLINTR = metadata$SPLINTR,
+                              Time = metadata$Time_2,
+                              Concentration = metadata$Concentration)
+rownames(type_annotation)<- metadata$label
+pheatmap(genes, border_color = 'NA', cellwidth = 8, annotation_col = type_annotation, cellheight = 10)
 ```
