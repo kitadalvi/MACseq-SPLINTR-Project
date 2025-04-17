@@ -1,0 +1,294 @@
+---
+title: "Concentration Analysis"
+output: html_document
+date: "2025-04-10"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning=FALSE, fig.height = 7, fig.width = 7)
+```
+
+```{r}
+library(tidyverse)
+library(Seurat)
+library(gtools)
+library(tidyseurat)
+library(DESeq2)
+library(edgeR)
+library(RUVSeq)
+library(variancePartition)
+library(reshape2)
+library(gridExtra)
+library(ggrepel)
+library(ggpubr)
+library(fgsea)
+library(org.Hs.eg.db)
+library(DT)
+library(DOSE)
+library(enrichplot)
+library(clusterProfiler)
+library(dplyr)
+library(pheatmap)
+library(EnhancedVolcano)
+library(msigdbr)
+```
+
+```{r}
+### macpie package functionality 
+
+############# Differential expression
+plot_volcano<-function(top, FDR_cutoff=0.005){
+  top<-as.data.frame(top)
+  top$diffexpressed<-"NO"
+  if(any(colnames(top) %in% "adj.P.Val")){
+    top<-top %>%
+      rename('FDR'='adj.P.Val')
+  }
+  top[top$logFC>=1 & top$FDR<=FDR_cutoff,]$diffexpressed<-"UP"
+  top[top$logFC<=-1 & top$FDR<=FDR_cutoff,]$diffexpressed<-"DOWN"
+
+  top$labelgenes<-""
+  top[top$diffexpressed!="NO",]$labelgenes<-rownames(top[top$diffexpressed!="NO",])
+
+  ggplot(top, aes(x=logFC, y=-log10(FDR), col=diffexpressed, label=labelgenes))+
+    geom_point()+
+    theme_classic()+
+    geom_text_repel(min.segment.length=5)+
+    scale_color_manual(values=c("blue", "black", "red"))+
+    geom_vline(xintercept=c(-1, 1), col="red") +
+    geom_hline(yintercept=-log10(0.05), col="red")
+}
+
+diff_exprs_voomLmFit<-function(treatment_1,treatment_2,max.overlaps=30){
+  countData<-mac@assays$RNA$counts[,grepl(paste0(treatment_1,"|",treatment_2),coldata$condition)]
+  coldata_temp<-coldata[grepl(paste0(treatment_1,"|",treatment_2),coldata$condition),]
+  group = coldata_temp$condition
+# batch = coldata_temp$batch
+  design = model.matrix(~0+group)
+  edgeR<-DGEList(
+    counts = countData+1,
+    samples = coldata_temp$condition,
+    group = coldata_temp$condition
+  )
+  edgeR <- calcNormFactors(edgeR,methods="TMMwsp")
+  edgeR <- estimateDisp(edgeR,design)
+  cpm <- edgeR::cpm(edgeR,log=T)
+  #fit <- glmQLFit(edgeR, design)
+  fit <- edgeR::voomLmFit(edgeR, design)
+  myargs = list(paste0("group",treatment_1,"-",paste0("group",treatment_2)), levels=design)
+  contrasts <- do.call(makeContrasts, myargs)
+  tmp <- contrasts.fit(fit, contrasts)
+  tmp <- eBayes(tmp)
+  top.table <- topTable(tmp, sort.by = "P", n = Inf)
+
+  return(as.data.frame(top.table))
+}
+
+diff_exprs_edgeR<-function(treatment_1,treatment_2){
+  countData<-mac@assays$RNA$counts[,grepl(paste0(treatment_1,"|",treatment_2),coldata$condition)]
+  coldata_temp<-coldata[grepl(paste0(treatment_1,"|",treatment_2),coldata$condition),]
+  group = coldata_temp$condition
+  batch = coldata_temp$batch
+  design = model.matrix(~0+group+batch)
+  edgeR<-DGEList(
+    counts = countData+1,
+    samples = coldata_temp$condition,
+    group = coldata_temp$condition
+  )
+  edgeR <- calcNormFactors(edgeR,methods="TMMwsp")
+  edgeR <- estimateDisp(edgeR,design)
+  fit <- glmQLFit(edgeR, design)
+  myargs = list(paste0("group",treatment_1,"-",paste0("group",treatment_2)), levels=design)
+  contrasts <- do.call(makeContrasts, myargs)
+  qlf <- glmQLFTest(fit, contrast=contrasts)
+  topTags <- topTags(qlf,n=length(qlf$df.total))
+  return(as.data.frame(topTags))
+}
+```
+
+```{r}
+### import metadata
+metadata<-read.csv("/Volumes/bioinf/home/ndalvi/MACseq_PMC228/metadata/PMC228.csv",header=T) %>%
+  arrange("Barcode") %>%
+  mutate(id=gsub("Plate","",Plate_ID)) %>%
+  mutate(label=paste0(Treatment_1,
+                      " ","(",Well_ID,")")) %>%
+  mutate(interaction_condition=paste0(Drug,".",SPLINTR)) %>%
+  mutate(macpie_analysis=paste0(Organoid,".",Treatment_1,".",Time)) %>%
+  mutate(analysis_condition=paste0(Organoid,".",SPLINTR,".",Time))
+
+### load in count data 
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/3_MACseq_PMC228/raw/PMC228/starsolo/SA_PMC228-null.Solo.out/Gene/raw')
+
+### filter by cpm>10 in at least 2 samples
+keep <- rowSums(edgeR::cpm(raw_counts)>10) >= 2
+raw_counts <- raw_counts[keep,]
+
+### filter for the minimum number of reads per gene per sample, as per edgeR
+row.names(metadata)<-metadata$label
+
+mac <- CreateSeuratObject(counts = raw_counts,
+                          project = 'PMC228',
+                          min.cells = 1,
+                          min.features = 1)
+
+mac[["percent.mt"]]<-PercentageFeatureSet(mac, pattern = "^mt-")
+mac[["percent.rp"]]<-PercentageFeatureSet(mac, pattern = "^rp-")
+
+### add location metadata
+mac<- mac %>%
+  inner_join(metadata,by=c(".cell"="Barcode"))
+
+### exclude mito and ribo genes from the counts
+mac<-mac[!grepl("^MT-",rownames(mac))]
+mac<-mac[!grepl("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA",rownames(mac))]
+
+# #Normalize to cpm and log transform counts 
+# mac <- mac %>%
+#   NormalizeData(normalization.method = 'RC', scale.factor = 1e6) 
+# mac@assays$RNA$counts <- log1p(mac@assays$RNA$counts)
+colnames(mac)<- mac$label
+
+### removing edge wells 
+### removing wells treated with STAUR
+#metadata <- metadata[metadata$Treatment_1!='STAUR', ]
+#metadata <- metadata[metadata$interaction_condition!='.', ]
+#mac <- mac[,c(metadata$label)]
+```
+
+## Concentration analysis using MACPIE functionality 
+
+Using ORG38 as an example, this analysis will examine differences in DE at different concentrations using the original MACseq functions from the MACPIE package by Nenad/VCFG. 
+
+```{r}
+### ORG38
+### PAC IC12.5 VS DMSO 48H
+treatment_1<-"ORG38.PAC_IC12.5.48H"
+treatment_2<-"ORG38.DMSO.48H"
+coldata<-data.frame(batch=rep(1,384),condition=mac$macpie_analysis)
+DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
+ic12.5_genes <- DEgenes[DEgenes$adj.P.Val<=0.005,]
+ic12.5_genes$dose <- 'IC12.5 48H'
+
+###ORG38
+### PAC IC25 VS DMSO 48H
+treatment_1<-"ORG38.PAC_IC25.48H"
+treatment_2<-"ORG38.DMSO.48H"
+coldata<-data.frame(batch=rep(1,384),condition=mac$macpie_analysis)
+DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
+ic25_genes <- DEgenes[DEgenes$adj.P.Val<=0.005,]
+ic25_genes$dose <- 'IC25 48H'
+
+###ORG38
+### PAC IC50 VS DMSO 48H
+treatment_1<-"ORG38.PAC_IC50.48H"
+treatment_2<-"ORG38.DMSO.48H"
+coldata<-data.frame(batch=rep(1,384),condition=mac$macpie_analysis)
+DEgenes<-diff_exprs_voomLmFit(treatment_1,treatment_2)
+ic50_genes <- DEgenes[DEgenes$adj.P.Val<=0.005,]
+ic50_genes$dose <- 'IC50 48H'
+
+
+logFC_data <- rbind(ic12.5_genes[,c('logFC', 'dose')],ic25_genes[,c('logFC', 'dose')],ic50_genes[,c('logFC', 'dose')] )
+
+p <- ggplot(logFC_data, aes(x=dose, y=logFC)) + 
+  geom_violin() +
+  theme_linedraw()
+p
+```
+
+
+## Concentration analysis using DM approach 
+```{r}
+### selecting metadata and countdata relevant for ORG 38
+### subset metadata to include only ORG38 cells at 48H
+columns <- metadata[metadata$Organoid=='ORG38'&metadata$Time=='48H' & metadata$Treatment_1!='STAUR',]
+
+
+### select only metadata relating to treatment concentration of interest (IC50)
+#columns <- columns[columns$Treatment_1!='STAUR',]
+sampleinfo <- columns
+columns <- c(columns[,c("label")])
+
+### subset counts to include only relevant ORG38 cells 
+counts <- mac[,columns]
+
+### factors to include in deisgn matrix: SPLINTR group and treatment, concentration
+
+group <- sampleinfo$Treatment_1
+splintr<- sampleinfo$SPLINTR
+time <- sampleinfo$Time_2
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0 + group + splintr + time)
+rownames(design) <- rownames(sampleinfo)
+datatable(design)
+```
+
+```{r}
+### create contrast
+### PAC VS DMSO across all concentrations and times
+### Only ORG 38
+pacVSdmso <- makeContrasts(((groupPAC_IC12.5+groupPAC_IC25+groupPAC_IC50)/3) -(groupDMSO), levels = colnames(design))
+
+### following limma workflow
+### difference between PAC and DMSO across concentrations, at 48H only
+counts <- mac[,columns]
+counts<-counts@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, pacVSdmso)
+fit <- eBayes(fit)
+all_conc <- topTable(fit, n=Inf)
+all_conc <- all_conc[all_conc$adj.P.Val<0.05,]
+all_conc$dose <- 'all'
+
+### create contrast
+### PAC VS DMSO across IC25 + IC50
+### Only ORG 38
+pacVSdmso <- makeContrasts(((groupPAC_IC25+groupPAC_IC50)/2) -(groupDMSO), levels = colnames(design))
+
+### following limma workflow
+### difference between PAC and DMSO across concentrations, at 48H only
+counts <- mac[,columns]
+counts<-counts@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, pacVSdmso)
+fit <- eBayes(fit)
+high_conc <- topTable(fit, n=Inf)
+high_conc <- all_conc[all_conc$adj.P.Val<0.05,]
+high_conc$dose <- 'IC50 + IC25'
+
+### create contrast
+### PAC VS DMSO across IC12.5
+### Only ORG 38
+pacVSdmso <- makeContrasts((groupPAC_IC12.5) -(groupDMSO), levels = colnames(design))
+
+### following limma workflow
+### difference between PAC and DMSO across concentrations, at 48H only
+counts <- mac[,columns]
+counts<-counts@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, pacVSdmso)
+fit <- eBayes(fit)
+low_conc <- topTable(fit, n=Inf)
+low_conc <- all_conc[all_conc$adj.P.Val<0.05,]
+low_conc$dose <- 'IC12.5'
+
+logFC_data <- rbind(all_conc[,c('logFC','dose')],high_conc[,c('logFC','dose')],low_conc[,c('logFC','dose')])
+
+p <- ggplot(logFC_data, aes(x=dose, y=logFC)) + 
+  geom_violin() +
+  theme_linedraw()
+p
+
+pval_data <- rbind(all_conc[,c('adj.P.Val','dose')],high_conc[,c('adj.P.Val','dose')],low_conc[,c('adj.P.Val','dose')])
+
+p2 <- ggplot(pval_data, aes(x=dose, y=adj.P.Val)) + 
+  geom_violin() +
+  theme_linedraw()
+p2
+```

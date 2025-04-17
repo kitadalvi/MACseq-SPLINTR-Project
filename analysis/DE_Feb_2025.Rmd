@@ -58,7 +58,7 @@ metadata<-read.csv("/Volumes/bioinf/home/ndalvi/MACseq_PMC228/metadata/PMC228.cs
   mutate(analysis_condition=paste0(Organoid,".",SPLINTR,".",Time))
 
 ### load in count data 
-raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/MACseq_PMC228/raw/PMC228/starsolo/SA_PMC228-null.Solo.out/Gene/raw')
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/3_MACseq_PMC228/raw/PMC228/starsolo/SA_PMC228-null.Solo.out/Gene/raw')
 
 ### filter by cpm>10 in at least 2 samples
 keep <- rowSums(edgeR::cpm(raw_counts)>10) >= 2
@@ -148,7 +148,7 @@ volcano_plot <- EnhancedVolcano(pac_genes,
                                 title="Paclitaxel VS DMSO",
                                 subtitle="Entire Plate",
                                 lab=rownames(pac_genes),
-                                selectLab = c("MSLN","S100P","LGALS1","KRT13","SNRPN","LCN2","MSMB","PSCA","CYSRT1","GDF15"),
+                                selectLab = c("MSLN","S100P","LGALS1","KRT13","SNRPN","LCN2","MSMB","PSCA","CYSRT1","GDF15","NAP1L1","AK4","EEF1A1","V1L1","CLIC1"),
                                 boxedLabels = TRUE,
                                 drawConnectors = TRUE,
                                 arrowheads = FALSE,

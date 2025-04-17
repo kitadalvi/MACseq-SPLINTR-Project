@@ -52,7 +52,7 @@ individual_counts <- function(df, well_id){
 
 org_data <- metadata[metadata$Organoid=='ORG66' 
                    & metadata$Treatment_1 != 'STAUR' 
-                   & metadata$Labelled != 'unlabelled',c('Well_ID',"Organoid","Treatment_1",'Time',"barcode", "bc.umi.count")]
+                   & metadata$SPLINTR != 'UNLABELLED',c('Well_ID',"Organoid","Treatment_1",'Time',"barcode", "bc.umi.count")]
 
 rownames(org_data)<- org_data$Well_ID
 treatments<- c(org_data$Well_ID)
@@ -81,7 +81,7 @@ barcode_data <- barcode_data[rowSums(barcode_data$counts) != 0, ]
 
 ### Entire Plate 
 Visualising proportion of barcodes in all ORG66 wells across both timepoints:
-```{r, fig.height=5, fig.width=6}
+```{r, fig.height=5, fig.width=5}
 plotBarcodeHistogram(barcode_data, topN = 10, alphaLowFreq = 0)
 
 dge.filtered <-
@@ -93,9 +93,13 @@ dge.filtered <-
     plot = F
   )
 
-p2 <- plotBarcodeHistogram(dge.filtered[,c("H19",'H20','H21','H22','D19','D20','D21','D22','K19','K20','K21','K22')], topN = 10, alphaLowFreq = 0)   
+plotBarcodeHistogram(dge.filtered[,c("H19",'H20','H21','H22','D19','D20','D21','D22','K19','K20','K21','K22')], topN = 10, alphaLowFreq = 0) + ggtitle("Top 10 barcodes in ORG66")
 
-p2 + geom_bar(position="stack", stat="identity", width=,show.legend = FALSE) + ggtitle("Top 10 barcodes in ORG66")
+#p2 + geom_bar(position="stack", stat="identity", width=,show.legend = FALSE) + ggtitle("Top 10 barcodes in ORG66")
+```
+
+```{r, fig.height=6, fig.width=5}
+plotBarcodeHistogram(dge.filtered[,c("H19",'H20','H21','H22')], topN = 10, alphaLowFreq = 0)
 ```
 
 ## Proportional Bubble Plots 

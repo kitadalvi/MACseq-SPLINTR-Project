@@ -39,6 +39,35 @@ metadata<- metadata %>%
 
 ```
 
+## Getting barcode data to identify # of unique and different barcodes
+```{r, eval=FALSE}
+### DO NOT RUN WHEN EVAL = FALSE
+### Purpose of chunk is to generate BC data for analyses in excel etc
+metadata<-read.csv("/Volumes/bioinf/home/ndalvi/MACseq_PMC228/metadata/PMC228.csv",header=T) %>%
+  arrange("Barcode") %>%
+  mutate(id=gsub("Plate","",Plate_ID)) %>%
+  mutate(label=paste0(Treatment_1,
+                      " ","(",Well_ID,")")) %>%
+  mutate(interaction_condition=paste0(Drug,".",SPLINTR)) %>%
+  mutate(analysis_condition=paste0(Organoid,".",SPLINTR))
+
+x=1
+counts$sample <- 0
+counts$drug <- 'unk'
+
+while (x < length(counts$cellid)) {
+  cellid <- counts$cellid[x]
+  condition <- metadata[metadata$Barcode==`cellid`,23]
+  counts$sample[x] <- condition
+  drug <- metadata[metadata$Barcode==`cellid`,17]
+  counts$drug[x] <- drug
+  x = x+1
+}
+
+write.table(counts, quote=F, row.names=F, col.names=T, file='/Users/dalvinikita/Documents/7_GitHub/MACseq-SPLINTR-Project/data/bc_data.tsv', sep='\t')
+
+```
+
 Subsetting data for the relevant ORG line:
 ```{r, fig.width=10, fig.height=10}
 individual_counts <- function(df, well_id){
@@ -52,7 +81,7 @@ individual_counts <- function(df, well_id){
 
 org_data <- metadata[metadata$Organoid=='ORG38' 
                    & metadata$Treatment_1 != 'STAUR' 
-                   & metadata$Labelled != 'unlabelled',c('Well_ID',"Organoid","Treatment_1",'Time',"barcode", "bc.umi.count")]
+                   & metadata$SPLINTR != 'UNLABELLED',c('Well_ID',"Organoid","Treatment_1",'Time',"barcode", "bc.umi.count")]
 
 rownames(org_data)<- org_data$Well_ID
 treatments<- c(org_data$Well_ID)
@@ -94,6 +123,12 @@ dge.filtered <-
   )
 
 plotBarcodeHistogram(dge.filtered[,c("H12",'H13','H14','H15','D12','D13','D14','D15','K12','K13','K14','K15')], topN = 20, alphaLowFreq = 0) + ggtitle("Top 20 barcodes in ORG38")
+
+```
+```{r, fig.height=6, fig.width=5}
+plotBarcodeHistogram(dge.filtered, samples=c("H12",'H13','H14','H15'), topN = 20, alphaLowFreq = 0) + ggtitle("Top 20 barcodes in DMSO treated ORG38 ")
+
+plotBarcodeHistogram(dge.filtered, samples=c("H12",'H13','H14','H15'), topN = 20, alphaLowFreq = 0)
 ```
 
 ## Proportional Bubble Plots 

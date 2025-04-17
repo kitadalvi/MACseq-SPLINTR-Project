@@ -52,7 +52,7 @@ individual_counts <- function(df, well_id){
 
 org_data <- metadata[metadata$Organoid=='ORG49' 
                    & metadata$Treatment_1 != 'STAUR' 
-                   & metadata$Labelled != 'unlabelled',c('Well_ID',"Organoid","Treatment_1",'Time',"barcode", "bc.umi.count")]
+                   & metadata$SPLINTR != 'UNLABELLED',c('Well_ID',"Organoid","Treatment_1",'Time',"barcode", "bc.umi.count")]
 
 rownames(org_data)<- org_data$Well_ID
 treatments<- c(org_data$Well_ID)
@@ -92,11 +92,16 @@ dge.filtered <-
     plot = F
   )
 
-p2 <- plotBarcodeHistogram(dge.filtered[,c("H05",'H06','H07','H08','D05','D06','D07','D08','K05','K06','K07','K08')], topN = 25, alphaLowFreq = 0)  
+plotBarcodeHistogram(dge.filtered[,c("H05",'H06','H07','H08','D05','D06','D07','D08','K05','K06','K07','K08')], topN = 25, alphaLowFreq = 0) + ggtitle("Top 25 barcodes in ORG49")
 
-p2 + geom_bar(position="stack", stat="identity", width=,show.legend = FALSE) + ggtitle("Top 25 barcodes in ORG49")
+plotBarcodeHistogram(dge.filtered[,c("H05",'H06','H07','H08')], topN = 25, alphaLowFreq = 0) + ggtitle("Top 25 barcodes in DMSO treated ORG49")
+#p2 + geom_bar(position="stack", stat="identity", width=,show.legend = FALSE) + ggtitle("Top 25 barcodes in ORG49")
+
+
 ```
-
+```{r, fig.height=6, fig.width=5}
+plotBarcodeHistogram(dge.filtered, samples=c("H05",'H06','H07','H08'), topN = 20, alphaLowFreq = 0) 
+```
 
 ## Proportional Bubble Plots 
 
