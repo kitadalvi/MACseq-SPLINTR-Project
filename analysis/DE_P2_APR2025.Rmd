@@ -1,0 +1,1861 @@
+---
+title: "MACseq Plate 2 Analysis APR2025"
+output: html_document
+date: "2025-04-28"
+---
+
+```{r setup, echo = FALSE, message =FALSE, warning=FALSE, fig.height=8, fig.width=6}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+```{r, warning=FALSE, message=FALSE}
+### loading required packages
+library(tidyverse)
+library(Seurat)
+library(gtools)
+library(tidyseurat)
+library(DESeq2)
+library(edgeR)
+library(RUVSeq)
+library(variancePartition)
+library(reshape2)
+library(gridExtra)
+library(ggrepel)
+library(ggpubr)
+library(fgsea)
+library(org.Hs.eg.db)
+library(DT)
+library(DOSE)
+library(enrichplot)
+library(clusterProfiler)
+library(dplyr)
+library(pheatmap)
+library(EnhancedVolcano)
+library(msigdbr)
+library(ReactomePA)
+library(RColorBrewer)
+```
+
+```{r}
+### Functions 
+
+### buttons for datatables 
+create_dt <- function(x){
+  DT::datatable(x,
+                extensions = 'Buttons',
+                options = list(dom = 'Blfrtip',
+                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                               lengthMenu = list(c(10,25,50,-1),
+                                                 c(10,25,50,"All"))))
+}
+```
+
+## Notes
+
+Thresholds used for DE analysis:
+
+• pvalue threshold = 0.05
+
+• log FC threshold = lfc > 1 | lfc < -1
+
+## Data
+```{r}
+### Importing MACseq data
+### Importing metadata
+### Joining data in a Seurat object 
+
+### import metadata
+metadata<-read.csv("/Users/dalvinikita/Documents/11_MACseq_PMMSq042/PMMSq042.csv",header=T) %>%
+  arrange("Barcode") %>%
+  mutate(id=gsub("Plate","",Plate_ID)) %>%
+  mutate(Treatment_Combination=paste0(substr(Cell_type,1,2),'_',substr(Treatment_1,1,4))) %>%
+  mutate(label=paste0(Treatment_Combination,"_",Well_ID)) %>%
+  mutate(Concentration_1=as.factor(Concentration_1)) %>%
+  mutate(SPLINTR = str_sub(Cell_type,-1,-1)) %>%
+  mutate(group = paste0(Treatment_Combination,'.',SPLINTR))
+
+
+### load in count data 
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/11_MACseq_PMMSq042/raw')
+
+### filter by cpm>10 in at least 3 samples
+keep <- rowSums(edgeR::cpm(raw_counts)>3) >= 10
+raw_counts <- raw_counts[keep,]
+
+### filter for the minimum number of reads per gene per sample, as per edgeR
+row.names(metadata)<-metadata$label
+
+mac <- CreateSeuratObject(counts = raw_counts,
+                          project = 'PMMSq042',
+                          min.cells = 1,
+                          min.features = 0)
+
+#mac[["percent.mt"]]<-PercentageFeatureSet(mac, pattern = "^mt-")
+#mac[["percent.rp"]]<-PercentageFeatureSet(mac, pattern = "^rp-")
+
+mac[["percent.mt"]] <- PercentageFeatureSet(mac, pattern = "^mt-|^MT-")
+mac[["percent.ribo"]] <- PercentageFeatureSet(mac, pattern = "^Rp[slp][[:digit:]]|^Rpsa|^RP[SLP][[:digit:]]|^RPSA")
+
+### add location metadata
+mac<- mac %>%
+  inner_join(metadata,by=c(".cell"="Barcode"))
+
+### exclude mito and ribo genes from the counts
+mac<-mac[!grepl("^MT-",rownames(mac))]
+mac<-mac[!grepl("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA",rownames(mac))]
+
+colnames(mac)<- mac$label
+```
+A quick look at the metadata:
+
+```{r}
+create_dt(metadata[metadata$Sample_type!="EMPTY",c("Well_ID","Barcode","Organoid", "Treatment_Combination", "SPLINTR", "Treatment_1")])
+```
+## Basic Visualisation {.tabset}
+
+### MDS Plots
+
+```{r}
+pch_values <- c(0,1,2,5,19,20,21,22,23,24,25)
+
+mac_filtered <- mac %>%
+    filter(Cell_type != "EMPTY")
+metadata_filtered <- metadata %>%
+    filter(Cell_type != "EMPTY")
+#------------------------------------------------------ENTIRE_PLATE---------------------------------
+
+# mds <- mac_filtered@assays$RNA$counts %>%
+#   dist() %>%          
+#   cmdscale() %>%
+#   as_tibble()
+# colnames(mds) <- c("Dim.1", "Dim.2")
+# # Plot MDS
+# ggscatter(mds, x = "Dim.1", y = "Dim.2", 
+#           label = mac_filtered$label,
+#           size = 1,
+#           repel = TRUE)
+# 
+# plotMDS(mac_filtered@assays$RNA$counts, 
+#         labels=mac_filtered$label, 
+#         pch=pch_values[as.factor(metadata_filtered$Treatment_Combination)], 
+#         cex=0.25, 
+#         bg=brewer.pal(3,'Dark2')[as.factor(metadata_filtered$Organoid)], 
+#         col=brewer.pal(3,'Dark2')[as.factor(metadata_filtered$Organoid)])
+
+#------------------------------------------------------ORG38-----------------------------------------
+columns <- metadata[metadata$Organoid=='ORG38',]
+sampleinfo <- columns
+columns <- c(columns[,c("label")])
+counts <- mac_filtered[,columns]
+
+plotMDS(counts@assays$RNA$counts, 
+        labels=NULL, 
+        pch=pch_values[as.factor(sampleinfo$Treatment_Combination)], 
+        cex=0.5, 
+        bg=brewer.pal(8,'Dark2')[as.factor(sampleinfo$SPLINTR)], 
+        col=brewer.pal(8,'Dark2')[as.factor(sampleinfo$SPLINTR)])
+
+#------------------------------------------------------ORG49----------------------------------------
+columns <- metadata[metadata$Organoid=='ORG49',]
+sampleinfo <- columns
+columns <- c(columns[,c("label")])
+counts <- mac_filtered[,columns]
+
+plotMDS(counts@assays$RNA$counts, 
+        labels=NULL, 
+        pch=pch_values[as.factor(sampleinfo$Treatment_Combination)], 
+        cex=0.5, 
+        bg=brewer.pal(8,'Dark2')[as.factor(sampleinfo$SPLINTR)], 
+        col=brewer.pal(8,'Dark2')[as.factor(sampleinfo$SPLINTR)])
+
+#------------------------------------------------------ORG66------------------------------------------
+columns <- metadata[metadata$Organoid=='ORG66',]
+sampleinfo <- columns
+columns <- c(columns[,c("label")])
+counts <- mac_filtered[,columns]
+
+plotMDS(counts@assays$RNA$counts, 
+        labels=NULL, 
+        pch=pch_values[as.factor(sampleinfo$Treatment_Combination)], 
+        cex=0.5, 
+        bg=brewer.pal(8,'Dark2')[as.factor(sampleinfo$SPLINTR)], 
+        col=brewer.pal(8,'Dark2')[as.factor(sampleinfo$SPLINTR)])
+
+VlnPlot(mac, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", "percent.ribo"),
+    ncol = 4, group.by = "Sample_type")
+```
+
+## Analysis
+
+### ORG38 
+
+#### Design Matrix and Contrasts 
+
+Factors to include in design matrix: 
+
+• SPLINTR/treatment group (splintrA/ splintrB)
+
+• Treatment combination
+
+• Concentration
+
+Design matrix:
+
+```{r, fig.height=8, fig.width=6}
+### selecting metadata and countdata relevant for ORG 38
+### subset metadata to include only ORG38 cells 
+columns <- metadata[metadata$Organoid=='ORG38' & metadata$Treatment_1!="Staurosporine",]
+sampleinfo <- columns
+samples <- c(rownames(sampleinfo))
+counts_matrix <- mac[,samples]
+order <- colnames(counts_matrix)
+sampleinfo <- sampleinfo[colnames(counts_matrix),]
+
+### factors to include in deisgn matrix: SPLINTR group and treatment, concentration
+treatment <- as.factor(sampleinfo$Treatment_Combination)
+concentration <- sampleinfo$Concentration_1
+splintr <- as.factor(sampleinfo$SPLINTR)
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+treatment+splintr+concentration)
+rownames(design) <- rownames(sampleinfo)
+datatable(design)
+
+NC_pacvsdmso <- makeContrasts(treatmentNC_Pacl-treatmentNC_DMSO,levels=colnames(design))
+NC_sn38vsdmso <- makeContrasts(treatmentNC_SN38-treatmentNC_DMSO,levels=colnames(design))
+PAC_pacvsdmso <- makeContrasts(treatmentPa_Pacl-treatmentPa_DMSO,levels=colnames(design))
+SN38_sn38vsdmso <- makeContrasts(treatmentSN_SN38-treatmentSN_DMSO,levels=colnames(design))
+long_PAC <- makeContrasts((treatmentPa_Pacl-treatmentPa_DMSO)-(treatmentNC_Pacl-treatmentNC_DMSO),levels=colnames(design))
+long_SN38 <- makeContrasts((treatmentSN_SN38-treatmentSN_DMSO)-(treatmentNC_SN38-treatmentNC_DMSO),levels=colnames(design))
+
+```
+
+#### Differential Expression {.tabset}
+
+##### NC_PAC-NC_DMSO
+
+```{r, fig.height=8, fig.width=6}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+counts<-counts_matrix@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, NC_pacvsdmso)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="NC Paclitaxel VS NC DMSO",
+                                subtitle="ORG38",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(DE_genes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
+
+### Pathway Analysis
+### returning a list of corresponding entrez IDs for gene names in DE genes
+entrezids <- bitr(rownames(DE_genes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+### add entrezid data
+DE_genes$gene <- rownames(DE_genes)
+pathway_data<- left_join(DE_genes, entrezids, by=join_by(gene==SYMBOL))
+
+### removing genes that dont map to an entrezID (~19.85%)
+pathway_data <- drop_na(pathway_data)
+
+### setting up gene list
+geneList <- pathway_data$logFC
+names(geneList)<- pathway_data$ENTREZID
+
+#performing reactome enrichment analysis 
+x <- ReactomePA::enrichPathway(gene=names(geneList),
+                               organism='human',
+                               pvalueCutoff =1,
+                               qvalueCutoff = 1,
+                               readable=TRUE)
+
+### Functional enrichment result using PA:
+
+create_dt(x@result)
+
+### Pathway visualisation:
+
+p1<- barplot(x) 
+p1 +scale_fill_gradient(low="blue", high="red")
+```
+*Genes that don't map to an entrezID ~19.85%*
+
+##### NC_SN38-NC_DMSO
+```{r, fig.height=8, fig.width=6}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+counts<-counts_matrix@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, NC_sn38vsdmso)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### labelling 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="NC SN38 VS NC DMSO",
+                                subtitle="ORG38",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(DE_genes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
+
+### Pathway Analysis
+### returning a list of corresponding entrez IDs for gene names in DE genes
+entrezids <- bitr(rownames(DE_genes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+### add entrezid data
+DE_genes$gene <- rownames(DE_genes)
+pathway_data<- left_join(DE_genes, entrezids, by=join_by(gene==SYMBOL))
+
+### removing genes that dont map to an entrezID (~18.15%)
+pathway_data <- drop_na(pathway_data)
+
+### setting up gene list
+geneList <- pathway_data$logFC
+names(geneList)<- pathway_data$ENTREZID
+
+#performing reactome enrichment analysis 
+x <- ReactomePA::enrichPathway(gene=names(geneList),
+                               organism='human',
+                               pvalueCutoff =1,
+                               qvalueCutoff = 1,
+                               readable=TRUE)
+
+### Functional enrichment result using PA:
+
+create_dt(x@result)
+
+### Pathway visualisation:
+
+p1<- barplot(x) 
+p1 +scale_fill_gradient(low="blue", high="red")
+```
+*Genes that don't map to an entrezID ~18.5%*
+
+##### PAC_PAC - PAC_DMSO
+```{r, fig.height=8, fig.width=6}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+counts<-counts_matrix@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, PAC_pacvsdmso)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### labelling 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="Pac_Pac VS Pac_DMSO",
+                                subtitle="ORG38",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(DE_genes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
+
+### Pathway Analysis
+### returning a list of corresponding entrez IDs for gene names in DE genes
+entrezids <- bitr(rownames(DE_genes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+### add entrezid data
+DE_genes$gene <- rownames(DE_genes)
+pathway_data<- left_join(DE_genes, entrezids, by=join_by(gene==SYMBOL))
+
+### removing genes that dont map to an entrezID (~16.54%)
+pathway_data <- drop_na(pathway_data)
+
+### setting up gene list
+geneList <- pathway_data$logFC
+names(geneList)<- pathway_data$ENTREZID
+
+#performing reactome enrichment analysis 
+x <- ReactomePA::enrichPathway(gene=names(geneList),
+                               organism='human',
+                               pvalueCutoff =1,
+                               qvalueCutoff = 1,
+                               readable=TRUE)
+
+### Functional enrichment result using PA:
+
+create_dt(x@result)
+
+### Pathway visualisation:
+
+p1<- barplot(x) 
+p1 +scale_fill_gradient(low="blue", high="red")
+```
+*Genes that don't map to an entrezID ~16.54%*
+
+##### SN38_SN38 - SN38_DMSO)
+
+```{r, fig.height=8, fig.width=6}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+counts<-counts_matrix@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, SN38_sn38vsdmso)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### labelling 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="SN38_SN38 VS SN38_DMSO",
+                                subtitle="ORG38",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(DE_genes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
+
+### Pathway Analysis
+### returning a list of corresponding entrez IDs for gene names in DE genes
+entrezids <- bitr(rownames(DE_genes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+### add entrezid data
+DE_genes$gene <- rownames(DE_genes)
+pathway_data<- left_join(DE_genes, entrezids, by=join_by(gene==SYMBOL))
+
+### removing genes that dont map to an entrezID (~18.44%)
+pathway_data <- drop_na(pathway_data)
+
+### setting up gene list
+geneList <- pathway_data$logFC
+names(geneList)<- pathway_data$ENTREZID
+
+#performing reactome enrichment analysis 
+x <- ReactomePA::enrichPathway(gene=names(geneList),
+                               organism='human',
+                               pvalueCutoff =1,
+                               qvalueCutoff = 1,
+                               readable=TRUE)
+
+### Functional enrichment result using PA:
+
+create_dt(x@result)
+
+### Pathway visualisation:
+
+p1<- barplot(x) 
+p1 +scale_fill_gradient(low="blue", high="red")
+```
+*Genes that don't map to an entrezID ~18.44%*
+
+##### (PAC_PAC - PAC_DMSO) - (NC_PAC-NC_DMSO)
+
+```{r, fig.height=8, fig.width=6}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+counts<-counts_matrix@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, long_PAC)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="(PAC_PAC-PAC_DMSO) - (NC_PAC-NC_DMSO)",
+                                subtitle="ORG38",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(DE_genes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
+
+### Pathway Analysis
+### returning a list of corresponding entrez IDs for gene names in DE genes
+entrezids <- bitr(rownames(DE_genes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+### add entrezid data
+DE_genes$gene <- rownames(DE_genes)
+pathway_data<- left_join(DE_genes, entrezids, by=join_by(gene==SYMBOL))
+
+### removing genes that dont map to an entrezID (~6.56%)
+pathway_data <- drop_na(pathway_data)
+
+### setting up gene list
+geneList <- pathway_data$logFC
+names(geneList)<- pathway_data$ENTREZID
+
+#performing reactome enrichment analysis 
+x <- ReactomePA::enrichPathway(gene=names(geneList),
+                               organism='human',
+                               pvalueCutoff =1,
+                               qvalueCutoff = 1,
+                               readable=TRUE)
+
+### Functional enrichment result using PA:
+
+create_dt(x@result)
+
+### Pathway visualisation:
+
+p1<- barplot(x) 
+p1 +scale_fill_gradient(low="blue", high="red")
+```
+*Genes that don't map to an entrezID ~6.56*
+
+##### (SN38_SN38 - SN38_DMSO) - (NC_SN38-NC_DMSO)
+```{r, fig.height=8, fig.width=6}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+counts<-counts_matrix@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, long_SN38)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="(PAC_PAC-PAC_DMSO) - (NC_PAC-NC_DMSO)",
+                                subtitle="ORG38",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(DE_genes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
+
+### Pathway Analysis
+### returning a list of corresponding entrez IDs for gene names in DE genes
+entrezids <- bitr(rownames(DE_genes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+### add entrezid data
+DE_genes$gene <- rownames(DE_genes)
+pathway_data<- left_join(DE_genes, entrezids, by=join_by(gene==SYMBOL))
+
+### removing genes that dont map to an entrezID (~6.25%)
+pathway_data <- drop_na(pathway_data)
+
+### setting up gene list
+geneList <- pathway_data$logFC
+names(geneList)<- pathway_data$ENTREZID
+
+#performing reactome enrichment analysis 
+x <- ReactomePA::enrichPathway(gene=names(geneList),
+                               organism='human',
+                               pvalueCutoff =1,
+                               qvalueCutoff = 1,
+                               readable=TRUE)
+
+### Functional enrichment result using PA:
+
+create_dt(x@result)
+
+### Pathway visualisation:
+
+p1<- barplot(x) 
+p1 +scale_fill_gradient(low="blue", high="red")
+```
+*Genes that don't map to an entrezID ~6.25%*
+
+
+### ORG49 
+
+#### Design Matrix and Contrasts 
+
+Factors to include in design matrix: 
+
+• SPLINTR/treatment group (splintrA/ splintrB)
+
+• Treatment combination
+
+• Concentration
+
+Design matrix:
+
+```{r, fig.height=8, fig.width=6}
+### selecting metadata and countdata relevant for ORG 38
+### subset metadata to include only ORG38 cells 
+columns <- metadata[metadata$Organoid=='ORG49' & metadata$Treatment_1!="Staurosporine",]
+sampleinfo <- columns
+samples <- c(rownames(sampleinfo))
+counts_matrix <- mac[,samples]
+order <- colnames(counts_matrix)
+sampleinfo <- sampleinfo[colnames(counts_matrix),]
+
+### factors to include in deisgn matrix: SPLINTR group and treatment, concentration
+treatment <- as.factor(sampleinfo$Treatment_Combination)
+concentration <- sampleinfo$Concentration_1
+splintr <- as.factor(sampleinfo$SPLINTR)
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+treatment+splintr+concentration)
+rownames(design) <- rownames(sampleinfo)
+datatable(design)
+
+NC_pacvsdmso <- makeContrasts(treatmentNC_Pacl-treatmentNC_DMSO,levels=colnames(design))
+NC_sn38vsdmso <- makeContrasts(treatmentNC_SN38-treatmentNC_DMSO,levels=colnames(design))
+PAC_pacvsdmso <- makeContrasts(treatmentPa_Pacl-treatmentPa_DMSO,levels=colnames(design))
+SN38_sn38vsdmso <- makeContrasts(treatmentSN_SN38-treatmentSN_DMSO,levels=colnames(design))
+long_PAC <- makeContrasts((treatmentPa_Pacl-treatmentPa_DMSO)-(treatmentNC_Pacl-treatmentNC_DMSO),levels=colnames(design))
+long_SN38 <- makeContrasts((treatmentSN_SN38-treatmentSN_DMSO)-(treatmentNC_SN38-treatmentNC_DMSO),levels=colnames(design))
+
+```
+#### Differential Expression {.tabset}
+
+##### NC_PAC-NC_DMSO
+
+```{r, fig.height=8, fig.width=6}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+counts<-counts_matrix@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, NC_pacvsdmso)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="NC Paclitaxel VS NC DMSO",
+                                subtitle="ORG49",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(DE_genes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
+
+### Pathway Analysis
+### returning a list of corresponding entrez IDs for gene names in DE genes
+entrezids <- bitr(rownames(DE_genes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+### add entrezid data
+DE_genes$gene <- rownames(DE_genes)
+pathway_data<- left_join(DE_genes, entrezids, by=join_by(gene==SYMBOL))
+
+### removing genes that dont map to an entrezID (0)
+pathway_data <- drop_na(pathway_data)
+
+### setting up gene list
+geneList <- pathway_data$logFC
+names(geneList)<- pathway_data$ENTREZID
+
+#performing reactome enrichment analysis 
+x <- ReactomePA::enrichPathway(gene=names(geneList),
+                               organism='human',
+                               pvalueCutoff =1,
+                               qvalueCutoff = 1,
+                               readable=TRUE)
+
+### Functional enrichment result using PA:
+
+create_dt(x@result)
+
+### Pathway visualisation:
+
+p1<- barplot(x) 
+p1 +scale_fill_gradient(low="blue", high="red")
+```
+*Genes that don't map to an entrezID ~0%*
+
+##### NC_SN38-NC_DMSO
+```{r, fig.height=8, fig.width=6}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+counts<-counts_matrix@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, NC_sn38vsdmso)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### labelling 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="NC SN38 VS NC DMSO",
+                                subtitle="ORG49",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(DE_genes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                max.overlaps = Inf)
+volcano_plot
+
+### Pathway Analysis
+### returning a list of corresponding entrez IDs for gene names in DE genes
+entrezids <- bitr(rownames(DE_genes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+### add entrezid data
+DE_genes$gene <- rownames(DE_genes)
+pathway_data<- left_join(DE_genes, entrezids, by=join_by(gene==SYMBOL))
+
+### removing genes that dont map to an entrezID (~16.53%)
+pathway_data <- drop_na(pathway_data)
+
+### setting up gene list
+geneList <- pathway_data$logFC
+names(geneList)<- pathway_data$ENTREZID
+
+#performing reactome enrichment analysis 
+x <- ReactomePA::enrichPathway(gene=names(geneList),
+                               organism='human',
+                               pvalueCutoff =1,
+                               qvalueCutoff = 1,
+                               readable=TRUE)
+
+### Functional enrichment result using PA:
+
+create_dt(x@result)
+
+### Pathway visualisation:
+
+p1<- barplot(x) 
+p1 +scale_fill_gradient(low="blue", high="red")
+```
+*Genes that don't map to an entrezID ~16.53%*
+
+##### PAC_PAC - PAC_DMSO
+```{r, fig.height=8, fig.width=6}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+counts<-counts_matrix@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, PAC_pacvsdmso)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### labelling 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="Pac_Pac VS Pac_DMSO",
+                                subtitle="ORG49",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(DE_genes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                max.overlaps = Inf)
+volcano_plot
+
+### Pathway Analysis
+### returning a list of corresponding entrez IDs for gene names in DE genes
+entrezids <- bitr(rownames(DE_genes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+### add entrezid data
+DE_genes$gene <- rownames(DE_genes)
+pathway_data<- left_join(DE_genes, entrezids, by=join_by(gene==SYMBOL))
+
+### removing genes that dont map to an entrezID (0%)
+pathway_data <- drop_na(pathway_data)
+
+### setting up gene list
+geneList <- pathway_data$logFC
+names(geneList)<- pathway_data$ENTREZID
+
+### Unable to perform functional enrichment on 1 gene 
+
+# #performing reactome enrichment analysis 
+# x <- ReactomePA::enrichPathway(gene=names(geneList),
+#                                organism='human',
+#                                pvalueCutoff =1,
+#                                qvalueCutoff = 1,
+#                                readable=TRUE)
+# 
+# ### Functional enrichment result using PA:
+# 
+# create_dt(x@result)
+# 
+# ### Pathway visualisation:
+# 
+# p1<- barplot(x) 
+# p1 +scale_fill_gradient(low="blue", high="red")
+```
+*Genes that don't map to an entrezID ~0%*
+
+##### SN38_SN38 - SN38_DMSO)
+
+```{r, fig.height=8, fig.width=6}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+counts<-counts_matrix@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, SN38_sn38vsdmso)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### labelling 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="SN38_SN38 VS SN38_DMSO",
+                                subtitle="ORG49",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(DE_genes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                max.overlaps = Inf)
+volcano_plot
+
+### Pathway Analysis
+### returning a list of corresponding entrez IDs for gene names in DE genes
+entrezids <- bitr(rownames(DE_genes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+### add entrezid data
+DE_genes$gene <- rownames(DE_genes)
+pathway_data<- left_join(DE_genes, entrezids, by=join_by(gene==SYMBOL))
+
+### removing genes that dont map to an entrezID (~11.5%)
+pathway_data <- drop_na(pathway_data)
+
+### setting up gene list
+geneList <- pathway_data$logFC
+names(geneList)<- pathway_data$ENTREZID
+
+#performing reactome enrichment analysis 
+x <- ReactomePA::enrichPathway(gene=names(geneList),
+                               organism='human',
+                               pvalueCutoff =1,
+                               qvalueCutoff = 1,
+                               readable=TRUE)
+
+### Functional enrichment result using PA:
+
+create_dt(x@result)
+
+### Pathway visualisation:
+
+p1<- barplot(x) 
+p1 +scale_fill_gradient(low="blue", high="red")
+```
+*Genes that don't map to an entrezID ~11.5%*
+
+##### (PAC_PAC - PAC_DMSO) - (NC_PAC-NC_DMSO)
+
+```{r, fig.height=8, fig.width=6}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+counts<-counts_matrix@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, long_PAC)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="(PAC_PAC-PAC_DMSO) - (NC_PAC-NC_DMSO)",
+                                subtitle="ORG49",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(DE_genes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                max.overlaps = Inf)
+volcano_plot
+
+### Pathway Analysis
+### returning a list of corresponding entrez IDs for gene names in DE genes
+entrezids <- bitr(rownames(DE_genes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+### add entrezid data
+DE_genes$gene <- rownames(DE_genes)
+pathway_data<- left_join(DE_genes, entrezids, by=join_by(gene==SYMBOL))
+
+### removing genes that dont map to an entrezID (~22.83%)
+pathway_data <- drop_na(pathway_data)
+
+### setting up gene list
+geneList <- pathway_data$logFC
+names(geneList)<- pathway_data$ENTREZID
+
+#performing reactome enrichment analysis 
+x <- ReactomePA::enrichPathway(gene=names(geneList),
+                               organism='human',
+                               pvalueCutoff =1,
+                               qvalueCutoff = 1,
+                               readable=TRUE)
+
+### Functional enrichment result using PA:
+
+create_dt(x@result)
+
+### Pathway visualisation:
+
+p1<- barplot(x) 
+p1 +scale_fill_gradient(low="blue", high="red")
+```
+*Genes that don't map to an entrezID ~22.83%*
+
+##### (SN38_SN38 - SN38_DMSO) - (NC_SN38-NC_DMSO)
+```{r, fig.height=8, fig.width=6}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+counts<-counts_matrix@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, long_SN38)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="(SN38_SN38-SN38_DMSO)-(NC_SN38-NC_DMSO)",
+                                subtitle="ORG49",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(DE_genes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                max.overlaps = Inf)
+volcano_plot
+
+### Pathway Analysis
+### returning a list of corresponding entrez IDs for gene names in DE genes
+entrezids <- bitr(rownames(DE_genes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+### add entrezid data
+DE_genes$gene <- rownames(DE_genes)
+pathway_data<- left_join(DE_genes, entrezids, by=join_by(gene==SYMBOL))
+
+### removing genes that dont map to an entrezID (~17.94%)
+pathway_data <- drop_na(pathway_data)
+
+### setting up gene list
+geneList <- pathway_data$logFC
+names(geneList)<- pathway_data$ENTREZID
+
+#performing reactome enrichment analysis 
+x <- ReactomePA::enrichPathway(gene=names(geneList),
+                               organism='human',
+                               pvalueCutoff =1,
+                               qvalueCutoff = 1,
+                               readable=TRUE)
+
+### Functional enrichment result using PA:
+
+create_dt(x@result)
+
+### Pathway visualisation:
+
+p1<- barplot(x) 
+p1 +scale_fill_gradient(low="blue", high="red")
+```
+*Genes that don't map to an entrezID ~17.94%*
+
+
+### ORG66 
+
+#### Design Matrix and Contrasts 
+
+Factors to include in design matrix: 
+
+• SPLINTR/treatment group (splintrA/ splintrB)
+
+• Treatment combination
+
+• Concentration
+
+Design matrix:
+
+```{r, fig.height=8, fig.width=6}
+### selecting metadata and countdata relevant for ORG 38
+### subset metadata to include only ORG38 cells 
+columns <- metadata[metadata$Organoid=='ORG66' & metadata$Treatment_1!="Staurosporine",]
+sampleinfo <- columns
+samples <- c(rownames(sampleinfo))
+counts_matrix <- mac[,samples]
+order <- colnames(counts_matrix)
+sampleinfo <- sampleinfo[colnames(counts_matrix),]
+
+### factors to include in deisgn matrix: SPLINTR group and treatment, concentration
+treatment <- as.factor(sampleinfo$Treatment_Combination)
+concentration <- sampleinfo$Concentration_1
+splintr <- as.factor(sampleinfo$SPLINTR)
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+treatment+splintr+concentration)
+rownames(design) <- rownames(sampleinfo)
+datatable(design)
+
+NC_pacvsdmso <- makeContrasts(treatmentNC_Pacl-treatmentNC_DMSO,levels=colnames(design))
+NC_sn38vsdmso <- makeContrasts(treatmentNC_SN38-treatmentNC_DMSO,levels=colnames(design))
+PAC_pacvsdmso <- makeContrasts(treatmentPa_Pacl-treatmentPa_DMSO,levels=colnames(design))
+SN38_sn38vsdmso <- makeContrasts(treatmentSN_SN38-treatmentSN_DMSO,levels=colnames(design))
+long_PAC <- makeContrasts((treatmentPa_Pacl-treatmentPa_DMSO)-(treatmentNC_Pacl-treatmentNC_DMSO),levels=colnames(design))
+long_SN38 <- makeContrasts((treatmentSN_SN38-treatmentSN_DMSO)-(treatmentNC_SN38-treatmentNC_DMSO),levels=colnames(design))
+
+```
+#### Differential Expression {.tabset}
+
+##### NC_PAC-NC_DMSO
+
+```{r, fig.height=8, fig.width=6}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+counts<-counts_matrix@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, NC_pacvsdmso)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="NC Paclitaxel VS NC DMSO",
+                                subtitle="ORG66",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(DE_genes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                max.overlaps = Inf)
+volcano_plot
+
+### Pathway Analysis
+### returning a list of corresponding entrez IDs for gene names in DE genes
+entrezids <- bitr(rownames(DE_genes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+### add entrezid data
+DE_genes$gene <- rownames(DE_genes)
+pathway_data<- left_join(DE_genes, entrezids, by=join_by(gene==SYMBOL))
+
+### removing genes that dont map to an entrezID (~18.53%)
+pathway_data <- drop_na(pathway_data)
+
+### setting up gene list
+geneList <- pathway_data$logFC
+names(geneList)<- pathway_data$ENTREZID
+
+#performing reactome enrichment analysis 
+x <- ReactomePA::enrichPathway(gene=names(geneList),
+                               organism='human',
+                               pvalueCutoff =1,
+                               qvalueCutoff = 1,
+                               readable=TRUE)
+
+### Functional enrichment result using PA:
+
+create_dt(x@result)
+
+### Pathway visualisation:
+
+p1<- barplot(x) 
+p1 +scale_fill_gradient(low="blue", high="red")
+```
+*Genes that don't map to an entrezID ~18.53%*
+
+##### NC_SN38-NC_DMSO
+```{r, fig.height=8, fig.width=6}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+counts<-counts_matrix@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, NC_sn38vsdmso)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### labelling 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="NC SN38 VS NC DMSO",
+                                subtitle="ORG66",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(DE_genes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                max.overlaps = Inf)
+volcano_plot
+
+### Pathway Analysis
+### returning a list of corresponding entrez IDs for gene names in DE genes
+entrezids <- bitr(rownames(DE_genes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+### add entrezid data
+DE_genes$gene <- rownames(DE_genes)
+pathway_data<- left_join(DE_genes, entrezids, by=join_by(gene==SYMBOL))
+
+### removing genes that dont map to an entrezID (~17.45%)
+pathway_data <- drop_na(pathway_data)
+
+### setting up gene list
+geneList <- pathway_data$logFC
+names(geneList)<- pathway_data$ENTREZID
+
+#performing reactome enrichment analysis 
+x <- ReactomePA::enrichPathway(gene=names(geneList),
+                               organism='human',
+                               pvalueCutoff =1,
+                               qvalueCutoff = 1,
+                               readable=TRUE)
+
+### Functional enrichment result using PA:
+
+create_dt(x@result)
+
+### Pathway visualisation:
+
+p1<- barplot(x) 
+p1 +scale_fill_gradient(low="blue", high="red")
+```
+*Genes that don't map to an entrezID ~17.45%*
+
+##### PAC_PAC - PAC_DMSO
+```{r, fig.height=8, fig.width=6}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+counts<-counts_matrix@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, PAC_pacvsdmso)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### labelling 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="Pac_Pac VS Pac_DMSO",
+                                subtitle="ORG66",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(DE_genes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                max.overlaps = Inf)
+volcano_plot
+
+### Pathway Analysis
+### returning a list of corresponding entrez IDs for gene names in DE genes
+entrezids <- bitr(rownames(DE_genes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+### add entrezid data
+DE_genes$gene <- rownames(DE_genes)
+pathway_data<- left_join(DE_genes, entrezids, by=join_by(gene==SYMBOL))
+
+### removing genes that dont map to an entrezID (~16.88%)
+pathway_data <- drop_na(pathway_data)
+
+### setting up gene list
+geneList <- pathway_data$logFC
+names(geneList)<- pathway_data$ENTREZID
+
+#performing reactome enrichment analysis 
+x <- ReactomePA::enrichPathway(gene=names(geneList),
+                               organism='human',
+                               pvalueCutoff =1,
+                               qvalueCutoff = 1,
+                               readable=TRUE)
+
+### Functional enrichment result using PA:
+
+create_dt(x@result)
+
+### Pathway visualisation:
+
+p1<- barplot(x) 
+p1 +scale_fill_gradient(low="blue", high="red")
+```
+*Genes that don't map to an entrezID ~16.88%*
+
+##### SN38_SN38 - SN38_DMSO)
+
+```{r, fig.height=8, fig.width=6}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+counts<-counts_matrix@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, SN38_sn38vsdmso)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### labelling 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="SN38_SN38 VS SN38_DMSO",
+                                subtitle="ORG66",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(DE_genes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                max.overlaps = Inf)
+volcano_plot
+
+### Pathway Analysis
+### returning a list of corresponding entrez IDs for gene names in DE genes
+entrezids <- bitr(rownames(DE_genes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+### add entrezid data
+DE_genes$gene <- rownames(DE_genes)
+pathway_data<- left_join(DE_genes, entrezids, by=join_by(gene==SYMBOL))
+
+### removing genes that dont map to an entrezID (~17.82%)
+pathway_data <- drop_na(pathway_data)
+
+### setting up gene list
+geneList <- pathway_data$logFC
+names(geneList)<- pathway_data$ENTREZID
+
+#performing reactome enrichment analysis 
+x <- ReactomePA::enrichPathway(gene=names(geneList),
+                               organism='human',
+                               pvalueCutoff =1,
+                               qvalueCutoff = 1,
+                               readable=TRUE)
+
+### Functional enrichment result using PA:
+
+create_dt(x@result)
+
+### Pathway visualisation:
+
+p1<- barplot(x) 
+p1 +scale_fill_gradient(low="blue", high="red")
+```
+*Genes that don't map to an entrezID ~17.82%*
+
+##### (PAC_PAC - PAC_DMSO) - (NC_PAC-NC_DMSO)
+
+```{r, fig.height=8, fig.width=6}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+counts<-counts_matrix@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, long_PAC)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="(PAC_PAC-PAC_DMSO) - (NC_PAC-NC_DMSO)",
+                                subtitle="ORG66",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(DE_genes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                max.overlaps = Inf)
+volcano_plot
+
+### Pathway Analysis
+### returning a list of corresponding entrez IDs for gene names in DE genes
+entrezids <- bitr(rownames(DE_genes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+### add entrezid data
+DE_genes$gene <- rownames(DE_genes)
+pathway_data<- left_join(DE_genes, entrezids, by=join_by(gene==SYMBOL))
+
+### removing genes that dont map to an entrezID (~4%)
+pathway_data <- drop_na(pathway_data)
+
+### setting up gene list
+geneList <- pathway_data$logFC
+names(geneList)<- pathway_data$ENTREZID
+
+#performing reactome enrichment analysis 
+x <- ReactomePA::enrichPathway(gene=names(geneList),
+                               organism='human',
+                               pvalueCutoff =1,
+                               qvalueCutoff = 1,
+                               readable=TRUE)
+
+### Functional enrichment result using PA:
+
+create_dt(x@result)
+
+### Pathway visualisation:
+
+p1<- barplot(x) 
+p1 +scale_fill_gradient(low="blue", high="red")
+```
+*Genes that don't map to an entrezID ~4%*
+
+##### (SN38_SN38 - SN38_DMSO) - (NC_SN38-NC_DMSO)
+```{r, fig.height=8, fig.width=6}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+counts<-counts_matrix@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, long_SN38)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="(SN38_SN38 - SN38_DMSO) - (NC_SN38-NC_DMSO)",
+                                subtitle="ORG66",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(DE_genes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                max.overlaps = Inf)
+volcano_plot
+
+### Pathway Analysis
+### returning a list of corresponding entrez IDs for gene names in DE genes
+entrezids <- bitr(rownames(DE_genes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+### add entrezid data
+DE_genes$gene <- rownames(DE_genes)
+pathway_data<- left_join(DE_genes, entrezids, by=join_by(gene==SYMBOL))
+
+### removing genes that dont map to an entrezID (0%)
+pathway_data <- drop_na(pathway_data)
+
+### setting up gene list
+geneList <- pathway_data$logFC
+names(geneList)<- pathway_data$ENTREZID
+
+#performing reactome enrichment analysis 
+x <- ReactomePA::enrichPathway(gene=names(geneList),
+                               organism='human',
+                               pvalueCutoff =1,
+                               qvalueCutoff = 1,
+                               readable=TRUE)
+
+### Functional enrichment result using PA:
+
+create_dt(x@result)
+
+### Pathway visualisation:
+
+p1<- barplot(x) 
+p1 +scale_fill_gradient(low="blue", high="red")
+```
+*Genes that don't map to an entrezID ~0%*
+

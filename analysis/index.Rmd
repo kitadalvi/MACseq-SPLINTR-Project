@@ -13,7 +13,7 @@ editor_options:
 |:---|:---|:---|:-|
 |QC |[MAC-seq PMC228 QC (VCFG)](QC_VCFG.html)|| |
 | |[MAC-seq PMC228 QC (Nenad)](QC_Analysis.html) | |
-|Differential Expression |[Differential Gene Expression (48H)](differential_expression.html)| | |
+|Differential Expression |[Differential Gene Expression (48H)](differential_expression.html)|[Differential Expression (JUNE 2025)](DE_P2_APR2025.html) | |
 | |[Differential Gene Expression (24H)](differential_expression_24H.html)| | |
 | |[Labelled VS Unlabelled samples](DM_approach.html)| | |
 | |[Differential Expression (FEB 2025)](DE_Feb_2025.html)| | |

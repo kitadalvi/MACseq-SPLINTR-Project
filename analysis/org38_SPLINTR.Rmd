@@ -19,6 +19,7 @@ library(ggpubr)
 library(patchwork)
 ```
 
+# Plate 1
 ## Loading Data
 ```{r, echo=TRUE}
 ##Loading data 
@@ -266,4 +267,81 @@ plot + facet_wrap(~treatment, scales='free', switch='x') +
   expand_limits(y = c(0,1)) + 
   scale_fill_manual(values=c('#6b0071','#a9c4ff','#af0406','#93c300','#0093c3','#d7ff5c','#ffa95c','#fffb5c','#ffa9ef','#ff5c60'))+
   plot_spacer() 
+```
+
+
+# Plate 2 
+## Loading Data
+```{r, echo=TRUE}
+##Loading data 
+counts_path <- "/Users/dalvinikita/Documents/11_MACseq_PMMSq042/raw/splintr_readlength20.tsv"
+counts <- readBartabCounts(counts_path)
+
+#changing BC names to make them shorter
+counts$barcode <- sub('SPLINTR_mCHERRY_V2_Barcode','BC',counts$barcode)
+counts_agg <- aggregateBarcodes(counts)
+#import metadata
+metadata<-read.csv("/Users/dalvinikita/Documents/11_MACseq_PMMSq042/PMMSq042.csv",header=T) %>%
+  arrange("Barcode") %>%
+  mutate(id=gsub("Plate","",Plate_ID)) %>%
+  mutate(analysis_condition=paste0(Organoid,".",Treatment_1,".",Time))
+
+metadata<- metadata %>%
+  left_join(counts_agg,by=c("Barcode"="cellid"))
+
+```
+
+Subsetting data for the relevant ORG line:
+```{r, fig.width=10, fig.height=10}
+individual_counts <- function(df, well_id){
+  subset <- df[df$Well_ID==well_id,c('barcode', 'bc.umi.count')]
+  subset <- separate_longer_delim(data=subset, cols=c('barcode','bc.umi.count'),delim = ';')
+  subset$bc.umi.count <- as.integer(c(subset$bc.umi.count))
+  names(subset)[2]<- well_id
+  subset <- drop_na(subset)
+  return(subset)
+}
+
+org_data <- metadata[metadata$Organoid=='ORG66',c('Well_ID',"Organoid","Treatment_1",'Time',"barcode", "bc.umi.count")]
+
+rownames(org_data)<- org_data$Well_ID
+treatments<- c(org_data$Well_ID)
+org_data_combined <- data.frame(barcode=character())
+
+for (well in treatments){
+  df <- individual_counts(org_data, well)
+  org_data_combined<- merge(org_data_combined, df, all=TRUE)
+}
+
+org_data_combined[is.na(org_data_combined)]<- 0
+end <- dim(org_data_combined)[2]
+barcode_data <- DGEList(counts=org_data_combined[,2:end])
+rownames(barcode_data$counts)<- org_data_combined[,1]
+
+#adding samplesheet information to DGElist object
+barcode_data$samples$Sample <- org_data$Well_ID
+barcode_data$samples$Treatment <- org_data$Treatment_1
+barcode_data$samples$Time <- org_data$Time
+barcode_data$samples$ORG <- org_data$Organoid
+barcode_data <- barcode_data[rowSums(barcode_data$counts) != 0, ]
+```
+
+## Barcode Histogram 
+
+### Entire Plate 
+Visualising proportion of barcodes in all ORG38 wells across both timepoints:
+```{r, fig.height=5, fig.width=6}
+plotBarcodeHistogram(barcode_data, topN = 500)  
+
+dge.filtered <-
+  thresholdCounts(
+    barcode_data,
+    type = "absolute",
+    threshold = 10,
+    minSamples = 1,
+    plot = F
+  )
+
+plotBarcodeHistogram(dge.filtered[,c("H12",'H13','H14','H15','D12','D13','D14','D15','K12','K13','K14','K15')], topN = 20, alphaLowFreq = 0) + ggtitle("Top 20 barcodes in ORG38")
+
 ```

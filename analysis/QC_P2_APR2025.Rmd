@@ -1,0 +1,662 @@
+---
+title: "Plate 2 QC - APR2025"
+output: html_document
+date: "2025-04-28"
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+library(tidyverse)
+library(Seurat)
+library(gtools)
+library(tidyseurat)
+library(Seurat)
+library(DESeq2)
+library(edgeR)
+library(RUVSeq)
+library(variancePartition)
+library(reshape2)
+library(gridExtra)
+library(ggrepel)
+library(gg.layers)
+library(platetools)
+library(ggplot2)
+library(ggpubr)
+library(DT)
+```
+
+## Filtering data
+```{r, echo=TRUE}
+
+#import metadata
+metadata<-read.csv("/Users/dalvinikita/Documents/11_MACseq_PMMSq042/PMMSq042.csv",header=T, check.names = FALSE) %>%
+  arrange("Barcode") %>%
+  mutate(id=gsub("Plate","",Plate_ID)) %>%
+  mutate(Concentration_1=as.factor(Concentration_1)) %>%
+  mutate(Treatment_Combination=paste0(substr(Cell_type,1,2),'_',substr(Treatment_1,1,4))) %>%
+  mutate(SPLINTR = str_sub(Cell_type,-1,-1)) %>%
+  mutate(PreTreatment = substr(Cell_type,1,2)) %>%
+  mutate(label=paste0(Treatment_Combination,"_",Well_ID))
+
+#load in count data 
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/11_MACseq_PMMSq042/raw')
+
+
+#filter by cpm>10 in at least 2 samples
+keep <- rowSums(edgeR::cpm(raw_counts)>10) >= 10
+raw_counts <- raw_counts[keep,]
+
+```
+
+## QC Plots
+```{r}
+#filter for the minimum number of reads per gene per sample, as per edgeR
+row.names(metadata)<-metadata$Barcode
+
+mac <- CreateSeuratObject(counts = raw_counts,
+                          project = 'PMMSq042',
+                          min.cells = 1,
+                          min.features = 1)
+
+
+#for humans: MT, and ribosomal protein: RP. if MT> 30 then most likely dead cells
+mac[["percent.mt"]]<-PercentageFeatureSet(mac, pattern = "^MT-")
+mac[["percent.rp"]]<-PercentageFeatureSet(mac, pattern = "^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA")
+
+#add location metadata
+mac<- mac %>%
+  inner_join(metadata,by=c(".cell"="Barcode"))
+
+colnames(mac)<- mac$label
+rownames(metadata) <- metadata$label
+```
+
+
+### Plate QC {.tabset}
+```{r}
+#facet by Organoid:
+grid  <- raw_map(data = mac$nCount_RNA, well = mac$Well_ID, plate = 384) +
+  theme_minimal() +
+  facet_wrap(~mac$Organoid)+
+  scale_fill_viridis_c()
+
+g1 = ggplotGrob(grid)
+```
+
+#### Entire plate
+```{r}
+entire_plate <- raw_map(data = mac$nCount_RNA, well = mac$Well_ID, plate = 384) +
+  ggtitle("Entire Plate (PMMSq042)") +
+  theme_minimal() +
+  scale_fill_viridis_c()
+
+entire_plate
+```
+
+#### ORG49
+```{r}
+g1_org49 = g1[-c(9,10),-c(11)]
+g1_org49
+```
+
+#### ORG38
+```{r}
+g1_org38 = g1[-c(14,15),-c(7)]
+g1_org38
+```
+
+#### ORG66
+```{r}
+g1_org66 = g1[-c(9,10),-c(7)]
+g1_org66
+```
+
+### PCA Plots {.tabset}
+
+#### Entire plate
+```{r, fig.height=12, fig.width=16, fig.align='left'}
+
+#Function for plotting
+pca_plots <- function(df, type){
+  if (type=='all'){
+    seurat_object <-df %>%
+      subset(., Cell_type != "")
+  } else {
+    seurat_object <-df %>%
+      subset(., Organoid == type)
+  }
+  
+  seurat_object<- seurat_object %>%
+    SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+    FindVariableFeatures(verbose = FALSE) %>%
+    RunPCA(npcs = ncol(seurat_object)-1) %>%
+    FindNeighbors(verbose = FALSE) %>% 
+    FindClusters(method = "igraph", verbose = FALSE)
+
+  p1<-FeaturePlot(seurat_object, features = 'nCount_RNA',pt.size = 2)
+  p2<-FeaturePlot(seurat_object, features = 'percent.mt',pt.size = 2)
+  p3<-FeaturePlot(seurat_object, features = 'percent.rp',pt.size = 2)
+  p4<-DimPlot(seurat_object, group.by= 'Row',pt.size = 2)
+  p5<-DimPlot(seurat_object, group.by= 'Column',pt.size = 2)
+  p6<-DimPlot(seurat_object, group.by= 'Organoid',pt.size = 2, shape.by = 'Treatment_1')
+  p7<-DimPlot(seurat_object, group.by= 'SPLINTR',pt.size = 2)
+  p8 <- DimPlot(seurat_object, group.by = 'Treatment_Combination',pt.size = 2)
+  p9 <- DimPlot(seurat_object, group.by = 'seurat_clusters',pt.size = 2)
+  ggarrange(p1,p2,p3,p4,p5,p6,p7,p8,p9, nrow=3, ncol=3)
+}
+
+pca_plots(mac, 'all')
+
+```
+
+
+```{r}
+
+#Function for plotting
+pca_plots <- function(df, type){
+   if (type=='all'){
+    seurat_object <-df %>%
+      subset(., Cell_type != "")
+  } else {
+    seurat_object <-df %>%
+      subset(., Organoid == type)
+  }
+  seurat_object<- seurat_object %>%
+    SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+    FindVariableFeatures(verbose = FALSE) %>%
+    RunPCA(npcs = ncol(seurat_object)-1) %>%
+    FindNeighbors(verbose = FALSE) %>% 
+    FindClusters(method = "igraph", verbose = FALSE)
+
+  p1<-FeaturePlot(seurat_object, features = 'nCount_RNA',pt.size = 2)
+  p2<-FeaturePlot(seurat_object, features = 'percent.mt',pt.size = 2)
+  p3<-FeaturePlot(seurat_object, features = 'percent.rp',pt.size = 2)
+  p4<-DimPlot(seurat_object, group.by= 'Row',pt.size = 2)
+  p5<-DimPlot(seurat_object, group.by= 'Column',pt.size = 2)
+  p6<-DimPlot(seurat_object, group.by= 'Sample_type',pt.size = 2)
+  p7<-DimPlot(seurat_object, group.by= 'SPLINTR',pt.size = 2)
+  p8 <- DimPlot(seurat_object, group.by = 'seurat_clusters',pt.size = 2, shape.by = 'Treatment_1')
+  p9 <- DimPlot(seurat_object, group.by = 'Treatment_Combination',pt.size = 2)
+  ggarrange(p1,p2,p3,p4,p5,p6,p7,p8,p9, nrow=3, ncol=3)
+}
+
+splintr_plots_by_treatment <- function(df, type){
+   if (type=='all'){
+    seurat_object <-df %>%
+      subset(., Cell_type != "")
+  } else {
+    seurat_object <-df %>%
+      subset(., Organoid == type)
+  }
+  seurat_object<- seurat_object %>%
+    SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+    FindVariableFeatures(verbose = FALSE) %>%
+    RunPCA(npcs = ncol(seurat_object)-1) %>%
+    FindNeighbors(verbose = FALSE) %>% 
+    FindClusters(method = "igraph", verbose = FALSE)
+
+  p1<-DimPlot(seurat_object, shape.by= 'SPLINTR',pt.size = 2, group.by = 'Treatment_Combination')
+  p2<-DimPlot(seurat_object, shape.by= 'SPLINTR',pt.size = 2, group.by = 'Treatment_Combination', dims = c(3,4))
+  p3<-DimPlot(seurat_object, shape.by= 'SPLINTR',pt.size = 2, group.by = 'Treatment_Combination', dims = c(5,6))
+  p4<-DimPlot(seurat_object, shape.by= 'SPLINTR',pt.size = 2, group.by = 'Treatment_Combination', dims = c(7,8))
+  p5<-DimPlot(seurat_object, shape.by= 'SPLINTR',pt.size = 2, group.by = 'Treatment_Combination', dims = c(9,10))
+  p6<-DimPlot(seurat_object, shape.by= 'SPLINTR',pt.size = 2, group.by = 'Treatment_Combination', dims = c(11,12))
+  ggarrange(p1,p2,p3,p4,p5,p6, nrow=2,ncol=3)
+}
+
+splintr_plots_by_splintr <- function(df, type){
+   if (type=='all'){
+    seurat_object <-df %>%
+      subset(., Cell_type != "")
+  } else {
+    seurat_object <-df %>%
+      subset(., Organoid == type)
+  }
+  seurat_object<- seurat_object %>%
+    SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+    FindVariableFeatures(verbose = FALSE) %>%
+    RunPCA(npcs = ncol(seurat_object)-1) %>%
+    FindNeighbors(verbose = FALSE) %>% 
+    FindClusters(method = "igraph", verbose = FALSE)
+
+  p1<-DimPlot(seurat_object, pt.size = 2, group.by = 'SPLINTR')
+  p2<-DimPlot(seurat_object, pt.size = 2, group.by = 'SPLINTR', dims = c(3,4))
+  p3<-DimPlot(seurat_object, pt.size = 2, group.by = 'SPLINTR', dims = c(5,6))
+  p4<-DimPlot(seurat_object, pt.size = 2, group.by = 'SPLINTR', dims = c(7,8))
+  p5<-DimPlot(seurat_object, pt.size = 2, group.by = 'SPLINTR', dims = c(9,10))
+  p6<-DimPlot(seurat_object,pt.size = 2, group.by = 'SPLINTR', dims = c(11,12))
+  ggarrange(p1,p2,p3,p4,p5,p6, nrow=2,ncol=3)
+}
+
+
+splintr_plots_by_pretreatment <- function(df, type){
+   if (type=='all'){
+    seurat_object <-df %>%
+      subset(., Cell_type != "")
+  } else {
+    seurat_object <-df %>%
+      subset(., Organoid == type)
+  }
+  seurat_object<- seurat_object %>%
+    SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+    FindVariableFeatures(verbose = FALSE) %>%
+    RunPCA(npcs = ncol(seurat_object)-1) %>%
+    FindNeighbors(verbose = FALSE) %>% 
+    FindClusters(method = "igraph", verbose = FALSE)
+
+  p1<-DimPlot(seurat_object, pt.size = 2, group.by = 'PreTreatment', shape.by = 'SPLINTR')
+  p2<-DimPlot(seurat_object, pt.size = 2, group.by = 'PreTreatment', dims = c(3,4), shape.by = 'SPLINTR')
+  p3<-DimPlot(seurat_object, pt.size = 2, group.by = 'PreTreatment', dims = c(5,6), shape.by = 'SPLINTR')
+  p4<-DimPlot(seurat_object, pt.size = 2, group.by = 'PreTreatment', dims = c(7,8), shape.by = 'SPLINTR')
+  p5<-DimPlot(seurat_object, pt.size = 2, group.by = 'PreTreatment', dims = c(9,10), shape.by = 'SPLINTR')
+  p6<-DimPlot(seurat_object,pt.size = 2, group.by = 'PreTreatment', dims = c(11,12), shape.by = 'SPLINTR')
+  ggarrange(p1,p2,p3,p4,p5,p6, nrow=2,ncol=3)
+}
+
+### pre-treatment plots 
+### everything that received 
+
+### treatment vs control in A VS treatment vs control in B 
+
+
+```
+
+#### Sample overview {.tabset}
+
+##### ORG49
+```{r, fig.height=12, fig.width=16, fig.align='left',warning=FALSE, message=FALSE, echo=FALSE}
+pca_plots(mac, 'ORG49')
+```
+
+##### ORG38
+```{r, fig.height=12, fig.width=16, fig.align='left',warning=FALSE, message=FALSE, echo=FALSE}
+pca_plots(mac, 'ORG38')
+```
+
+##### ORG66
+```{r, fig.height=12, fig.width=16, fig.align='left',warning=FALSE, message=FALSE, echo=FALSE}
+pca_plots(mac, 'ORG66')
+```
+
+#### SPLINTR + Treatment {.tabset}
+
+##### ORG49
+```{r, fig.height=8, fig.width=16, fig.align='left',warning=FALSE, message=FALSE, echo=FALSE}
+splintr_plots_by_treatment(mac,'ORG49')
+splintr_plots_by_splintr(mac,'ORG49')
+```
+
+##### ORG38
+```{r, fig.height=8, fig.width=16, fig.align='left',warning=FALSE, message=FALSE, echo=FALSE}
+splintr_plots_by_treatment(mac,'ORG38')
+splintr_plots_by_splintr(mac,'ORG38')
+```
+
+##### ORG66
+```{r, fig.height=8, fig.width=16, fig.align='left',warning=FALSE, message=FALSE, echo=FALSE}
+splintr_plots_by_treatment(mac,'ORG66')
+splintr_plots_by_splintr(mac,'ORG66')
+```
+
+
+#### SPLINTR + Pre-treatment {.tabset}
+
+##### ORG49
+```{r, fig.height=8, fig.width=16, fig.align='left',warning=FALSE, message=FALSE, echo=FALSE}
+splintr_plots_by_pretreatment(mac,'ORG49')
+```
+
+##### ORG38
+```{r, fig.height=8, fig.width=16, fig.align='left',warning=FALSE, message=FALSE, echo=FALSE}
+splintr_plots_by_pretreatment(mac,'ORG38')
+
+```
+
+##### ORG66
+```{r, fig.height=8, fig.width=16, fig.align='left',warning=FALSE, message=FALSE, echo=FALSE}
+splintr_plots_by_pretreatment(mac,'ORG66')
+
+```
+
+#### SPLINTR after model fitting {.tabset}
+
+##### ORG49 
+```{r}
+### selecting metadata and countdata relevant for ORG 38
+### subset metadata to include only ORG38 cells 
+columns <- metadata[metadata$Organoid=='ORG49',]
+
+### select only metadata relating to treatment concentration of interest (IC50)
+#columns <- columns[columns$Treatment_1!='STAUR',]
+sampleinfo <- columns
+rownames(sampleinfo) <- sampleinfo$label
+columns <- c(columns[,c("label")])
+
+### subset counts to include only relevant ORG38 cells 
+counts <- mac[,columns]
+
+### factors to include in deisgn matrix: SPLINTR group and treatment, concentration
+splintr <- as.factor(sampleinfo$SPLINTR)
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+splintr)
+rownames(design) <- rownames(sampleinfo)
+datatable(design)
+
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+counts <- mac[,columns]
+counts<-counts@assays$RNA$counts
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fited_values <- fitted(fit)
+
+seurat_object <-mac %>%
+  subset(., Organoid == 'ORG49')
+seurat_object@assays$RNA$counts <- fitted_values
+
+test <-mac %>%
+  subset(., Organoid == 'ORG49')
+
+seurat_object<- seurat_object %>%
+    SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+    FindVariableFeatures(verbose = FALSE) %>%
+    RunPCA(npcs = ncol(seurat_object)-1) %>%
+    FindNeighbors(verbose = FALSE) %>% 
+    FindClusters(method = "igraph", verbose = FALSE)
+
+p1<-DimPlot(seurat_object, group.by= 'SPLINTR',pt.size = 2, shape.by = 'Treatment_1')
+p2<-DimPlot(seurat_object, group.by= 'SPLINTR',pt.size = 2, shape.by = 'Treatment_1', dims = c(3,4))
+p3<-DimPlot(seurat_object, group.by= 'SPLINTR',pt.size = 2, shape.by = 'Treatment_1', dims = c(5,6))
+p4<-DimPlot(seurat_object, group.by= 'SPLINTR',pt.size = 2, shape.by = 'Treatment_1', dims = c(7,8))
+p5<-DimPlot(seurat_object, group.by= 'SPLINTR',pt.size = 2, shape.by = 'Treatment_1', dims = c(9,10))
+p6<-DimPlot(seurat_object, group.by= 'SPLINTR',pt.size = 2, shape.by = 'Treatment_1', dims = c(11,12))
+```
+
+```{r, fig.height=12, fig.width=16}
+ggarrange(p1,p2,p3,p4,p5,p6, nrow=2,ncol=3)
+
+```
+
+
+
+
+
+
+```{r, fig.height=12, fig.width=16, fig.align='left',warning=FALSE, message=FALSE, echo=FALSE}
+mac49 <- mac %>%
+  subset(., Organoid == "ORG49") %>%
+  subset(., Treatment_Combination == "NC_DMSO")
+mac49 <- mac49 %>%
+  SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+  FindVariableFeatures(verbose = FALSE) %>%
+  RunPCA(npcs = ncol(mac49)-1) %>%
+  FindNeighbors(verbose = FALSE) %>% 
+  FindClusters(method = "igraph", verbose = FALSE)
+
+p1 <- DimPlot(mac49, group.by = 'SPLINTR', pt.size = 2) + ggtitle('NC_DMSO')
+
+mac49 <- mac %>%
+  subset(., Organoid == "ORG49") %>%
+  subset(., Treatment_Combination == "NC_PAC")
+mac49 <- mac49 %>%
+  SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+  FindVariableFeatures(verbose = FALSE) %>%
+  RunPCA(npcs = ncol(mac49)-1) %>%
+  FindNeighbors(verbose = FALSE) %>% 
+  FindClusters(method = "igraph", verbose = FALSE)
+
+p2 <- DimPlot(mac49, group.by = 'SPLINTR', pt.size = 2) + ggtitle('NC_PAC')
+
+mac49 <- mac %>%
+  subset(., Organoid == "ORG49") %>%
+  subset(., Treatment_Combination == "NC_SN38")
+mac49 <- mac49 %>%
+  SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+  FindVariableFeatures(verbose = FALSE) %>%
+  RunPCA(npcs = ncol(mac49)-1) %>%
+  FindNeighbors(verbose = FALSE) %>% 
+  FindClusters(method = "igraph", verbose = FALSE)
+
+p3 <- DimPlot(mac49, group.by = 'SPLINTR', pt.size = 2) + ggtitle('NC_SN38')
+
+mac49 <- mac %>%
+  subset(., Organoid == "ORG49") %>%
+  subset(., Treatment_Combination == "SN38_DMSO")
+mac49 <- mac49 %>%
+  SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+  FindVariableFeatures(verbose = FALSE) %>%
+  RunPCA(npcs = ncol(mac49)-1) %>%
+  FindNeighbors(verbose = FALSE) %>% 
+  FindClusters(method = "igraph", verbose = FALSE)
+
+p4 <- DimPlot(mac49, group.by = 'SPLINTR', pt.size = 2) + ggtitle('SN38_DMSO')
+
+mac49 <- mac %>%
+  subset(., Organoid == "ORG49") %>%
+  subset(., Treatment_Combination == "SN38_SN38")
+mac49 <- mac49 %>%
+  SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+  FindVariableFeatures(verbose = FALSE) %>%
+  RunPCA(npcs = ncol(mac49)-1) %>%
+  FindNeighbors(verbose = FALSE) %>% 
+  FindClusters(method = "igraph", verbose = FALSE)
+
+p5 <- DimPlot(mac49, group.by = 'SPLINTR', pt.size = 2) + ggtitle('SN38_SN38')
+
+mac49 <- mac %>%
+  subset(., Organoid == "ORG49") %>%
+  subset(., Treatment_Combination == "PAC_DMSO")
+mac49 <- mac49 %>%
+  SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+  FindVariableFeatures(verbose = FALSE) %>%
+  RunPCA(npcs=4) 
+
+p6 <- DimPlot(mac49, group.by = 'SPLINTR', pt.size = 2) + ggtitle('PAC_DMSO')
+
+mac49 <- mac %>%
+  subset(., Organoid == "ORG49") %>%
+  subset(., Treatment_Combination == "PAC_PAC")
+mac49 <- mac49 %>%
+  SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+  FindVariableFeatures(verbose = FALSE) %>%
+  RunPCA(npcs = ncol(mac49)-1) %>%
+  FindNeighbors(verbose = FALSE) %>% 
+  FindClusters(method = "igraph", verbose = FALSE)
+
+p8 <- DimPlot(mac49, group.by = 'SPLINTR', pt.size = 2) + ggtitle('PAC_PAC')
+
+ggarrange(p1,p2,p3,p4,p5,p6,p8, nrow=3, ncol=3)
+```
+
+
+
+
+
+#### ORG38 {.tabset}
+```{r, fig.height=12, fig.width=16, fig.align='left',warning=FALSE, message=FALSE, echo=FALSE}
+pca_plots(mac, 'ORG38')
+```
+
+```{r, fig.height=12, fig.width=16, fig.align='left',warning=FALSE, message=FALSE, echo=FALSE}
+mac38 <- mac %>%
+  subset(., Organoid == "ORG38") %>%
+  subset(., Treatment_Combination == "NC_DMSO")
+mac38 <- mac38 %>%
+  SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+  FindVariableFeatures(verbose = FALSE) %>%
+  RunPCA(npcs = ncol(mac38)-1) %>%
+  FindNeighbors(verbose = FALSE) %>% 
+  FindClusters(method = "igraph", verbose = FALSE)
+
+p1 <- DimPlot(mac38, group.by = 'SPLINTR', pt.size = 2) + ggtitle('NC_DMSO')
+
+mac38 <- mac %>%
+  subset(., Organoid == "ORG38") %>%
+  subset(., Treatment_Combination == "NC_PAC")
+mac38 <- mac38 %>%
+  SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+  FindVariableFeatures(verbose = FALSE) %>%
+  RunPCA(npcs = ncol(mac38)-1) %>%
+  FindNeighbors(verbose = FALSE) %>% 
+  FindClusters(method = "igraph", verbose = FALSE)
+
+p2 <- DimPlot(mac38, group.by = 'SPLINTR', pt.size = 2) + ggtitle('NC_PAC')
+
+mac38 <- mac %>%
+  subset(., Organoid == "ORG38") %>%
+  subset(., Treatment_Combination == "NC_SN38")
+mac38 <- mac38 %>%
+  SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+  FindVariableFeatures(verbose = FALSE) %>%
+  RunPCA(npcs = ncol(mac38)-1) %>%
+  FindNeighbors(verbose = FALSE) %>% 
+  FindClusters(method = "igraph", verbose = FALSE)
+
+p3 <- DimPlot(mac38, group.by = 'SPLINTR', pt.size = 2) + ggtitle('NC_SN38')
+
+# mac49 <- mac %>%
+#   subset(., Organoid == "ORG38") %>%
+#   subset(., Treatment_Combination == "SN38_DMSO")
+# mac49 <- mac49 %>%
+#   SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+#   FindVariableFeatures(verbose = FALSE) %>%
+#   RunPCA(npcs = ncol(mac49)-1) %>%
+#   FindNeighbors(verbose = FALSE) %>% 
+#   FindClusters(method = "igraph", verbose = FALSE)
+# 
+# p4 <- DimPlot(mac49, group.by = 'SPLINTR', pt.size = 2) + ggtitle('SN38_DMSO')
+
+mac38 <- mac %>%
+  subset(., Organoid == "ORG38") %>%
+  subset(., Treatment_Combination == "SN38_SN38")
+mac38 <- mac38 %>%
+  SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+  FindVariableFeatures(verbose = FALSE) %>%
+  RunPCA(npcs = ncol(mac38)-1) %>%
+  FindNeighbors(verbose = FALSE) %>% 
+  FindClusters(method = "igraph", verbose = FALSE)
+
+p5 <- DimPlot(mac38, group.by = 'SPLINTR', pt.size = 2) + ggtitle('SN38_SN38')
+
+mac38 <- mac %>%
+  subset(., Organoid == "ORG38") %>%
+  subset(., Treatment_Combination == "PAC_DMSO")
+mac38 <- mac38 %>%
+  SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+  FindVariableFeatures(verbose = FALSE) %>%
+  RunPCA(npcs=4) 
+
+p6 <- DimPlot(mac38, group.by = 'SPLINTR', pt.size = 2) + ggtitle('PAC_DMSO')
+
+mac38 <- mac %>%
+  subset(., Organoid == "ORG38") %>%
+  subset(., Treatment_Combination == "PAC_PAC")
+mac38 <- mac38 %>%
+  SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+  FindVariableFeatures(verbose = FALSE) %>%
+  RunPCA(npcs = ncol(mac38)-1) %>%
+  FindNeighbors(verbose = FALSE) %>% 
+  FindClusters(method = "igraph", verbose = FALSE)
+
+p7 <- DimPlot(mac38, group.by = 'SPLINTR', pt.size = 2) + ggtitle('PAC_PAC')
+
+ggarrange(p1,p2,p3,p5,p6,p7, nrow=3, ncol=3)
+```
+
+#### ORG66 {.tabset}
+
+```{r, fig.height=12, fig.width=16, fig.align='left',warning=FALSE, message=FALSE, echo=FALSE}
+pca_plots(mac, 'ORG66')
+```
+
+```{r, fig.height=12, fig.width=16, fig.align='left',warning=FALSE, message=FALSE, echo=FALSE}
+mac66 <- mac %>%
+  subset(., Organoid == "ORG66") %>%
+  subset(., Treatment_Combination == "NC_DMSO")
+mac66 <- mac66 %>%
+  SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt ",verbose = FALSE) %>%
+  FindVariableFeatures(verbose = FALSE) %>%
+  RunPCA(npcs = ncol(mac66)-1) %>%
+  FindNeighbors(verbose = FALSE) %>% 
+  FindClusters(method = "igraph", verbose = FALSE)
+
+p1 <- DimPlot(mac66, group.by = 'SPLINTR', pt.size = 2) + ggtitle('NC_DMSO')
+
+mac66 <- mac %>%
+  subset(., Organoid == "ORG66") %>%
+  subset(., Treatment_Combination == "NC_PAC")
+mac66 <- mac66 %>%
+  SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+  FindVariableFeatures(verbose = FALSE) %>%
+  RunPCA(npcs = ncol(mac66)-1) %>%
+  FindNeighbors(verbose = FALSE) %>% 
+  FindClusters(method = "igraph", verbose = FALSE)
+
+p2 <- DimPlot(mac66, group.by = 'SPLINTR', pt.size = 2) + ggtitle('NC_PAC')
+
+mac66 <- mac %>%
+  subset(., Organoid == "ORG66") %>%
+  subset(., Treatment_Combination == "NC_SN38")
+mac66 <- mac66 %>%
+  SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+  FindVariableFeatures(verbose = FALSE) %>%
+  RunPCA(npcs = ncol(mac66)-1) %>%
+  FindNeighbors(verbose = FALSE) %>% 
+  FindClusters(method = "igraph", verbose = FALSE)
+
+p3 <- DimPlot(mac66, group.by = 'SPLINTR', pt.size = 2) + ggtitle('NC_SN38')
+
+mac66 <- mac %>%
+  subset(., Organoid == "ORG66") %>%
+  subset(., Treatment_Combination == "SN38_DMSO")
+mac66 <- mac66 %>%
+  SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+  FindVariableFeatures(verbose = FALSE) %>%
+  RunPCA(npcs = 3) 
+
+p4 <- DimPlot(mac66, group.by = 'SPLINTR', pt.size = 2) + ggtitle('SN38_DMSO')
+
+mac66 <- mac %>%
+  subset(., Organoid == "ORG66") %>%
+  subset(., Treatment_Combination == "SN38_SN38")
+mac66 <- mac66 %>%
+  SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+  FindVariableFeatures(verbose = FALSE) %>%
+  RunPCA(npcs = ncol(mac66)-1) %>%
+  FindNeighbors(verbose = FALSE) %>% 
+  FindClusters(method = "igraph", verbose = FALSE)
+
+p5 <- DimPlot(mac66, group.by = 'SPLINTR', pt.size = 2) + ggtitle('SN38_SN38')
+
+mac66 <- mac %>%
+  subset(., Organoid == "ORG66") %>%
+  subset(., Treatment_Combination == "PAC_DMSO")
+mac66 <- mac66 %>%
+  SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+  FindVariableFeatures(verbose = FALSE) %>%
+  RunPCA(npcs=4) 
+
+p6 <- DimPlot(mac66, group.by = 'SPLINTR', pt.size = 2) + ggtitle('PAC_DMSO')
+
+mac66 <- mac %>%
+  subset(., Organoid == "ORG66") %>%
+  subset(., Treatment_Combination == "PAC_PAC")
+mac66 <- mac66 %>%
+  SCTransform(do.scale = T, return.only.var.genes = F, vars.to.regress = "percent.mt",verbose = FALSE) %>%
+  FindVariableFeatures(verbose = FALSE) %>%
+  RunPCA(npcs = ncol(mac66)-1) %>%
+  FindNeighbors(verbose = FALSE) %>% 
+  FindClusters(method = "igraph", verbose = FALSE)
+
+p7 <- DimPlot(mac66, group.by = 'SPLINTR', pt.size = 2) + ggtitle('PAC_PAC')
+
+ggarrange(p1,p2,p3,p4,p5,p6,p7, nrow=3, ncol=3)
+```
+
+### Sample Type Distribution
+
+### Gene Expression
+
+
