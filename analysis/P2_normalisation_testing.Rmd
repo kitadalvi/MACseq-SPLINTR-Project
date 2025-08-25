@@ -1,0 +1,1266 @@
+---
+title: "Normalisation Testing"
+output: html_document
+date: "2025-08-06"
+---
+
+```{r setup, echo = FALSE, message =FALSE, warning=FALSE, fig.height=6, fig.width=6}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.height = 8, fig.width = 6)
+```
+
+```{r, warning=FALSE, message=FALSE}
+### loading required packages
+library(tidyverse)
+library(Seurat)
+library(gtools)
+library(tidyseurat)
+library(DESeq2)
+library(edgeR)
+library(RUVSeq)
+library(variancePartition)
+library(reshape2)
+library(dplyr)
+library(RColorBrewer)
+library(DT)
+library(EnhancedVolcano)
+```
+
+```{r}
+### Functions 
+
+### buttons for datatables 
+create_dt <- function(x){
+  colnames <- c('logFC','AveExpr','t','B')
+  df <- x %>%
+    mutate(across(all_of(colnames),round, digits = 2)) %>%
+    mutate(adj.P.Val = format(adj.P.Val, format='e', digits=4)) %>%
+    mutate(P.Value = format(P.Value, format='e', digits=4))
+  DT::datatable(df,
+                extensions = 'Buttons',
+                options = list(dom = 'Blfrtip',
+                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                               lengthMenu = list(c(10,25,50,-1),
+                                                 c(10,25,50,"All"))))
+}
+
+plotRLE <- function(data, main = "", ylab = "Relative Log Expression") {
+  # Calculate medians
+  col <- brewer.pal(8, 'Set3')
+  medians <- apply(data, 1, median, na.rm = TRUE)
+  rle_data <- data - medians
+  
+  boxplot(as.data.frame(rle_data),
+          outline = FALSE,
+          las = 2,
+          ylab = ylab,
+          main = main,
+          col = col)
+  abline(h = 0, col = "red", lty = 2)
+}
+
+```
+
+## Normalisation Testing
+
+```{r}
+### load in MACseq data
+### load in nmetadata
+### join in Seurate Object 
+
+### import metadata
+metadata<-read.csv("/Users/dalvinikita/Documents/11_MACseq_PMMSq042/PMMSq042.csv",header=T) %>%
+  arrange("Barcode") %>%
+  mutate(id=gsub("Plate","",Plate_ID)) %>%
+  mutate(Treatment_Combination=paste0(substr(Cell_type,1,2),'_',substr(Treatment_1,1,4))) %>%
+  mutate(label=paste0(Treatment_Combination,"_",Well_ID)) %>%
+  mutate(Concentration_1=as.factor(Concentration_1)) %>%
+  mutate(SPLINTR = str_sub(Cell_type,-1,-1)) %>%
+  mutate(group = paste0(Treatment_Combination,'.',SPLINTR))
+
+```
+
+### Parameter Testing 
+
+Looking at DMSO wells in the entire plate using:
+
+• keep <- rowSums(edgeR::cpm(raw_counts)>10) >= 3
+
+```{r}
+### load in count data 
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/11_MACseq_PMMSq042/raw')
+
+### filter by cpm>10 in at least 3 samples
+keep <- rowSums(edgeR::cpm(raw_counts)>10) >= 3
+raw_counts <- raw_counts[keep,]
+
+### filter for the minimum number of reads per gene per sample, as per edgeR
+row.names(metadata)<-metadata$label
+
+mac <- CreateSeuratObject(counts = raw_counts,
+                          project = 'PMMSq042',
+                          min.cells = 1,
+                          min.features = 0)
+
+#mac[["percent.mt"]]<-PercentageFeatureSet(mac, pattern = "^mt-")
+#mac[["percent.rp"]]<-PercentageFeatureSet(mac, pattern = "^rp-")
+
+mac[["percent.mt"]] <- PercentageFeatureSet(mac, pattern = "^mt-|^MT-")
+mac[["percent.ribo"]] <- PercentageFeatureSet(mac, pattern = "^Rp[slp][[:digit:]]|^Rpsa|^RP[SLP][[:digit:]]|^RPSA")
+
+### add location metadata
+mac<- mac %>%
+  inner_join(metadata,by=c(".cell"="Barcode"))
+
+### exclude mito and ribo genes from the counts
+mac<-mac[!grepl("^MT-",rownames(mac))]
+mac<-mac[!grepl("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA",rownames(mac))]
+
+colnames(mac)<- mac$label
+
+###   Select wells from mac that are not empty 
+rawdata <- mac
+sampleinfo <- metadata[is.na(metadata$Cell_type)!=TRUE | metadata$Treatment_1!="Staurosporine",]
+samples <- rownames(sampleinfo)
+rawdata <- mac[,samples]
+
+### Keep only DMSO treated wells
+rawdata <- rawdata %>%
+  filter(Treatment_1=="DMSO")
+
+### Ensure counts data and sampleinfo are in the same order
+order <- colnames(rawdata)
+sampleinfo <- sampleinfo[order,]
+order_check <- rownames(sampleinfo)==colnames(rawdata)
+cat('Instances where metadata sample matches counts matric sample (checking correct order):',"\n", order_check)
+
+dge <- DGEList(counts = rawdata@assays$RNA$counts)
+dge <- calcNormFactors(dge, methods = "TMMwsp")
+treatment_combination <- as.factor(sampleinfo$Treatment_Combination)
+splintr <- as.factor(sampleinfo$SPLINTR)
+concentration <- as.factor(sampleinfo$Concentration_1)
+organoid <- as.factor(sampleinfo$Organoid)
+design <- model.matrix(~0+organoid+treatment_combination+splintr+concentration)
+v <- voom(dge, design, plot=T)
+plotRLE(as.data.frame(rawdata@assays$RNA$counts), main='RLE of all DMSO treated wells - raw')
+plotRLE(v$E, main='RLE of all DMSO treated wells - normalised')
+
+```
+
+NIKITA TESTING::
+
+```{r}
+colnames(mac_filtered)<- mac_filtered$label
+
+###   Select wells from mac that are not empty 
+rawdata <- mac_filtered
+sampleinfo <- metadata[is.na(metadata$Cell_type)!=TRUE | metadata$Treatment_1!="Staurosporine",]
+samples <- rownames(sampleinfo)
+rawdata <- mac_filtered[,samples]
+
+### Keep only DMSO treated wells
+rawdata <- rawdata %>%
+  filter(Treatment_1=="DMSO")
+
+### Ensure counts data and sampleinfo are in the same order
+order <- colnames(rawdata)
+sampleinfo <- sampleinfo[order,]
+order_check <- rownames(sampleinfo)==colnames(rawdata)
+cat('Instances where metadata sample matches counts matric sample (checking correct order):',"\n", order_check)
+
+dge <- DGEList(counts = rawdata@assays$RNA$counts)
+dge <- calcNormFactors(dge, methods = "TMMwsp")
+treatment_combination <- as.factor(sampleinfo$Treatment_Combination)
+splintr <- as.factor(sampleinfo$SPLINTR)
+concentration <- as.factor(sampleinfo$Concentration_1)
+organoid <- as.factor(sampleinfo$Organoid)
+design <- model.matrix(~0+organoid+treatment_combination+splintr+concentration)
+v <- voom(dge, design, plot=T)
+plotRLE(as.data.frame(rawdata@assays$RNA$counts), main='RLE of all DMSO treated wells - raw')
+plotRLE(v$E, main='RLE of all DMSO treated wells - normalised')
+```
+```{r}
+### load in count data 
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/11_MACseq_PMMSq042/raw')
+
+### filter for the minimum number of reads per gene per sample, as per edgeR
+row.names(metadata)<-metadata$label
+
+mac <- CreateSeuratObject(counts = raw_counts,
+                          project = 'PMMSq042',
+                          min.cells = 1,
+                          min.features = 0)
+
+
+mac[["percent.mt"]] <- PercentageFeatureSet(mac, pattern = "^mt-|^MT-")
+mac[["percent.ribo"]] <- PercentageFeatureSet(mac, pattern = "^Rp[slp][[:digit:]]|^Rpsa|^RP[SLP][[:digit:]]|^RPSA")
+
+### add location metadata
+mac<- mac %>%
+  inner_join(metadata,by=c(".cell"="Barcode"))
+
+### FILTERING
+mac_filtered <- filter_genes_by_expression(mac, group_by = "Organoid", min_counts = 10,
+    min_samples = 10)
+
+
+colnames(mac_filtered)<- mac_filtered$label
+
+### selecting metadata and countdata relevant for ORG 38
+### subset metadata to include only ORG38 cells 
+columns <- metadata[metadata$Organoid=='ORG38' & metadata$Treatment_1!="Staurosporine",]
+sampleinfo <- columns
+samples <- c(rownames(sampleinfo))
+counts_matrix <- mac_filtered[,samples]
+order <- colnames(counts_matrix)
+sampleinfo <- sampleinfo[colnames(counts_matrix),]
+
+### factors to include in deisgn matrix: SPLINTR group and treatment, concentration
+treatment <- as.factor(sampleinfo$Treatment_Combination)
+concentration <- sampleinfo$Concentration_1
+splintr <- as.factor(sampleinfo$SPLINTR)
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+treatment+splintr+concentration)
+rownames(design) <- rownames(sampleinfo)
+datatable(design)
+
+NC_pacvsdmso <- makeContrasts(treatmentNC_Pacl-treatmentNC_DMSO,levels=colnames(design))
+NC_sn38vsdmso <- makeContrasts(treatmentNC_SN38-treatmentNC_DMSO,levels=colnames(design))
+PAC_pacvsdmso <- makeContrasts(treatmentPa_Pacl-treatmentPa_DMSO,levels=colnames(design))
+
+### Normalising data
+counts<-counts_matrix@assays$RNA$counts
+counts <- DGEList(counts = counts) %>%
+  calcNormFactors(method = 'TMMwsp')
+v <- voom(counts, design, plot = T)
+
+plotRLE(counts$counts, main='RLE of all wells - raw')
+plotRLE(v$E, main='RLE of all wells - normalised')
+
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, NC_pacvsdmso)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+
+### Assign Significance 
+all_genes$significance <- 'nonsignificant'
+all_genes[all_genes$logFC < -1 & all_genes$adj.P.Val < 0.05,c('significance')] <- 'downregulated'
+all_genes[all_genes$logFC >1 & all_genes$adj.P.Val < 0.05,c('significance')] <- 'upregulated'
+
+### MA plot
+MA <- new("MAList")
+MA$A <- all_genes$AveExpr
+MA$M <- all_genes$logFC
+status <- all_genes$significance
+values <- c("downregulated","upregulated","nonsignificant")
+col <- c("blue", "red", "black")
+plotMA(MA,main="MA-Plot with significant genes highlighted",
+       status=status, values=values, hl.col=col)
+```
+
+
+
+
+
+
+
+------------------------------------------
+
+
+Looking at DMSO wells in the entire plate using:
+
+• keep <- rowSums(edgeR::cpm(raw_counts)>10) >= 10
+
+```{r}
+### load in count data 
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/11_MACseq_PMMSq042/raw')
+
+### filter by cpm>10 in at least 3 samples
+keep <- rowSums(edgeR::cpm(raw_counts)>10) >= 10
+raw_counts <- raw_counts[keep,]
+
+### filter for the minimum number of reads per gene per sample, as per edgeR
+row.names(metadata)<-metadata$label
+
+mac <- CreateSeuratObject(counts = raw_counts,
+                          project = 'PMMSq042',
+                          min.cells = 1,
+                          min.features = 0)
+
+#mac[["percent.mt"]]<-PercentageFeatureSet(mac, pattern = "^mt-")
+#mac[["percent.rp"]]<-PercentageFeatureSet(mac, pattern = "^rp-")
+
+mac[["percent.mt"]] <- PercentageFeatureSet(mac, pattern = "^mt-|^MT-")
+mac[["percent.ribo"]] <- PercentageFeatureSet(mac, pattern = "^Rp[slp][[:digit:]]|^Rpsa|^RP[SLP][[:digit:]]|^RPSA")
+
+### add location metadata
+mac<- mac %>%
+  inner_join(metadata,by=c(".cell"="Barcode"))
+
+### exclude mito and ribo genes from the counts
+mac<-mac[!grepl("^MT-",rownames(mac))]
+mac<-mac[!grepl("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA",rownames(mac))]
+
+colnames(mac)<- mac$label
+
+###   Select wells from mac that are not empty 
+rawdata <- mac
+sampleinfo <- metadata[is.na(metadata$Cell_type)!=TRUE | metadata$Treatment_1!="Staurosporine",]
+samples <- rownames(sampleinfo)
+rawdata <- mac[,samples]
+
+### Keep only DMSO treated wells
+rawdata <- rawdata %>%
+  filter(Treatment_1=="DMSO")
+
+### Ensure counts data and sampleinfo are in the same order
+order <- colnames(rawdata)
+sampleinfo <- sampleinfo[order,]
+order_check <- rownames(sampleinfo)==colnames(rawdata)
+cat('Instances where metadata sample matches counts matric sample (checking correct order):',"\n", order_check)
+
+dge <- DGEList(counts = rawdata@assays$RNA$counts)
+dge <- calcNormFactors(dge, methods = "TMMwsp")
+treatment_combination <- as.factor(sampleinfo$Treatment_Combination)
+splintr <- as.factor(sampleinfo$SPLINTR)
+concentration <- as.factor(sampleinfo$Concentration_1)
+organoid <- as.factor(sampleinfo$Organoid)
+design <- model.matrix(~0+organoid+treatment_combination+splintr+concentration)
+v <- voom(dge, design, plot=T)
+plotRLE(as.data.frame(rawdata@assays$RNA$counts), main='RLE of all DMSO treated wells - raw')
+plotRLE(v$E, main='RLE of all DMSO treated wells - normalised')
+
+```
+
+Looking at DMSO wells in the entire plate using:
+
+• keep <- rowSums(edgeR::cpm(raw_counts)>10) >= 50
+
+```{r}
+### load in count data 
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/11_MACseq_PMMSq042/raw')
+
+### filter by cpm>10 in at least 3 samples
+keep <- rowSums(edgeR::cpm(raw_counts)>10) >= 50
+raw_counts <- raw_counts[keep,]
+
+### filter for the minimum number of reads per gene per sample, as per edgeR
+row.names(metadata)<-metadata$label
+
+mac <- CreateSeuratObject(counts = raw_counts,
+                          project = 'PMMSq042',
+                          min.cells = 1,
+                          min.features = 0)
+
+#mac[["percent.mt"]]<-PercentageFeatureSet(mac, pattern = "^mt-")
+#mac[["percent.rp"]]<-PercentageFeatureSet(mac, pattern = "^rp-")
+
+mac[["percent.mt"]] <- PercentageFeatureSet(mac, pattern = "^mt-|^MT-")
+mac[["percent.ribo"]] <- PercentageFeatureSet(mac, pattern = "^Rp[slp][[:digit:]]|^Rpsa|^RP[SLP][[:digit:]]|^RPSA")
+
+### add location metadata
+mac<- mac %>%
+  inner_join(metadata,by=c(".cell"="Barcode"))
+
+### exclude mito and ribo genes from the counts
+mac<-mac[!grepl("^MT-",rownames(mac))]
+mac<-mac[!grepl("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA",rownames(mac))]
+
+colnames(mac)<- mac$label
+
+###   Select wells from mac that are not empty 
+rawdata <- mac
+sampleinfo <- metadata[is.na(metadata$Cell_type)!=TRUE | metadata$Treatment_1!="Staurosporine",]
+samples <- rownames(sampleinfo)
+rawdata <- mac[,samples]
+
+### Keep only DMSO treated wells
+rawdata <- rawdata %>%
+  filter(Treatment_1=="DMSO")
+
+### Ensure counts data and sampleinfo are in the same order
+order <- colnames(rawdata)
+sampleinfo <- sampleinfo[order,]
+order_check <- rownames(sampleinfo)==colnames(rawdata)
+cat('Instances where metadata sample matches counts matric sample (checking correct order):',"\n", order_check)
+
+dge <- DGEList(counts = rawdata@assays$RNA$counts)
+dge <- calcNormFactors(dge, methods = "TMMwsp")
+treatment_combination <- as.factor(sampleinfo$Treatment_Combination)
+splintr <- as.factor(sampleinfo$SPLINTR)
+concentration <- as.factor(sampleinfo$Concentration_1)
+organoid <- as.factor(sampleinfo$Organoid)
+design <- model.matrix(~0+organoid+treatment_combination+splintr+concentration)
+v <- voom(dge, design, plot=T)
+plotRLE(as.data.frame(rawdata@assays$RNA$counts), main='RLE of all DMSO treated wells - raw')
+plotRLE(v$E, main='RLE of all DMSO treated wells - normalised')
+```
+
+Looking at DMSO wells in the entire plate using:
+
+• keep <- rowSums(edgeR::cpm(raw_counts)>50) >= 10
+
+```{r}
+### load in count data 
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/11_MACseq_PMMSq042/raw')
+
+### filter by cpm>10 in at least 3 samples
+keep <- rowSums(edgeR::cpm(raw_counts)>50) >= 10
+raw_counts <- raw_counts[keep,]
+
+### filter for the minimum number of reads per gene per sample, as per edgeR
+row.names(metadata)<-metadata$label
+
+mac <- CreateSeuratObject(counts = raw_counts,
+                          project = 'PMMSq042',
+                          min.cells = 1,
+                          min.features = 0)
+
+#mac[["percent.mt"]]<-PercentageFeatureSet(mac, pattern = "^mt-")
+#mac[["percent.rp"]]<-PercentageFeatureSet(mac, pattern = "^rp-")
+
+mac[["percent.mt"]] <- PercentageFeatureSet(mac, pattern = "^mt-|^MT-")
+mac[["percent.ribo"]] <- PercentageFeatureSet(mac, pattern = "^Rp[slp][[:digit:]]|^Rpsa|^RP[SLP][[:digit:]]|^RPSA")
+
+### add location metadata
+mac<- mac %>%
+  inner_join(metadata,by=c(".cell"="Barcode"))
+
+### exclude mito and ribo genes from the counts
+mac<-mac[!grepl("^MT-",rownames(mac))]
+mac<-mac[!grepl("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA",rownames(mac))]
+
+colnames(mac)<- mac$label
+
+###   Select wells from mac that are not empty 
+rawdata <- mac
+sampleinfo <- metadata[is.na(metadata$Cell_type)!=TRUE | metadata$Treatment_1!="Staurosporine",]
+samples <- rownames(sampleinfo)
+rawdata <- mac[,samples]
+
+### Keep only DMSO treated wells
+rawdata <- rawdata %>%
+  filter(Treatment_1=="DMSO")
+
+### Ensure counts data and sampleinfo are in the same order
+order <- colnames(rawdata)
+sampleinfo <- sampleinfo[order,]
+order_check <- rownames(sampleinfo)==colnames(rawdata)
+cat('Instances where metadata sample matches counts matric sample (checking correct order):',"\n", order_check)
+
+dge <- DGEList(counts = rawdata@assays$RNA$counts)
+dge <- calcNormFactors(dge, methods = "TMMwsp")
+treatment_combination <- as.factor(sampleinfo$Treatment_Combination)
+splintr <- as.factor(sampleinfo$SPLINTR)
+concentration <- as.factor(sampleinfo$Concentration_1)
+organoid <- as.factor(sampleinfo$Organoid)
+design <- model.matrix(~0+organoid+treatment_combination+splintr+concentration)
+v <- voom(dge, design, plot=T)
+plotRLE(as.data.frame(rawdata@assays$RNA$counts), main='RLE of all DMSO treated wells - raw')
+plotRLE(v$E, main='RLE of all DMSO treated wells - normalised')
+
+```
+
+Looking at DMSO wells in the entire plate using:
+
+• keep <- rowSums(edgeR::cpm(raw_counts)>15) >= 50
+
+```{r}
+### load in count data 
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/11_MACseq_PMMSq042/raw')
+
+### filter by cpm>10 in at least 3 samples
+keep <- rowSums(edgeR::cpm(raw_counts)>15) >= 50
+raw_counts <- raw_counts[keep,]
+
+### filter for the minimum number of reads per gene per sample, as per edgeR
+row.names(metadata)<-metadata$label
+
+mac <- CreateSeuratObject(counts = raw_counts,
+                          project = 'PMMSq042',
+                          min.cells = 1,
+                          min.features = 0)
+
+#mac[["percent.mt"]]<-PercentageFeatureSet(mac, pattern = "^mt-")
+#mac[["percent.rp"]]<-PercentageFeatureSet(mac, pattern = "^rp-")
+
+mac[["percent.mt"]] <- PercentageFeatureSet(mac, pattern = "^mt-|^MT-")
+mac[["percent.ribo"]] <- PercentageFeatureSet(mac, pattern = "^Rp[slp][[:digit:]]|^Rpsa|^RP[SLP][[:digit:]]|^RPSA")
+
+### add location metadata
+mac<- mac %>%
+  inner_join(metadata,by=c(".cell"="Barcode"))
+
+### exclude mito and ribo genes from the counts
+mac<-mac[!grepl("^MT-",rownames(mac))]
+mac<-mac[!grepl("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA",rownames(mac))]
+
+colnames(mac)<- mac$label
+
+###   Select wells from mac that are not empty 
+rawdata <- mac
+sampleinfo <- metadata[is.na(metadata$Cell_type)!=TRUE | metadata$Treatment_1!="Staurosporine",]
+samples <- rownames(sampleinfo)
+rawdata <- mac[,samples]
+
+### Keep only DMSO treated wells
+rawdata <- rawdata %>%
+  filter(Treatment_1=="DMSO")
+
+### Ensure counts data and sampleinfo are in the same order
+order <- colnames(rawdata)
+sampleinfo <- sampleinfo[order,]
+order_check <- rownames(sampleinfo)==colnames(rawdata)
+cat('Instances where metadata sample matches counts matric sample (checking correct order):',"\n", order_check)
+
+dge <- DGEList(counts = rawdata@assays$RNA$counts)
+dge <- calcNormFactors(dge, methods = "TMMwsp")
+treatment_combination <- as.factor(sampleinfo$Treatment_Combination)
+splintr <- as.factor(sampleinfo$SPLINTR)
+concentration <- as.factor(sampleinfo$Concentration_1)
+organoid <- as.factor(sampleinfo$Organoid)
+design <- model.matrix(~0+organoid+treatment_combination+splintr+concentration)
+v <- voom(dge, design, plot=T)
+plotRLE(as.data.frame(rawdata@assays$RNA$counts), main='RLE of all DMSO treated wells - raw')
+plotRLE(v$E, main='RLE of all DMSO treated wells - normalised')
+
+```
+
+### Differential expression 
+
+Testing differential expression in ORG38 using new parameters for filtering:
+
+cpm(raw_counts)>10) >= 50
+
+#### Design Matrix and Contrasts 
+
+Factors to include in design matrix: 
+
+• SPLINTR/treatment group (splintrA/ splintrB)
+
+• Treatment combination
+
+• Concentration (High/Low for each treatment combination)
+
+Design matrix:
+
+```{r}
+### load in count data 
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/11_MACseq_PMMSq042/raw')
+
+### filter by cpm>10 in at least 3 samples
+keep <- rowSums(edgeR::cpm(raw_counts)>10) >= 50
+raw_counts <- raw_counts[keep,]
+
+### filter for the minimum number of reads per gene per sample, as per edgeR
+row.names(metadata)<-metadata$label
+
+mac <- CreateSeuratObject(counts = raw_counts,
+                          project = 'PMMSq042',
+                          min.cells = 1,
+                          min.features = 0)
+
+#mac[["percent.mt"]]<-PercentageFeatureSet(mac, pattern = "^mt-")
+#mac[["percent.rp"]]<-PercentageFeatureSet(mac, pattern = "^rp-")
+
+mac[["percent.mt"]] <- PercentageFeatureSet(mac, pattern = "^mt-|^MT-")
+mac[["percent.ribo"]] <- PercentageFeatureSet(mac, pattern = "^Rp[slp][[:digit:]]|^Rpsa|^RP[SLP][[:digit:]]|^RPSA")
+
+### add location metadata
+mac<- mac %>%
+  inner_join(metadata,by=c(".cell"="Barcode"))
+
+### exclude mito and ribo genes from the counts
+mac<-mac[!grepl("^MT-",rownames(mac))]
+mac<-mac[!grepl("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA",rownames(mac))]
+
+colnames(mac)<- mac$label
+
+### selecting metadata and countdata relevant for ORG 38
+### subset metadata to include only ORG38 cells 
+columns <- metadata[metadata$Organoid=='ORG38' & metadata$Treatment_1!="Staurosporine",]
+sampleinfo <- columns
+samples <- c(rownames(sampleinfo))
+counts_matrix <- mac[,samples]
+order <- colnames(counts_matrix)
+sampleinfo <- sampleinfo[colnames(counts_matrix),]
+
+### factors to include in deisgn matrix: SPLINTR group and treatment, concentration
+treatment <- as.factor(sampleinfo$Treatment_Combination)
+concentration <- sampleinfo$Concentration_1
+splintr <- as.factor(sampleinfo$SPLINTR)
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+treatment+splintr+concentration)
+rownames(design) <- rownames(sampleinfo)
+datatable(design)
+
+NC_pacvsdmso <- makeContrasts(treatmentNC_Pacl-treatmentNC_DMSO,levels=colnames(design))
+NC_sn38vsdmso <- makeContrasts(treatmentNC_SN38-treatmentNC_DMSO,levels=colnames(design))
+PAC_pacvsdmso <- makeContrasts(treatmentPa_Pacl-treatmentPa_DMSO,levels=colnames(design))
+```
+
+Check normalisation: 
+
+```{r}
+### Normalising data
+counts<-counts_matrix@assays$RNA$counts
+counts <- DGEList(counts = counts) %>%
+  calcNormFactors(method = 'TMMwsp')
+v <- voom(counts, design, plot = T)
+
+plotRLE(counts$counts, main='RLE of all wells - raw')
+plotRLE(v$E, main='RLE of all wells - normalised')
+```
+#### NC_PAC-NC_DMSO 
+
+Differentially expressed genes between NC Pac and NC DMSO in ORG38:
+
+```{r}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, NC_pacvsdmso)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+##### MA Plot
+
+```{r, fig.height=6, fig.width=8}
+### Assign Significance 
+all_genes$significance <- 'nonsignificant'
+all_genes[all_genes$logFC < -1 & all_genes$adj.P.Val < 0.05,c('significance')] <- 'downregulated'
+all_genes[all_genes$logFC >1 & all_genes$adj.P.Val < 0.05,c('significance')] <- 'upregulated'
+
+### MA plot
+MA <- new("MAList")
+MA$A <- all_genes$AveExpr
+MA$M <- all_genes$logFC
+status <- all_genes$significance
+values <- c("downregulated","upregulated","nonsignificant")
+col <- c("blue", "red", "black")
+plotMA(MA,main="MA-Plot with significant genes highlighted",
+       status=status, values=values, hl.col=col)
+```
+
+##### Heatmaps 
+
+Next, we can look the differentially expressed genes by visualising the voom-transformed counts of the treated and DMSO samples in a heatmap, to make sure that the DEgenes we've identified actually look "different" in terms of their expression. 
+
+```{r}
+### Assigning genes of interest from DEgenes table
+### Formatting counts to log(CPM) for heatmap
+### subsetting wells of interest
+genes <- rownames(DE_genes)
+samples_of_interest <- sampleinfo[sampleinfo$Treatment_Combination=='NC_Pacl'|sampleinfo$Treatment_Combination=='NC_DMSO',c('label')]
+heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
+
+
+### Setting up annotation data frame
+type_annotation <- data.frame(Treatment = as.factor(sampleinfo[,c(18)]),
+                              Concentration = as.factor(sampleinfo[,c(11)]),
+                              SPLINTR = as.factor(sampleinfo[,c(16)]))
+rownames(type_annotation) <- rownames(sampleinfo)
+```
+
+Heatmap of top 50 differentially expressed genes between NC_PAC and NC_DMSO in PAC/DMSO samples in ORG38:
+
+```{r, fig.height=8, fig.width=8}
+pheatmap(heatmap_counts[genes[1:50],],
+         border_color = 'NA',
+         annotation_col = type_annotation,
+         treeheight_row = 0,
+         cellheight = 8)
+```
+
+Heatmap of all differentially expressed genes between NC_PAC and NC_DMSO in PAC/DMSO samples in ORG38:
+
+```{r, fig.height=15, fig.width=15}
+pheatmap(heatmap_counts[genes,],
+         border_color = 'NA',
+         annotation_col = type_annotation,
+         treeheight_row = 0)
+
+```
+
+Volcano plot of differentially expressed genes with top 10 differentially expressed genes labelled:
+
+```{r, fig.height=6, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="NC Paclitaxel VS NC DMSO",
+                                subtitle="ORG38",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(DE_genes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
+```
+#### NC_SN38-NC_DMSO
+
+Differentially expressed genes between NC SN38 and NC DMSO in ORG38:
+
+```{r}
+### following limma workflow
+### difference between SN38 and DMSO across concentrations
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, NC_sn38vsdmso)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+##### MA plot
+
+```{r, fig.height=6, fig.width=8}
+### Assign Significance 
+all_genes$significance <- 'nonsignificant'
+all_genes[all_genes$logFC < -1 & all_genes$adj.P.Val < 0.05,c('significance')] <- 'downregulated'
+all_genes[all_genes$logFC >1 & all_genes$adj.P.Val < 0.05,c('significance')] <- 'upregulated'
+
+### MA plot
+MA <- new("MAList")
+MA$A <- all_genes$AveExpr
+MA$M <- all_genes$logFC
+status <- all_genes$significance
+values <- c("downregulated","upregulated","nonsignificant")
+col <- c("blue", "red", "black")
+plotMA(MA,main="MA-Plot with significant genes highlighted",
+       status=status, values=values, hl.col=col)
+```
+#### PAC_PAC-PAC_DMSO
+
+Differentially expressed genes between PAC_PAC and PAC_DMSO in ORG38:
+
+```{r}
+### following limma workflow
+### difference between SN38 and DMSO across concentrations
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, PAC_pacvsdmso)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+##### MA plot
+
+```{r, fig.height=6, fig.width=8}
+### Assign Significance 
+all_genes$significance <- 'nonsignificant'
+all_genes[all_genes$logFC < -1 & all_genes$adj.P.Val < 0.05,c('significance')] <- 'downregulated'
+all_genes[all_genes$logFC >1 & all_genes$adj.P.Val < 0.05,c('significance')] <- 'upregulated'
+
+### MA plot
+MA <- new("MAList")
+MA$A <- all_genes$AveExpr
+MA$M <- all_genes$logFC
+status <- all_genes$significance
+values <- c("downregulated","upregulated","nonsignificant")
+col <- c("blue", "red", "black")
+plotMA(MA,main="MA-Plot with significant genes highlighted",
+       status=status, values=values, hl.col=col)
+```
+
+## Validationg in ORG49/ORG66
+
+### ORG49
+
+```{r, fig.height=8, fig.width=6}
+### selecting metadata and countdata relevant for ORG 38
+### subset metadata to include only ORG38 cells 
+columns <- metadata[metadata$Organoid=='ORG49' & metadata$Treatment_1!="Staurosporine",]
+sampleinfo <- columns
+samples <- c(rownames(sampleinfo))
+counts_matrix <- mac[,samples]
+order <- colnames(counts_matrix)
+sampleinfo <- sampleinfo[colnames(counts_matrix),]
+
+### factors to include in deisgn matrix: SPLINTR group and treatment, concentration
+treatment <- as.factor(sampleinfo$Treatment_Combination)
+concentration <- sampleinfo$Concentration_1
+splintr <- as.factor(sampleinfo$SPLINTR)
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+treatment+concentration)
+rownames(design) <- rownames(sampleinfo)
+datatable(design)
+
+NC_pacvsdmso <- makeContrasts(treatmentNC_Pacl-treatmentNC_DMSO,levels=colnames(design))
+PAC_pacvsdmso <- makeContrasts(treatmentPa_Pacl-treatmentPa_DMSO,levels=colnames(design))
+```
+
+Check normalisation: 
+
+```{r}
+### Normalising data
+counts<-counts_matrix@assays$RNA$counts
+counts <- DGEList(counts = counts) %>%
+  calcNormFactors(method = 'TMMwsp')
+v <- voom(counts, design, plot=T)
+
+plotRLE(counts$counts, main='RLE of all wells - raw')
+plotRLE(v$E, main='RLE of all wells - normalised')
+```
+
+Differentially expressed genes between NC_PAC and NC_DMSO in ORG49:
+
+```{r, fig.height=8, fig.width=6}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, NC_pacvsdmso)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+```{r, fig.height=6, fig.width=8}
+### Assign Significance 
+all_genes$significance <- 'nonsignificant'
+all_genes[all_genes$logFC < -1 & all_genes$adj.P.Val < 0.05,c('significance')] <- 'downregulated'
+all_genes[all_genes$logFC >1 & all_genes$adj.P.Val < 0.05,c('significance')] <- 'upregulated'
+
+### MA plot
+MA <- new("MAList")
+MA$A <- all_genes$AveExpr
+MA$M <- all_genes$logFC
+status <- all_genes$significance
+values <- c("downregulated","upregulated","nonsignificant")
+col <- c("blue", "red", "black")
+plotMA(MA,main="MA-Plot with significant genes highlighted",
+       status=status, values=values, hl.col=col)
+```
+
+### ORG66 
+```{r, fig.height=8, fig.width=6}
+### selecting metadata and countdata relevant for ORG66
+### subset metadata to include only ORG38 cells 
+columns <- metadata[metadata$Organoid=='ORG66' & metadata$Treatment_1!="Staurosporine",]
+sampleinfo <- columns
+samples <- c(rownames(sampleinfo))
+counts_matrix <- mac[,samples]
+order <- colnames(counts_matrix)
+sampleinfo <- sampleinfo[colnames(counts_matrix),]
+
+### factors to include in deisgn matrix: SPLINTR group and treatment, concentration
+treatment <- as.factor(sampleinfo$Treatment_Combination)
+concentration <- sampleinfo$Concentration_1
+splintr <- as.factor(sampleinfo$SPLINTR)
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+treatment+concentration)
+rownames(design) <- rownames(sampleinfo)
+datatable(design)
+
+NC_pacvsdmso <- makeContrasts(treatmentNC_Pacl-treatmentNC_DMSO,levels=colnames(design))
+PAC_pacvsdmso <- makeContrasts(treatmentPa_Pacl-treatmentPa_DMSO,levels=colnames(design))
+```
+
+Check Normalisation:
+
+```{r}
+### Normalising data
+counts<-counts_matrix@assays$RNA$counts
+counts <- DGEList(counts = counts) %>%
+  calcNormFactors(method = 'TMMwsp')
+v <- voom(counts, design, plot=T)
+
+plotRLE(counts$counts, main='RLE of all wells - raw')
+plotRLE(v$E, main='RLE of all wells - normalised')
+```
+
+Differential expression:
+
+```{r, fig.height=8, fig.width=6}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+# fit <- lmFit(v, design)
+# fit <- contrasts.fit(fit, NC_pacvsdmso)
+# fit <- eBayes(fit)
+# all_genes <- topTable(fit, n=Inf)
+# DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+### limma treat method
+fit <- lmFit(v, design)
+fit <- treat(fit, lfc=log2(1.2), trend=TRUE)
+DE_genes <- topTreat(fit, coef=c('treatmentNC_Pacl'))
+
+
+datatable(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+```{r, fig.height=6, fig.width=8}
+### Assign Significance 
+all_genes$significance <- 'nonsignificant'
+all_genes[all_genes$logFC < -1 & all_genes$adj.P.Val < 0.05,c('significance')] <- 'downregulated'
+all_genes[all_genes$logFC >1 & all_genes$adj.P.Val < 0.05,c('significance')] <- 'upregulated'
+
+### MA plot
+MA <- new("MAList")
+MA$A <- all_genes$AveExpr
+MA$M <- all_genes$logFC
+status <- all_genes$significance
+values <- c("downregulated","upregulated","nonsignificant")
+col <- c("blue", "red", "black")
+plotMA(MA,main="MA-Plot with significant genes highlighted",
+       status=status, values=values, hl.col=col)
+```
+
+## Replicating VCFG MACseq P2
+
+```{r}
+### Importing MACseq data
+### Importing metadata
+### Joining data in a Seurat object 
+
+### import metadata
+metadata<-read.csv("/Users/dalvinikita/Documents/11_MACseq_PMMSq042/PMMSq042.csv",header=T) %>%
+  arrange("Barcode") %>%
+  mutate(id=gsub("Plate","",Plate_ID)) %>%
+  mutate(Treatment_Combination=paste0(substr(Cell_type,1,2),'_',substr(Treatment_1,1,4))) %>%
+  mutate(label=paste0(Treatment_Combination,"_",Well_ID)) %>%
+  mutate(Concentration_1=as.factor(Concentration_1)) %>%
+  mutate(SPLINTR = str_sub(Cell_type,-1,-1)) %>%
+  mutate(group = paste0(Treatment_Combination,'.',SPLINTR)) %>%
+  mutate(combined_id = paste0(Cell_type, '_', Treatment_1))
+
+
+### load in count data 
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/11_MACseq_PMMSq042/raw')
+
+### filter for the minimum number of reads per gene per sample, as per edgeR
+row.names(metadata)<-metadata$label
+
+mac <- CreateSeuratObject(counts = raw_counts,
+                          project = 'PMMSq042',
+                          min.cells = 1,
+                          min.features = 0)
+
+mac[["percent.mt"]] <- PercentageFeatureSet(mac, pattern = "^mt-|^MT-")
+mac[["percent.ribo"]] <- PercentageFeatureSet(mac, pattern = "^Rp[slp][[:digit:]]|^Rpsa|^RP[SLP][[:digit:]]|^RPSA")
+
+### add location metadata
+mac<- mac %>%
+  inner_join(metadata,by=c(".cell"="Barcode"))
+
+mac <- filter_genes_by_expression(mac,
+                                       group_by = "combined_id",
+                                       min_counts = 10,
+                                       min_samples = 10)
+### exclude mito and ribo genes from the counts
+mac<-mac[!grepl("^MT-",rownames(mac))]
+mac<-mac[!grepl("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA",rownames(mac))]
+
+colnames(mac)<- mac$label
+
+###   Select wells from mac that are not empty 
+rawdata <- mac
+sampleinfo <- metadata[is.na(metadata$Cell_type)!=TRUE | metadata$Treatment_1!="Staurosporine",]
+samples <- rownames(sampleinfo)
+rawdata <- mac[,samples]
+
+### Keep only DMSO treated wells
+rawdata <- rawdata %>%
+  filter(Treatment_1=="DMSO")
+
+### Ensure counts data and sampleinfo are in the same order
+order <- colnames(rawdata)
+sampleinfo <- sampleinfo[order,]
+order_check <- rownames(sampleinfo)==colnames(rawdata)
+cat('Instances where metadata sample matches counts matric sample (checking correct order):',"\n", order_check)
+
+dge <- DGEList(counts = rawdata@assays$RNA$counts)
+dge <- calcNormFactors(dge, methods = "TMMwsp")
+treatment_combination <- as.factor(sampleinfo$Treatment_Combination)
+splintr <- as.factor(sampleinfo$SPLINTR)
+concentration <- as.factor(sampleinfo$Concentration_1)
+organoid <- as.factor(sampleinfo$Organoid)
+design <- model.matrix(~0+organoid+treatment_combination+splintr+concentration)
+v <- voom(dge, design)
+plotRLE(as.data.frame(rawdata@assays$RNA$counts), main='RLE of all DMSO treated wells - raw')
+plotRLE(v$E, main='RLE of all DMSO treated wells - normalised')
+```
+
+## Final Parameters 
+
+### Filtering and Normalisation
+
+Based on parameters tested above, final thresholds for filtering are as follows: 
+
+• Any gene must have a cpm >= 10 in at least half of all samples per organoid line to pass filtering. 
+
+```{r}
+### Importing MACseq data
+### Importing metadata
+### Joining data in a Seurat object 
+
+### import metadata
+metadata<-read.csv("/Users/dalvinikita/Documents/11_MACseq_PMMSq042/PMMSq042.csv",header=T) %>%
+  arrange("Barcode") %>%
+  mutate(id=gsub("Plate","",Plate_ID)) %>%
+  mutate(Treatment_Combination=paste0(substr(Cell_type,1,2),'_',substr(Treatment_1,1,4))) %>%
+  mutate(label=paste0(Treatment_Combination,"_",Well_ID)) %>%
+  mutate(Concentration_1=as.factor(Concentration_1)) %>%
+  mutate(SPLINTR = str_sub(Cell_type,-1,-1)) %>%
+  mutate(group = paste0(Treatment_Combination,'.',SPLINTR))
+
+
+### load in count data 
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/11_MACseq_PMMSq042/raw')
+
+### filter for the minimum number of reads per gene per sample, as per edgeR
+row.names(metadata)<-metadata$label
+
+mac <- CreateSeuratObject(counts = raw_counts,
+                          project = 'PMMSq042',
+                          min.cells = 1,
+                          min.features = 0)
+
+mac[["percent.mt"]] <- PercentageFeatureSet(mac, pattern = "^mt-|^MT-")
+mac[["percent.ribo"]] <- PercentageFeatureSet(mac, pattern = "^Rp[slp][[:digit:]]|^Rpsa|^RP[SLP][[:digit:]]|^RPSA")
+
+### add location metadata
+mac<- mac %>%
+  inner_join(metadata,by=c(".cell"="Barcode"))
+
+### filter for a min cpm of 10 in at least half of samples for each ORG
+mac <- filter_genes_by_expression(mac,
+                                       group_by = "Organoid",
+                                       min_counts = 10,
+                                       min_samples = 48)
+
+### exclude mito and ribo genes from the counts
+mac<-mac[!grepl("^MT-",rownames(mac))]
+mac<-mac[!grepl("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA",rownames(mac))]
+
+colnames(mac)<- mac$label
+
+###   Select wells from mac that are not empty 
+rawdata <- mac
+sampleinfo <- metadata[is.na(metadata$Cell_type)!=TRUE | metadata$Treatment_1!="Staurosporine",]
+samples <- rownames(sampleinfo)
+rawdata <- mac[,samples]
+
+### Keep only DMSO treated wells
+rawdata <- rawdata %>%
+  filter(Treatment_1=="DMSO")
+
+### Ensure counts data and sampleinfo are in the same order
+order <- colnames(rawdata)
+sampleinfo <- sampleinfo[order,]
+order_check <- rownames(sampleinfo)==colnames(rawdata)
+cat('Instances where metadata sample matches counts matric sample (checking correct order):',"\n", order_check)
+
+dge <- DGEList(counts = rawdata@assays$RNA$counts)
+dge <- calcNormFactors(dge, methods = "TMMwsp")
+treatment_combination <- as.factor(sampleinfo$Treatment_Combination)
+splintr <- as.factor(sampleinfo$SPLINTR)
+concentration <- as.factor(sampleinfo$Concentration_1)
+organoid <- as.factor(sampleinfo$Organoid)
+design <- model.matrix(~0+organoid+treatment_combination+splintr+concentration)
+v <- voom(dge, design)
+plotRLE(as.data.frame(rawdata@assays$RNA$counts), main='RLE of all DMSO treated wells - raw')
+plotRLE(v$E, main='RLE of all DMSO treated wells - normalised')
+```
+### DE test and MA plot {.tabset}
+
+```{r}
+### selecting metadata and countdata relevant for ORG 38
+### subset metadata to include only ORG38 cells 
+columns <- metadata[metadata$Organoid=='ORG38' & metadata$Treatment_1!="Staurosporine",]
+sampleinfo <- columns
+samples <- c(rownames(sampleinfo))
+counts_matrix <- mac[,samples]
+order <- colnames(counts_matrix)
+sampleinfo <- sampleinfo[colnames(counts_matrix),]
+
+### factors to include in deisgn matrix: SPLINTR group and treatment, concentration
+treatment <- as.factor(sampleinfo$Treatment_Combination)
+concentration <- sampleinfo$Concentration_1
+splintr <- as.factor(sampleinfo$SPLINTR)
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+treatment+splintr+concentration)
+rownames(design) <- rownames(sampleinfo)
+datatable(design)
+
+NC_pacvsdmso <- makeContrasts(treatmentNC_Pacl-treatmentNC_DMSO,levels=colnames(design))
+
+```
+
+Check normalisation: 
+
+```{r}
+### Normalising data
+counts<-counts_matrix@assays$RNA$counts
+counts <- DGEList(counts = counts) %>%
+  calcNormFactors(method = 'TMMwsp')
+v <- voom(counts, design, plot = T)
+
+plotRLE(counts$counts, main='RLE of all wells - raw')
+plotRLE(v$E, main='RLE of all wells - normalised')
+```
+
+#### Limma - voom 
+
+Differentially expressed genes between NC Pac and NC DMSO in ORG38 using limma-voom:
+
+```{r}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, NC_pacvsdmso)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+MA Plot:
+
+```{r, fig.height=6, fig.width=8}
+### Assign Significance 
+all_genes$significance <- 'nonsignificant'
+all_genes[all_genes$logFC < -1 & all_genes$adj.P.Val < 0.05,c('significance')] <- 'downregulated'
+all_genes[all_genes$logFC >1 & all_genes$adj.P.Val < 0.05,c('significance')] <- 'upregulated'
+
+### MA plot
+MA <- new("MAList")
+MA$A <- all_genes$AveExpr
+MA$M <- all_genes$logFC
+status <- all_genes$significance
+values <- c("downregulated","upregulated","nonsignificant")
+col <- c("blue", "red", "black")
+plotMA(MA,main="MA-Plot with significant genes highlighted",
+       status=status, values=values, hl.col=col)
+```
+#### Limma-trend
+
+Differentially expressed genes between NC Pac and NC DMSO in ORG38 using limma-trend:
+
+```{r}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, NC_pacvsdmso)
+fit <- treat(fit, lfc=1)
+all_genes <- topTreat(fit, number=Inf)
+DE_genes <- topTreat(fit, p.value = 0.05, number=Inf, sort.by='p')
+
+datatable(DE_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes)))
+up <- paste('• UPREGULATED:',sum(DE_genes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+MA Plot:
+
+```{r, fig.height=6, fig.width=8}
+### Assign Significance 
+all_genes$significance <- 'nonsignificant'
+all_genes[all_genes$logFC < -1 & all_genes$adj.P.Val < 0.05,c('significance')] <- 'downregulated'
+all_genes[all_genes$logFC >1 & all_genes$adj.P.Val < 0.05,c('significance')] <- 'upregulated'
+
+### MA plot
+MA <- new("MAList")
+MA$A <- all_genes$AveExpr
+MA$M <- all_genes$logFC
+status <- all_genes$significance
+values <- c("downregulated","upregulated","nonsignificant")
+col <- c("blue", "red", "black")
+plotMA(MA,main="MA-Plot with significant genes highlighted",
+       status=status, values=values, hl.col=col)
+```

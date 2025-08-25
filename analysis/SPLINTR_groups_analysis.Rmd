@@ -1,0 +1,350 @@
+---
+title: "SPLINTR groups Analysis"
+output: html_document
+date: "2025-07-08"
+---
+
+```{r setup, echo = FALSE, message =FALSE, warning=FALSE, fig.height=8, fig.width=6}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.height = 8, fig.width = 6)
+```
+
+```{r, warning=FALSE, message=FALSE}
+### loading required packages
+library(tidyverse)
+library(Seurat)
+library(gtools)
+library(tidyseurat)
+library(DESeq2)
+library(edgeR)
+library(RUVSeq)
+library(variancePartition)
+library(reshape2)
+library(gridExtra)
+library(ggrepel)
+library(ggpubr)
+library(fgsea)
+library(org.Hs.eg.db)
+library(DT)
+library(DOSE)
+library(enrichplot)
+library(clusterProfiler)
+library(dplyr)
+library(pheatmap)
+library(EnhancedVolcano)
+library(msigdbr)
+library(ReactomePA)
+library(RColorBrewer)
+```
+
+```{r}
+### Functions 
+
+### buttons for datatables 
+create_dt <- function(x){
+  colnames <- c('logFC','AveExpr','t','B')
+  df <- x %>%
+    mutate(across(all_of(colnames),round, digits = 2)) %>%
+    mutate(adj.P.Val = format(adj.P.Val, format='e', digits=4)) %>%
+    mutate(P.Value = format(P.Value, format='e', digits=4))
+  DT::datatable(df,
+                extensions = 'Buttons',
+                options = list(dom = 'Blfrtip',
+                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                               lengthMenu = list(c(10,25,50,-1),
+                                                 c(10,25,50,"All"))))
+}
+
+plotRLE <- function(data, main = "", ylab = "Relative Log Expression") {
+  # Calculate medians
+  col <- brewer.pal(8, 'Set3')
+  medians <- apply(data, 1, median, na.rm = TRUE)
+  rle_data <- data - medians
+  
+  boxplot(as.data.frame(rle_data),
+          outline = FALSE,
+          las = 2,
+          ylab = ylab,
+          main = main,
+          col = col)
+  abline(h = 0, col = "red", lty = 2)
+}
+
+
+```
+
+## Notes
+
+Thresholds used for DE analysis:
+
+• pvalue threshold = 0.05
+
+• log FC threshold = lfc > 1 | lfc < -1
+
+## Data
+
+```{r}
+### Importing MACseq data
+### Importing metadata
+### Joining data in a Seurat object 
+
+### import metadata
+metadata<-read.csv("/Users/dalvinikita/Documents/11_MACseq_PMMSq042/PMMSq042.csv",header=T) %>%
+  arrange("Barcode") %>%
+  mutate(id=gsub("Plate","",Plate_ID)) %>%
+  mutate(Treatment_Combination=paste0(substr(Cell_type,1,2),'_',substr(Treatment_1,1,4))) %>%
+  mutate(label=paste0(Treatment_Combination,"_",Well_ID)) %>%
+  mutate(Concentration_1=as.factor(Concentration_1)) %>%
+  mutate(SPLINTR = str_sub(Cell_type,-1,-1)) %>%
+  mutate(group = paste0(Treatment_Combination,'.',SPLINTR))
+
+
+### load in count data 
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/11_MACseq_PMMSq042/raw')
+
+### filter by cpm>10 in at least 3 samples
+keep <- rowSums(edgeR::cpm(raw_counts)>10) >= 10
+raw_counts <- raw_counts[keep,]
+
+### filter for the minimum number of reads per gene per sample, as per edgeR
+row.names(metadata)<-metadata$label
+
+mac <- CreateSeuratObject(counts = raw_counts,
+                          project = 'PMMSq042',
+                          min.cells = 1,
+                          min.features = 0)
+
+#mac[["percent.mt"]]<-PercentageFeatureSet(mac, pattern = "^mt-")
+#mac[["percent.rp"]]<-PercentageFeatureSet(mac, pattern = "^rp-")
+
+mac[["percent.mt"]] <- PercentageFeatureSet(mac, pattern = "^mt-|^MT-")
+mac[["percent.ribo"]] <- PercentageFeatureSet(mac, pattern = "^Rp[slp][[:digit:]]|^Rpsa|^RP[SLP][[:digit:]]|^RPSA")
+
+### add location metadata
+mac<- mac %>%
+  inner_join(metadata,by=c(".cell"="Barcode"))
+
+### exclude mito and ribo genes from the counts
+mac<-mac[!grepl("^MT-",rownames(mac))]
+mac<-mac[!grepl("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA",rownames(mac))]
+
+colnames(mac)<- mac$label
+```
+
+A quick look at the metadata:
+
+```{r}
+create_dt(metadata[metadata$Sample_type!="EMPTY",c("Well_ID","Barcode","Organoid", "Treatment_Combination", "SPLINTR", "Treatment_1")])
+```
+
+## Normalisation
+
+```{r}
+###   Select wells from mac that are not empty 
+rawdata <- mac
+sampleinfo <- metadata[is.na(metadata$Cell_type)!=TRUE | metadata$Treatment_1!="Staurosporine",]
+samples <- rownames(sampleinfo)
+rawdata <- mac[,samples]
+
+### Keep only DMSO treated wells
+rawdata <- rawdata %>%
+  filter(Treatment_1=="DMSO")
+
+### Ensure counts data and sampleinfo are in the same order
+order <- colnames(rawdata)
+sampleinfo <- sampleinfo[order,]
+order_check <- rownames(sampleinfo)==colnames(rawdata)
+cat('Instances where metadata sample matches counts matric sample (checking correct order):',"\n", order_check)
+
+dge <- DGEList(counts = rawdata@assays$RNA$counts)
+dge <- calcNormFactors(dge, methods = "TMMwsp")
+treatment_combination <- as.factor(sampleinfo$Treatment_Combination)
+splintr <- as.factor(sampleinfo$SPLINTR)
+concentration <- as.factor(sampleinfo$Concentration_1)
+organoid <- as.factor(sampleinfo$Organoid)
+design <- model.matrix(~0+organoid+treatment_combination+splintr+concentration)
+v <- voom(dge, design)
+plotRLE(as.data.frame(rawdata@assays$RNA$counts), main='RLE of all DMSO treated wells - raw')
+plotRLE(v$E, main='RLE of all DMSO treated wells - normalised')
+```
+
+## Analysis {.tabset}
+
+### ORG38
+
+#### Normalisation
+
+```{r}
+### selecting metadata and countdata relevant for ORG 38
+### subset metadata to include only ORG38 cells 
+columns <- metadata[metadata$Organoid=='ORG38' & metadata$Treatment_1!="Staurosporine",]
+sampleinfo <- columns
+samples <- c(rownames(sampleinfo))
+counts_matrix <- mac[,samples]
+order <- colnames(counts_matrix)
+sampleinfo <- sampleinfo[colnames(counts_matrix),]
+
+### Normalisation
+dge <- DGEList(counts = counts_matrix@assays$RNA$counts)
+dge <- calcNormFactors(dge, methods = "TMMwsp")
+concentration <- as.factor(sampleinfo$Concentration_1)
+group <- as.factor(sampleinfo$group)
+design <- model.matrix(~0+group+concentration)
+rownames(design)<- rownames(sampleinfo)
+v <- voom(dge, design)
+plotRLE(as.data.frame(rawdata@assays$RNA$counts), main='RLE of all ORG38 treated wells - raw')
+plotRLE(v$E, main='RLE of all ORG38 treated wells - normalised')
+```
+
+#### Design Matrix and Contrasts
+
+Factors to include in design matrix: 
+
+• Group variable (Treatment.SPLINTR)
+
+• Concentration (High/Low for each treatment combination)
+
+Design matrix:
+
+```{r}
+datatable(design)
+```
+
+Contrasts to look at the difference in expression between SPLINTR A and SPLINTR B groups:
+
+```{r}
+ncPAC_ncDMSO_splA <- makeContrasts(groupNC_Pacl.A-(groupNC_DMSO.A+groupNC_DMSO.B)/2, levels = colnames(design))
+  
+ncPAC_ncDMSO_splB <- makeContrasts(groupNC_Pacl.B-(groupNC_DMSO.A+groupNC_DMSO.B)/2, levels = colnames(design))
+
+ncPAC_A_ncPAC_B <- makeContrasts((groupNC_Pacl.A-(groupNC_DMSO.A+groupNC_DMSO.B)/2)-(groupNC_Pacl.B-(groupNC_DMSO.A+groupNC_DMSO.B)/2), levels=colnames(design))
+```
+
+#### Differential Expression {.tabset}
+
+##### PAC.A - DMSO
+```{r}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, ncPAC_ncDMSO_splA)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes_A <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes_A)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes_A)))
+up <- paste('• UPREGULATED:',sum(DE_genes_A$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes_A$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+
+```
+
+##### PAC.B - DMSO
+```{r}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, ncPAC_ncDMSO_splB)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes_B <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes_B)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes_B)))
+up <- paste('• UPREGULATED:',sum(DE_genes_B$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes_B$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+##### Heatmap
+```{r, fig.width=16}
+common_genes <- c('TPPP3',
+'AQP5',
+'CA9',
+'PGK1',
+'TPI1',
+'MIR210HG',
+'SCD',
+'TFF3',
+'FDFT1',
+'LRP1',
+'FOS',
+'ENO1',
+'IL32',
+'TMEM80',
+'LINC03078',
+'STIL',
+'MUCL3',
+'SMC4',
+'PLK1',
+'ALDOC',
+'MT1X',
+'ZWINT')
+
+samples <- sampleinfo[sampleinfo$group=='NC_DMSO.A'|
+                        sampleinfo$group=='NC_DMSO.B'|
+                        sampleinfo$group=='NC_Pacl.A'|
+                        sampleinfo$group=='NC_Pacl.B',c('label')]
+
+### Setting up annotation data frame
+type_annotation <- data.frame(group = as.factor(sampleinfo[,c('group')]),
+                              Concentration = as.factor(sampleinfo[,c('Concentration_1')]))
+rownames(type_annotation) <- rownames(sampleinfo)
+
+pheatmap(v$E[common_genes,samples],
+         cellwidth = 16,
+         border_color = NA,
+         annotation_col = type_annotation)
+```
+
+##### (PAC.A-DMSO) - (PAC.B - DMSO)
+
+```{r}
+### following limma workflow
+### difference between PAC and DMSO across concentrations
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, ncPAC_A_ncPAC_B)
+fit <- eBayes(fit)
+all_genes <- topTable(fit, n=Inf)
+DE_genes_A_vs_B <- topTable(fit, p.value = 0.05, lfc=1, n=Inf, sort.by='p')
+
+create_dt(DE_genes_A_vs_B)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(DE_genes_A_vs_B)))
+up <- paste('• UPREGULATED:',sum(DE_genes_A_vs_B$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(DE_genes_A_vs_B$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+##### Heatmaps
+
+```{r, fig.width=16}
+common_genes <- rownames(DE_genes_A_vs_B)[1:50]
+
+samples <- sampleinfo[sampleinfo$group=='NC_DMSO.A'|
+                        sampleinfo$group=='NC_DMSO.B'|
+                        sampleinfo$group=='NC_Pacl.A'|
+                        sampleinfo$group=='NC_Pacl.B',c('label')]
+
+### Setting up annotation data frame
+type_annotation <- data.frame(group = as.factor(sampleinfo[,c('group')]),
+                              Concentration = as.factor(sampleinfo[,c('Concentration_1')]))
+rownames(type_annotation) <- rownames(sampleinfo)
+
+pheatmap(v$E[common_genes,samples],
+         cellwidth = 16,
+         border_color = NA,
+         annotation_col = type_annotation)
+```
+
+```{r}
+
+```
