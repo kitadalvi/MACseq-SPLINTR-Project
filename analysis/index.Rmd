@@ -18,6 +18,7 @@ editor_options:
 | |[Labelled VS Unlabelled samples](DM_approach.html)| | |
 | |[Differential Expression (FEB 2025)](DE_Feb_2025.html)| | |
 | |[Differential Expression (APR 2025)](DE_P1_APR2025.html)| | |
+| |[Differential Expression (AUG 2025)](DE_P1_AUG2025.html)| | |
 |Pathway Analysis|[Pathway Analysis](DGE_VPathwaysEnrichment.html) | | |
 |SPLINTR|[ORG38](org38_SPLINTR.html) | | |
 | |[ORG49](org49_SPLINTR.html) | | |

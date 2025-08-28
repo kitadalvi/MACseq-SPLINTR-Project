@@ -507,7 +507,7 @@ heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
 
 
 ### Setting up annotation data frame
-type_annotation <- data.frame(Treatment = as.factor(sampleinfo[,c(18)]),
+type_annotation <- data.frame(Treatment = as.factor(sampleinfo[,c(10)]),
                               Concentration = as.factor(sampleinfo[,c(11)]),
                               SPLINTR = as.factor(sampleinfo[,c(16)]))
 rownames(type_annotation) <- rownames(sampleinfo)
@@ -623,7 +623,7 @@ pheatmap(heatmap_counts[genes,],
          cellheight = 20)
 ```
 
-#### org38 Gene list comparison {.tabset}
+#### ORG38 Gene list comparison {.tabset}
 
 ```{r}
 ### Venn Diagram tests

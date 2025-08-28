@@ -1,0 +1,737 @@
+---
+title: "MACseq Plate 1 Analysis AUG2025"
+output: html_document
+date: "2025-08-27"
+---
+```{r setup, echo = FALSE, message =FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.height=8, fig.width = 10)
+```
+
+```{r}
+### loading required packages
+library(tidyverse)
+library(Seurat)
+library(gtools)
+library(tidyseurat)
+library(DESeq2)
+library(edgeR)
+library(DT)
+library(dplyr)
+library(pheatmap)
+library(EnhancedVolcano)
+library(RColorBrewer)
+library(ggvenn)
+library(gplots)
+```
+
+```{r}
+### Functions 
+
+source('/Users/dalvinikita/Desktop/macpie/R/filter_genes_by_expression.R')
+
+### buttons for datatables 
+create_gene_dt <- function(x){
+  colnames <- c('logFC','AveExpr','t','B')
+  df <- x %>%
+    mutate(across(all_of(colnames),round, digits = 2)) %>%
+    mutate(adj.P.Val = format(adj.P.Val, format='e', digits=4)) %>%
+    mutate(P.Value = format(P.Value, format='e', digits=4))
+  DT::datatable(df,
+                extensions = 'Buttons',
+                options = list(dom = 'Blfrtip',
+                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                               lengthMenu = list(c(10,25,50,-1),
+                                                 c(10,25,50,"All"))))
+}
+
+create_dt <- function(x){
+  DT::datatable(x,
+                extensions = 'Buttons',
+                options = list(dom = 'Blfrtip',
+                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                               lengthMenu = list(c(10,25,50,-1),
+                                                 c(10,25,50,"All"))))
+}
+
+plotRLE <- function(data, main = "", ylab = "Relative Log Expression") {
+  # Calculate medians
+  col <- brewer.pal(8, 'Set3')
+  medians <- apply(data, 1, median, na.rm = TRUE)
+  rle_data <- data - medians
+  
+  boxplot(as.data.frame(rle_data),
+          outline = FALSE,
+          las = 2,
+          ylab = ylab,
+          main = main,
+          col = col)
+  abline(h = 0, col = "red", lty = 2)
+}
+
+red_blue_palette <- colorRampPalette(brewer.pal(11, "RdBu"))(100)
+```
+
+## Notes
+
+Thresholds used for DE analysis:
+
+• pvalue threshold = 0.05
+
+• log FC threshold = |lfc| > 0, which is equivalent to an absolute FC of |fc| > 1
+
+Differences from previous analyses of MACseq plate 1:
+
+• Utilising new filtering method: count of 10 in at least 80/96 of samples within an ORG line. 
+
+```{r, echo=TRUE}
+### Threshold Constants
+
+absolute_fold_change <- 1.0
+
+p_value_threshold <- 0.05
+```
+
+## Data
+```{r}
+### Importing MACseq data
+### Importing metadata
+### Joining data in a Seurat object 
+
+### import metadata
+metadata<-read.csv("/Volumes/bioinf/home/ndalvi/MACseq_PMC228/metadata/PMC228.csv",header=T) %>%
+  arrange("Barcode") %>%
+  mutate(id=gsub("Plate","",Plate_ID)) %>%
+  mutate(label=paste0(Treatment_1," ","(",Well_ID,")")) %>%
+  mutate(interaction_condition=paste0(Drug,".",SPLINTR)) %>%
+  mutate(analysis_condition=paste0(Organoid,".",SPLINTR,".",Time))
+
+### load in count data 
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/3_MACseq_PMC228/raw/PMC228/starsolo/SA_PMC228-null.Solo.out/Gene/raw')
+
+### filter for the minimum number of reads per gene per sample, as per edgeR
+row.names(metadata)<-metadata$label
+
+mac <- CreateSeuratObject(counts = raw_counts,
+                          project = 'PMC228',
+                          min.cells = 1,
+                          min.features = 1)
+
+mac[["percent.mt"]] <- PercentageFeatureSet(mac, pattern = "^mt-|^MT-")
+mac[["percent.ribo"]] <- PercentageFeatureSet(mac, pattern = "^Rp[slp][[:digit:]]|^Rpsa|^RP[SLP][[:digit:]]|^RPSA")
+
+### add location metadata
+mac<- mac %>%
+  inner_join(metadata,by=c(".cell"="Barcode"))
+
+mac <- filter_genes_by_expression(mac,
+                                       group_by = "Organoid",
+                                       min_counts = 10,
+                                       min_samples = 80)
+
+### exclude mito and ribo genes from the counts
+mac<-mac[!grepl("^MT-",rownames(mac))]
+mac<-mac[!grepl("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA",rownames(mac))]
+
+colnames(mac)<- mac$label
+```
+
+A quick look at the metadata:
+```{r}
+create_dt(metadata[metadata$Organoid=="ORG38"| metadata$Organoid=='ORG49' | metadata$Organoid=="ORG66",c('Barcode','Well_ID','Organoid','SPLINTR','Drug','Concentration','Time_2')])
+```
+
+## Basic Visualisation {.tabset}
+
+### Violin Plot
+
+```{r, fig.height=5, fig.width=8}
+VlnPlot(mac, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", "percent.ribo"),
+    ncol = 4, group.by = "Organoid")
+```
+
+### Pre and post normalisation {.tabset}
+
+#### Entire Plate
+
+DMSO raw VS normalised wells across entire plate:
+
+```{r, fig.width=15, fig.height=6}
+###   Select wells from mac that are not empty 
+rawdata <- mac
+sampleinfo <- metadata[is.na(metadata$Cell_type)!=TRUE | metadata$Treatment_1!="Staurosporine",]
+samples <- rownames(sampleinfo)
+rawdata <- mac[,samples]
+
+### Keep only DMSO treated wells
+rawdata <- rawdata %>%
+  filter(Treatment_1=="DMSO")
+
+### Ensure counts data and sampleinfo are in the same order
+order <- colnames(rawdata)
+sampleinfo <- sampleinfo[order,]
+order_check <- rownames(sampleinfo)==colnames(rawdata)
+cat('Instances where metadata sample matches counts matric sample (checking correct order):',"\n", order_check)
+
+dge <- DGEList(counts = rawdata@assays$RNA$counts)
+dge <- calcNormFactors(dge, methods = "TMMwsp")
+group <- as.factor(sampleinfo$interaction_condition)
+organoid <- as.factor(sampleinfo$Organoid)
+design <- model.matrix(~0+organoid+group)
+v <- voom(dge, design)
+
+par(mfrow=c(1,2))
+plotRLE(as.data.frame(rawdata@assays$RNA$counts), main='RLE of all DMSO treated wells - raw')
+plotRLE(v$E, main='RLE of all DMSO treated wells - normalised')
+
+```
+
+## Analysis 
+
+### ORG38 
+
+#### Design Matrix and Contrasts 
+
+Factors to include in design matrix: 
+
+• SPLINTR/treatment group (drug_label, drug_unlabelled)
+
+• Concentration (IC12.5, IC25, IC50)
+
+• Time (48H VS DMSO)
+
+• Not including ORG as only 1 ORG line 
+
+Design matrix:
+
+```{r}
+### selecting metadata and countdata relevant for ORG 38
+### subset metadata to include only ORG38 cells at 48H
+columns <- metadata[metadata$Organoid=='ORG38'&metadata$Time=='48H' & metadata$Treatment_1!="STAUR",]
+sampleinfo <- columns
+columns <- c(columns[,c("label")])
+
+### subset counts to include only relevant ORG38 cells 
+counts_matrix <- mac[,columns]
+
+### factors to include in deisgn matrix: treatment/splintr, concentration, time
+group <- sampleinfo$interaction_condition
+concentration <- sampleinfo$Concentration
+time <- sampleinfo$Time_2
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+group+concentration+time)
+rownames(design) <- rownames(sampleinfo)
+datatable(design)
+
+### Specifying contrasts for analysis
+pacVSdmso <- makeContrasts(((groupPACLITAXEL.SPL1+groupPACLITAXEL.SPL2+groupPACLITAXEL.UNLABELLED)/3)-((groupDMSO.SPL1+groupDMSO.SPL2+groupDMSO.UNLABELLED)/3), levels=colnames(design))
+
+sn38VSdmso <- makeContrasts(((groupSN38.SPL1+groupSN38.SPL2+groupSN38.UNLABELLED)/3)-((groupDMSO.SPL1+groupDMSO.SPL2+groupDMSO.UNLABELLED)/3), levels=colnames(design))
+```
+
+#### Dfferential Expression {.tabset}
+
+Voom plot: 
+
+```{r, fig.height=5, fig.width=5}
+### Normalising data
+counts<-counts_matrix@assays$RNA$counts
+counts <- DGEList(counts = counts) %>%
+  calcNormFactors(method = 'TMMwsp')
+v <- voom(counts, design, plot = T, save.plot = TRUE)
+```
+
+RLE of all ORG38 wells before and after normalisation:
+
+```{r, fig.width=16}
+par(mfrow=c(1,2))
+plotRLE(counts$counts, main='RLE of all wells - raw')
+plotRLE(v$E, main='RLE of all wells - normalised')
+```
+
+##### Paclitaxel - DMSO
+
+Differentially expressed genes between Paclitaxel and DMSO in ORG38:
+
+```{r}
+### following limma trend workflow
+### difference between PAC and DMSO across concentrations
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, pacVSdmso)
+fit <- treat(fit, fc=absolute_fold_change)
+all_genes <- topTreat(fit, number=Inf)
+org38_pac_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+datatable(org38_pac_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org38_pac_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org38_pac_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org38_pac_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+###### Heatmap of DEGs
+
+```{r, fig.height=8, fig.width=8}
+### Assigning genes of interest from DEgenes table
+### Formatting counts to log(CPM) for heatmap
+### subsetting wells of interest
+genes <- rownames(org38_pac_DEgenes)
+samples_of_interest <- sampleinfo[sampleinfo$Drug=='PACLITAXEL'|sampleinfo$Drug=='DMSO',c('label')]
+heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
+
+
+### Setting up annotation data frame
+type_annotation <- data.frame(Drug = as.factor(sampleinfo[,c(17)]),
+                              Concentration = as.factor(sampleinfo[,c(11)]),
+                              SPLINTR = as.factor(sampleinfo[,c(16)]))
+rownames(type_annotation) <- rownames(sampleinfo)
+
+pheatmap(heatmap_counts[genes[1:50],],
+         border_color = 'NA',
+         annotation_col = type_annotation,
+         treeheight_row = 0,
+         cellheight = 8,
+         color=rev(red_blue_palette))
+     
+```
+
+##### SN38 - DMSO
+
+Differentially expressed genes between SN38 and DMSO in ORG38:
+
+```{r}
+### following limma trend workflow
+### difference between SN38 and DMSO across concentrations
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, sn38VSdmso)
+fit <- treat(fit, fc=absolute_fold_change)
+all_genes <- topTreat(fit, number=Inf)
+org38_sn38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+datatable(org38_sn38_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org38_sn38_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org38_sn38_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org38_sn38_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+###### Heatmap of DEGs
+
+```{r, fig.height=8, fig.width=8}
+### Assigning genes of interest from DEgenes table
+### Formatting counts to log(CPM) for heatmap
+### subsetting wells of interest
+genes <- rownames(org38_sn38_DEgenes)
+samples_of_interest <- sampleinfo[sampleinfo$Drug=='SN38'|sampleinfo$Drug=='DMSO',c('label')]
+heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
+
+
+### Setting up annotation data frame
+type_annotation <- data.frame(Drug = as.factor(sampleinfo[,c(17)]),
+                              Concentration = as.factor(sampleinfo[,c(11)]),
+                              SPLINTR = as.factor(sampleinfo[,c(16)]))
+rownames(type_annotation) <- rownames(sampleinfo)
+
+pheatmap(heatmap_counts[genes[1:50],],
+         border_color = 'NA',
+         annotation_col = type_annotation,
+         treeheight_row = 0,
+         cellheight = 8,
+         color=rev(red_blue_palette))
+     
+```
+
+##### Gene list comparison
+
+```{r, fig.height=6, fig.width=6}
+### Venn Diagram tests
+x <- list(`PAC-DMSO`=rownames(org38_pac_DEgenes),
+          `SN38-DMSO`=rownames(org38_sn38_DEgenes))
+
+x.table <- venn(x[c("PAC-DMSO","SN38-DMSO")], show.plot = FALSE)
+x_attributes <- attributes(x.table)
+
+ggvenn(x, 
+       show_percentage = FALSE,
+       text_size = 8)
+
+common_genes <- x_attributes$intersections$`PAC-DMSO:SN38-DMSO`
+
+```
+
+`r length(common_genes)` genes were found to be shared between nc(PAC-DMSO) and nc(SN38-DMSO) : 
+
+  • `r common_genes`
+  
+### ORG49 
+
+#### Design Matrix and Contrasts 
+
+Factors to include in design matrix: 
+
+• SPLINTR/treatment group (drug_label, drug_unlabelled)
+
+• Concentration (IC12.5, IC25, IC50)
+
+• Time (48H VS DMSO)
+
+• Not including ORG as only 1 ORG line 
+
+Design matrix:
+
+```{r}
+### selecting metadata and countdata relevant for ORG49
+### subset metadata to include only ORG49 cells at 48H
+columns <- metadata[metadata$Organoid=='ORG49'&metadata$Time=='48H' & metadata$Treatment_1!="STAUR",]
+sampleinfo <- columns
+columns <- c(columns[,c("label")])
+
+### subset counts to include only relevant ORG49 cells 
+counts_matrix <- mac[,columns]
+
+### factors to include in deisgn matrix: splintr/treatment, concentration, time
+group <- sampleinfo$interaction_condition
+concentration <- sampleinfo$Concentration
+time <- sampleinfo$Time_2
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+group+concentration+time)
+rownames(design) <- rownames(sampleinfo)
+datatable(design)
+
+### Specifying contrasts for analysis
+pacVSdmso <- makeContrasts(((groupPACLITAXEL.SPL1+groupPACLITAXEL.SPL2+groupPACLITAXEL.UNLABELLED)/3)-((groupDMSO.SPL1+groupDMSO.SPL2+groupDMSO.UNLABELLED)/3), levels=colnames(design))
+
+sn38VSdmso <- makeContrasts(((groupSN38.SPL1+groupSN38.SPL2+groupSN38.UNLABELLED)/3)-((groupDMSO.SPL1+groupDMSO.SPL2+groupDMSO.UNLABELLED)/3), levels=colnames(design))
+```
+
+#### Dfferential Expression {.tabset}
+
+Voom plot: 
+
+```{r, fig.height=5, fig.width=5}
+### Normalising data
+counts<-counts_matrix@assays$RNA$counts
+counts <- DGEList(counts = counts) %>%
+  calcNormFactors(method = 'TMMwsp')
+v <- voom(counts, design, plot = T, save.plot = TRUE)
+```
+
+RLE of all ORG49 wells before and after normalisation:
+
+```{r, fig.width=16}
+par(mfrow=c(1,2))
+plotRLE(counts$counts, main='RLE of all wells - raw')
+plotRLE(v$E, main='RLE of all wells - normalised')
+```
+
+##### Paclitaxel - DMSO
+
+Differentially expressed genes between Paclitaxel and DMSO in ORG49:
+
+```{r}
+### following limma trend workflow
+### difference between PAC and DMSO across concentrations
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, pacVSdmso)
+fit <- treat(fit, fc=absolute_fold_change)
+all_genes <- topTreat(fit, number=Inf)
+org49_pac_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+datatable(org49_pac_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org49_pac_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org49_pac_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org49_pac_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+###### Heatmap of DEGs
+
+```{r, fig.height=8, fig.width=8}
+### Assigning genes of interest from DEgenes table
+### Formatting counts to log(CPM) for heatmap
+### subsetting wells of interest
+genes <- rownames(org49_pac_DEgenes)
+samples_of_interest <- sampleinfo[sampleinfo$Drug=='PACLITAXEL'|sampleinfo$Drug=='DMSO',c('label')]
+heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
+
+
+### Setting up annotation data frame
+type_annotation <- data.frame(Drug = as.factor(sampleinfo[,c(17)]),
+                              Concentration = as.factor(sampleinfo[,c(11)]),
+                              SPLINTR = as.factor(sampleinfo[,c(16)]))
+rownames(type_annotation) <- rownames(sampleinfo)
+
+pheatmap(heatmap_counts[genes[1:50],],
+         border_color = 'NA',
+         annotation_col = type_annotation,
+         treeheight_row = 0,
+         cellheight = 8,
+         color=rev(red_blue_palette))
+     
+```
+
+##### SN38 - DMSO
+
+Differentially expressed genes between SN38 and DMSO in ORG49:
+
+```{r}
+### following limma trend workflow
+### difference between SN38 and DMSO across concentrations
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, sn38VSdmso)
+fit <- treat(fit, fc=absolute_fold_change)
+all_genes <- topTreat(fit, number=Inf)
+org49_sn38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+datatable(org49_sn38_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org49_sn38_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org49_sn38_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org49_sn38_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+###### Heatmap of DEGs
+
+```{r, fig.height=8, fig.width=8}
+### Assigning genes of interest from DEgenes table
+### Formatting counts to log(CPM) for heatmap
+### subsetting wells of interest
+genes <- rownames(org49_sn38_DEgenes)
+samples_of_interest <- sampleinfo[sampleinfo$Drug=='SN38'|sampleinfo$Drug=='DMSO',c('label')]
+heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
+
+
+### Setting up annotation data frame
+type_annotation <- data.frame(Drug = as.factor(sampleinfo[,c(17)]),
+                              Concentration = as.factor(sampleinfo[,c(11)]),
+                              SPLINTR = as.factor(sampleinfo[,c(16)]))
+rownames(type_annotation) <- rownames(sampleinfo)
+
+pheatmap(heatmap_counts[genes[1:50],],
+         border_color = 'NA',
+         annotation_col = type_annotation,
+         treeheight_row = 0,
+         cellheight = 8,
+         color=rev(red_blue_palette))
+     
+```
+
+##### Gene list comparison
+
+```{r, fig.height=6, fig.width=6}
+### Venn Diagram tests
+x <- list(`PAC-DMSO`=rownames(org49_pac_DEgenes),
+          `SN38-DMSO`=rownames(org49_sn38_DEgenes))
+
+x.table <- venn(x[c("PAC-DMSO","SN38-DMSO")], show.plot = FALSE)
+x_attributes <- attributes(x.table)
+
+ggvenn(x, 
+       show_percentage = FALSE,
+       text_size = 8)
+
+common_genes <- x_attributes$intersections$`PAC-DMSO:SN38-DMSO`
+
+```
+
+`r length(common_genes)` genes were found to be shared between nc(PAC-DMSO) and nc(SN38-DMSO) : 
+
+  • `r common_genes`
+  
+### ORG66 
+
+#### Design Matrix and Contrasts 
+
+Factors to include in design matrix: 
+
+• SPLINTR/treatment group (drug_label, drug_unlabelled)
+
+• Concentration (IC12.5, IC25, IC50)
+
+• Time (48H VS DMSO)
+
+• Not including ORG as only 1 ORG line 
+
+Design matrix:
+
+```{r}
+### selecting metadata and countdata relevant for ORG66
+### subset metadata to include only ORG66 cells at 48H
+columns <- metadata[metadata$Organoid=='ORG66'&metadata$Time=='48H' & metadata$Treatment_1!="STAUR",]
+sampleinfo <- columns
+columns <- c(columns[,c("label")])
+
+### subset counts to include only relevant ORG66 cells 
+counts_matrix <- mac[,columns]
+
+### factors to include in deisgn matrix: treatment/SPLINTR, concentration, time
+group <- sampleinfo$interaction_condition
+concentration <- sampleinfo$Concentration
+time <- sampleinfo$Time_2
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+group+concentration+time)
+rownames(design) <- rownames(sampleinfo)
+datatable(design)
+
+### Specifying contrasts for analysis
+pacVSdmso <- makeContrasts(((groupPACLITAXEL.SPL1+groupPACLITAXEL.SPL2+groupPACLITAXEL.UNLABELLED)/3)-((groupDMSO.SPL1+groupDMSO.SPL2+groupDMSO.UNLABELLED)/3), levels=colnames(design))
+
+sn38VSdmso <- makeContrasts(((groupSN38.SPL1+groupSN38.SPL2+groupSN38.UNLABELLED)/3)-((groupDMSO.SPL1+groupDMSO.SPL2+groupDMSO.UNLABELLED)/3), levels=colnames(design))
+```
+
+#### Dfferential Expression {.tabset}
+
+Voom plot: 
+
+```{r, fig.height=5, fig.width=5}
+### Normalising data
+counts<-counts_matrix@assays$RNA$counts
+counts <- DGEList(counts = counts) %>%
+  calcNormFactors(method = 'TMMwsp')
+v <- voom(counts, design, plot = T, save.plot = TRUE)
+```
+
+RLE of all ORG66 wells before and after normalisation:
+
+```{r, fig.width=16}
+par(mfrow=c(1,2))
+plotRLE(counts$counts, main='RLE of all wells - raw')
+plotRLE(v$E, main='RLE of all wells - normalised')
+```
+
+##### Paclitaxel - DMSO
+
+Differentially expressed genes between Paclitaxel and DMSO in ORG66:
+
+```{r}
+### following limma trend workflow
+### difference between PAC and DMSO across concentrations
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, pacVSdmso)
+fit <- treat(fit, fc=absolute_fold_change)
+all_genes <- topTreat(fit, number=Inf)
+org66_pac_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+datatable(org38_pac_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org66_pac_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org66_pac_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org66_pac_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+###### Heatmap of DEGs
+
+```{r, fig.height=8, fig.width=8}
+### Assigning genes of interest from DEgenes table
+### Formatting counts to log(CPM) for heatmap
+### subsetting wells of interest
+genes <- rownames(org66_pac_DEgenes)
+samples_of_interest <- sampleinfo[sampleinfo$Drug=='PACLITAXEL'|sampleinfo$Drug=='DMSO',c('label')]
+heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
+
+
+### Setting up annotation data frame
+type_annotation <- data.frame(Drug = as.factor(sampleinfo[,c(17)]),
+                              Concentration = as.factor(sampleinfo[,c(11)]),
+                              SPLINTR = as.factor(sampleinfo[,c(16)]))
+rownames(type_annotation) <- rownames(sampleinfo)
+
+pheatmap(heatmap_counts[genes[1:50],],
+         border_color = 'NA',
+         annotation_col = type_annotation,
+         treeheight_row = 0,
+         cellheight = 8,
+         color=rev(red_blue_palette))
+     
+```
+
+##### SN38 - DMSO
+
+Differentially expressed genes between SN38 and DMSO in ORG66:
+
+```{r}
+### following limma trend workflow
+### difference between SN38 and DMSO across concentrations
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, sn38VSdmso)
+fit <- treat(fit, fc=absolute_fold_change)
+all_genes <- topTreat(fit, number=Inf)
+org66_sn38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+datatable(org38_sn38_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org66_sn38_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org66_sn38_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org66_sn38_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+###### Heatmap of DEGs
+
+```{r, fig.height=8, fig.width=8}
+### Assigning genes of interest from DEgenes table
+### Formatting counts to log(CPM) for heatmap
+### subsetting wells of interest
+genes <- rownames(org66_sn38_DEgenes)
+samples_of_interest <- sampleinfo[sampleinfo$Drug=='SN38'|sampleinfo$Drug=='DMSO',c('label')]
+heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
+
+
+### Setting up annotation data frame
+type_annotation <- data.frame(Drug = as.factor(sampleinfo[,c(17)]),
+                              Concentration = as.factor(sampleinfo[,c(11)]),
+                              SPLINTR = as.factor(sampleinfo[,c(16)]))
+rownames(type_annotation) <- rownames(sampleinfo)
+
+pheatmap(heatmap_counts[genes[1:50],],
+         border_color = 'NA',
+         annotation_col = type_annotation,
+         treeheight_row = 0,
+         cellheight = 8,
+         color=rev(red_blue_palette))
+     
+```
+
+##### Gene list comparison
+
+```{r, fig.height=6, fig.width=6}
+### Venn Diagram tests
+x <- list(`PAC-DMSO`=rownames(org66_pac_DEgenes),
+          `SN38-DMSO`=rownames(org66_sn38_DEgenes))
+
+x.table <- venn(x[c("PAC-DMSO","SN38-DMSO")], show.plot = FALSE)
+x_attributes <- attributes(x.table)
+
+ggvenn(x, 
+       show_percentage = FALSE,
+       text_size = 8)
+
+common_genes <- x_attributes$intersections$`PAC-DMSO:SN38-DMSO`
+
+```
+
+`r length(common_genes)` genes were found to be shared between nc(PAC-DMSO) and nc(SN38-DMSO) : 
+
+  • `r common_genes`
