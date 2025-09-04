@@ -27,48 +27,50 @@ library(DT)
 
 ## Filtering data
 ```{r, echo=TRUE}
+### Importing MACseq data
+### Importing metadata
+### Joining data in a Seurat object 
 
-#import metadata
-metadata<-read.csv("/Users/dalvinikita/Documents/11_MACseq_PMMSq042/PMMSq042.csv",header=T, check.names = FALSE) %>%
+### import metadata
+metadata<-read.csv("/Users/dalvinikita/Documents/11_MACseq_PMMSq042/PMMSq042.csv",header=T) %>%
   arrange("Barcode") %>%
   mutate(id=gsub("Plate","",Plate_ID)) %>%
-  mutate(Concentration_1=as.factor(Concentration_1)) %>%
   mutate(Treatment_Combination=paste0(substr(Cell_type,1,2),'_',substr(Treatment_1,1,4))) %>%
+  mutate(label=paste0(Treatment_Combination,"_",Well_ID)) %>%
+  mutate(Concentration_1=as.factor(Concentration_1)) %>%
   mutate(SPLINTR = str_sub(Cell_type,-1,-1)) %>%
-  mutate(PreTreatment = substr(Cell_type,1,2)) %>%
-  mutate(label=paste0(Treatment_Combination,"_",Well_ID))
+  mutate(group = paste0(Treatment_Combination,'.',SPLINTR)) %>%
+  mutate(combined_id = paste0(Cell_type, '_', Treatment_1))
 
-#load in count data 
+
+### load in count data 
 raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/11_MACseq_PMMSq042/raw')
 
-
-#filter by cpm>10 in at least 2 samples
-keep <- rowSums(edgeR::cpm(raw_counts)>10) >= 10
-raw_counts <- raw_counts[keep,]
-
-```
-
-## QC Plots
-```{r}
-#filter for the minimum number of reads per gene per sample, as per edgeR
-row.names(metadata)<-metadata$Barcode
+### filter for the minimum number of reads per gene per sample, as per edgeR
+row.names(metadata)<-metadata$label
 
 mac <- CreateSeuratObject(counts = raw_counts,
                           project = 'PMMSq042',
                           min.cells = 1,
-                          min.features = 1)
+                          min.features = 0)
 
+mac[["percent.mt"]] <- PercentageFeatureSet(mac, pattern = "^mt-|^MT-")
+mac[["percent.ribo"]] <- PercentageFeatureSet(mac, pattern = "^Rp[slp][[:digit:]]|^Rpsa|^RP[SLP][[:digit:]]|^RPSA")
 
-#for humans: MT, and ribosomal protein: RP. if MT> 30 then most likely dead cells
-mac[["percent.mt"]]<-PercentageFeatureSet(mac, pattern = "^MT-")
-mac[["percent.rp"]]<-PercentageFeatureSet(mac, pattern = "^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA")
-
-#add location metadata
+### add location metadata
 mac<- mac %>%
   inner_join(metadata,by=c(".cell"="Barcode"))
 
+mac <- filter_genes_by_expression(mac,
+                                       group_by = "Organoid",
+                                       min_counts = 10,
+                                       min_samples = 80)
+
+### exclude mito and ribo genes from the counts
+mac<-mac[!grepl("^MT-",rownames(mac))]
+mac<-mac[!grepl("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA",rownames(mac))]
+
 colnames(mac)<- mac$label
-rownames(metadata) <- metadata$label
 ```
 
 
@@ -135,7 +137,7 @@ pca_plots <- function(df, type){
 
   p1<-FeaturePlot(seurat_object, features = 'nCount_RNA',pt.size = 2)
   p2<-FeaturePlot(seurat_object, features = 'percent.mt',pt.size = 2)
-  p3<-FeaturePlot(seurat_object, features = 'percent.rp',pt.size = 2)
+  p3<-FeaturePlot(seurat_object, features = 'percent.ribo',pt.size = 2)
   p4<-DimPlot(seurat_object, group.by= 'Row',pt.size = 2)
   p5<-DimPlot(seurat_object, group.by= 'Column',pt.size = 2)
   p6<-DimPlot(seurat_object, group.by= 'Organoid',pt.size = 2, shape.by = 'Treatment_1')
@@ -170,22 +172,16 @@ pca_plots <- function(df, type){
 
   p1<-FeaturePlot(seurat_object, features = 'nCount_RNA',pt.size = 2)
   p2<-FeaturePlot(seurat_object, features = 'percent.mt',pt.size = 2)
-  p3<-FeaturePlot(seurat_object, features = 'percent.rp',pt.size = 2)
+  p3<-FeaturePlot(seurat_object, features = 'percent.ribo',pt.size = 2)
   p4<-DimPlot(seurat_object, group.by= 'Row',pt.size = 2)
   p5<-DimPlot(seurat_object, group.by= 'Column',pt.size = 2)
   p6<-DimPlot(seurat_object, group.by= 'Sample_type',pt.size = 2)
   p7<-DimPlot(seurat_object, group.by= 'Concentration_1',pt.size = 2, shape.by = 'SPLINTR')
   p8 <- DimPlot(seurat_object, group.by = 'seurat_clusters',pt.size = 2, shape.by = 'Treatment_1')
   p9 <- DimPlot(seurat_object, group.by = 'Treatment_Combination',pt.size = 2)
-  p10<-DimPlot(seurat_object, group.by= 'Treatment_Combination',pt.size = 2, shape.by = 'Treatment_1', split.by = 'SPLINTR',dims = c(3,4))
-  p11<-DimPlot(seurat_object, group.by= 'Treatment_Combination',pt.size = 2, shape.by = 'Treatment_1', split.by = 'SPLINTR',dims = c(5,6))
-  p12 <-DimPlot(seurat_object, group.by= 'SPLINTR',pt.size = 2, shape.by = 'Treatment_1',dims = c(1,2))
-  p13<-DimPlot(seurat_object, group.by= 'SPLINTR',pt.size = 2, shape.by = 'Treatment_1',dims = c(3,4))
-  p14<-DimPlot(seurat_object, group.by= 'SPLINTR',pt.size = 2, shape.by = 'Treatment_1',dims = c(5,6))
-  p15<-DimPlot(seurat_object, group.by= 'SPLINTR',pt.size = 2, shape.by = 'Treatment_1',dims = c(7,8))
-  p16<-DimPlot(seurat_object, group.by= 'SPLINTR',pt.size = 2, shape.by = 'Treatment_1',dims = c(9,10))
-  p17<-DimPlot(seurat_object, group.by= 'SPLINTR',pt.size = 2, shape.by = 'Treatment_1',dims = c(11,12))
-  ggarrange(p1,p2,p3,p4,p5,p6,p7,p8,p9,p12,p13,p14,p15,p16,p17, nrow=5, ncol=3)
+  p10<-DimPlot(seurat_object, group.by= 'Treatment_1',pt.size = 2)
+  
+  ggarrange(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10, nrow=4, ncol=3)
 }
 
 splintr_plots_by_treatment <- function(df, type){

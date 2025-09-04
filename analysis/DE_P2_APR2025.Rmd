@@ -125,7 +125,7 @@ mac<- mac %>%
 mac <- filter_genes_by_expression(mac,
                                        group_by = "Organoid",
                                        min_counts = 10,
-                                       min_samples = 48)
+                                       min_samples = 80)
 
 ### exclude mito and ribo genes from the counts
 mac<-mac[!grepl("^MT-",rownames(mac))]
@@ -146,7 +146,7 @@ datatable(metadata[metadata$Sample_type!="EMPTY",c("Well_ID","Barcode","Organoid
 
 ```{r, fig.height=5, fig.width=8}
 VlnPlot(mac, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", "percent.ribo"),
-    ncol = 4, group.by = "Sample_type")
+    ncol = 4, group.by = "Organoid")
 ```
 
 ### Pre and post normalisation {.tabset}
@@ -179,7 +179,7 @@ splintr <- as.factor(sampleinfo$SPLINTR)
 concentration <- as.factor(sampleinfo$Concentration_1)
 organoid <- as.factor(sampleinfo$Organoid)
 design <- model.matrix(~0+organoid+treatment_combination+splintr+concentration)
-v <- voom(dge, design)
+v <- voom(dge, design, plot=T)
 
 par(mfrow=c(1,2))
 plotRLE(as.data.frame(rawdata@assays$RNA$counts), main='RLE of all DMSO treated wells - raw')
@@ -204,7 +204,7 @@ Factors to include in design matrix:
 Design matrix:
 
 ```{r}
-### selecting metadata and countdata relevant for ORG 38
+### selecting metadata and countdata relevant for ORG38
 ### subset metadata to include only ORG38 cells 
 columns <- metadata[metadata$Organoid=='ORG38' & metadata$Treatment_1!="Staurosporine",]
 sampleinfo <- columns
@@ -230,6 +230,7 @@ PAC_pacvsdmso <- makeContrasts(treatmentPa_Pacl-treatmentPa_DMSO,levels=colnames
 SN38_sn38vsdmso <- makeContrasts(treatmentSN_SN38-treatmentSN_DMSO,levels=colnames(design))
 long_PAC <- makeContrasts((treatmentPa_Pacl-treatmentPa_DMSO)-(treatmentNC_Pacl-treatmentNC_DMSO),levels=colnames(design))
 long_SN38 <- makeContrasts((treatmentSN_SN38-treatmentSN_DMSO)-(treatmentNC_SN38-treatmentNC_DMSO),levels=colnames(design))
+long_PAC_common <- makeContrasts(((treatmentPa_Pacl-treatmentPa_DMSO)+(treatmentNC_Pacl-treatmentNC_DMSO))/2,levels=colnames(design))
 
 ```
 
@@ -237,7 +238,7 @@ long_SN38 <- makeContrasts((treatmentSN_SN38-treatmentSN_DMSO)-(treatmentNC_SN38
 
 Voom plot: 
 
-```{r, fig.height=5, fig.width=5}
+```{r, fig.height=5, fig.width=8}
 ### Normalising data
 counts<-counts_matrix@assays$RNA$counts
 counts <- DGEList(counts = counts) %>%
@@ -310,12 +311,23 @@ type_annotation <- data.frame(Treatment = as.factor(sampleinfo[,c(18)]),
                               Concentration = as.factor(sampleinfo[,c(11)]),
                               SPLINTR = as.factor(sampleinfo[,c(16)]))
 rownames(type_annotation) <- rownames(sampleinfo)
+
 ```
+
+```{r}
+pheatmap(heatmap_counts[genes,],
+         border_color = 'NA',
+         annotation_col = type_annotation,
+         treeheight_row = 0,
+         cellheight = 8,
+         color=rev(red_blue_palette))
+```
+
 
 Heatmap of top 50 differentially expressed genes between NC_PAC and NC_DMSO in PAC/DMSO samples in ORG38:
 
 ```{r}
-pheatmap(heatmap_counts[genes[1:50],],
+pheatmap(heatmap_counts[genes,],
          border_color = 'NA',
          annotation_col = type_annotation,
          treeheight_row = 0,
@@ -568,7 +580,8 @@ pheatmap(heatmap_counts[genes,],
          border_color = 'NA',
          annotation_col = type_annotation,
          treeheight_row = 0,
-         cellheight = 20)
+         cellheight = 20,
+         color = red_blue_palette)
 ```
 
 
@@ -620,7 +633,8 @@ pheatmap(heatmap_counts[genes,],
          border_color = 'NA',
          annotation_col = type_annotation,
          treeheight_row = 0,
-         cellheight = 20)
+         cellheight = 20,
+         color = red_blue_palette)
 ```
 
 #### ORG38 Gene list comparison {.tabset}
@@ -700,7 +714,7 @@ common_genes <- x_attributes$intersections$`pa(PAC-DMSO):sn(SN38-DMSO)`
   • `r common_genes`
 
 ##### all comparisons
-```{r}
+```{r, fig.width=6}
 x.table <- venn(x, show.plot = FALSE)
 x_attributes <- attributes(x.table)
 
@@ -1122,7 +1136,7 @@ counts <- DGEList(counts = counts) %>%
 v <- voom(counts, design, plot = T, save.plot = TRUE)
 ```
 
-RLE of all ORG38 wells before and after normalisation:
+RLE of all ORG66 wells before and after normalisation:
 
 ```{r, fig.width=16}
 par(mfrow=c(1,2))
@@ -1339,9 +1353,7 @@ pheatmap(heatmap_counts[genes,],
          annotation_col = type_annotation,
          treeheight_row = 0,
          cellheight = 20,
-         color=rev(red_blue_palette),
-         cluster_rows = FALSE,
-         cluster_cols=FALSE)
+         color=rev(red_blue_palette))
 ```
 
 ##### (PAC_PAC - PAC_DMSO) - (NC_PAC-NC_DMSO)
