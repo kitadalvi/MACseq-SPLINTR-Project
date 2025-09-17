@@ -149,6 +149,7 @@ pca_plots <- function(df, type){
 
 pca_plots(mac, 'all')
 
+
 ```
 
 
@@ -261,8 +262,6 @@ splintr_plots_by_pretreatment <- function(df, type){
 ### everything that received 
 
 ### treatment vs control in A VS treatment vs control in B 
-
-
 ```
 
 #### Sample overview {.tabset}
