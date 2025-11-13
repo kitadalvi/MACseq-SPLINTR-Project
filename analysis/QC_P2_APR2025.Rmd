@@ -267,7 +267,7 @@ splintr_plots_by_pretreatment <- function(df, type){
 #### Sample overview {.tabset}
 
 ##### ORG49
-```{r, fig.height=16, fig.width=20, fig.align='left',warning=FALSE, message=FALSE, echo=FALSE}
+```{r, fig.h eight=16, fig.width=20, fig.align='left',warning=FALSE, message=FALSE, echo=FALSE}
 pca_plots(mac, 'ORG49')
 ```
 

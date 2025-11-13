@@ -13,16 +13,9 @@ editor_options:
 |:---|:---|:---|:-|
 |QC |[MAC-seq PMC228 QC (VCFG)](QC_VCFG.html)|| |
 | |[MAC-seq PMC228 QC (Nenad)](QC_Analysis.html) | |
-|Differential Expression |[Differential Gene Expression (48H)](differential_expression.html)|[Differential Expression (JUNE 2025)](DE_P2_APR2025.html) | |
-| |[Differential Gene Expression (24H)](differential_expression_24H.html)| | |
-| |[Labelled VS Unlabelled samples](DM_approach.html)| | |
-| |[Differential Expression (FEB 2025)](DE_Feb_2025.html)| | |
-| |[Differential Expression (APR 2025)](DE_P1_APR2025.html)| | |
-| |[Differential Expression (AUG 2025)](DE_P1_AUG2025.html)| | |
-|Pathway Analysis|[Pathway Analysis](DGE_VPathwaysEnrichment.html) | | |
-|SPLINTR|[ORG38](org38_SPLINTR.html) | | |
-| |[ORG49](org49_SPLINTR.html) | | |
-| |[ORG66](org66_SPLINTR.html) | | |
+|Differential Expression (CONC together)|[Differential Gene Expression (AUG2025)](DE_P1_AUG2025.html)|[Differential Expression (NOV 2025)](DE_P2_APR2025.html) | 
+|Differential Expression (CONC separate)| |[Differential Expression v2](DE_P2_v2.html) | 
+|SPLINTR Analysis |[Labelled VS Unlabelled samples](DM_approach.html)| | |
 
 
 

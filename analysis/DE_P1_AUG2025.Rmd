@@ -83,7 +83,7 @@ Differences from previous analyses of MACseq plate 1:
 
 • Utilising new filtering method: count of 10 in at least 80/96 of samples within an ORG line. 
 
-```{r, echo=TRUE}
+```{r,echo=TRUE}
 ### Threshold Constants
 
 absolute_fold_change <- 1.0
@@ -185,7 +185,7 @@ plotRLE(v$E, main='RLE of all DMSO treated wells - normalised')
 
 ```
 
-## Analysis 
+## Differential Expression Analysis 
 
 ### ORG38 
 
@@ -239,7 +239,7 @@ Voom plot:
 counts<-counts_matrix@assays$RNA$counts
 counts <- DGEList(counts = counts) %>%
   calcNormFactors(method = 'TMMwsp')
-v <- voom(counts, design, plot = T, save.plot = TRUE)
+v <- voom(counts, design, plot = T)
 ```
 
 RLE of all ORG38 wells before and after normalisation:
@@ -260,6 +260,7 @@ Differentially expressed genes between Paclitaxel and DMSO in ORG38:
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, pacVSdmso)
 fit <- treat(fit, fc=absolute_fold_change)
+saveRDS(fit, file='output/P1/org38_pac_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org38_pac_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -275,7 +276,7 @@ cat(summary[1])
 
 ###### Heatmap of DEGs
 
-```{r, fig.height=8, fig.width=8}
+```{r, fig.height=10, fig.width=10}
 ### Assigning genes of interest from DEgenes table
 ### Formatting counts to log(CPM) for heatmap
 ### subsetting wells of interest
@@ -309,6 +310,7 @@ Differentially expressed genes between SN38 and DMSO in ORG38:
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, sn38VSdmso)
 fit <- treat(fit, fc=absolute_fold_change)
+saveRDS(fit, file='output/P1/org38_sn38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org38_sn38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -324,7 +326,7 @@ cat(summary[1])
 
 ###### Heatmap of DEGs
 
-```{r, fig.height=8, fig.width=8}
+```{r, fig.height=10, fig.width=10}
 ### Assigning genes of interest from DEgenes table
 ### Formatting counts to log(CPM) for heatmap
 ### subsetting wells of interest
@@ -422,7 +424,7 @@ Voom plot:
 counts<-counts_matrix@assays$RNA$counts
 counts <- DGEList(counts = counts) %>%
   calcNormFactors(method = 'TMMwsp')
-v <- voom(counts, design, plot = T, save.plot = TRUE)
+v <- voom(counts, design, plot = T)
 ```
 
 RLE of all ORG49 wells before and after normalisation:
@@ -443,6 +445,7 @@ Differentially expressed genes between Paclitaxel and DMSO in ORG49:
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, pacVSdmso)
 fit <- treat(fit, fc=absolute_fold_change)
+saveRDS(fit, file='output/P1/org49_pac_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_pac_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -458,7 +461,7 @@ cat(summary[1])
 
 ###### Heatmap of DEGs
 
-```{r, fig.height=8, fig.width=8}
+```{r, fig.height=10, fig.width=10}
 ### Assigning genes of interest from DEgenes table
 ### Formatting counts to log(CPM) for heatmap
 ### subsetting wells of interest
@@ -492,6 +495,7 @@ Differentially expressed genes between SN38 and DMSO in ORG49:
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, sn38VSdmso)
 fit <- treat(fit, fc=absolute_fold_change)
+saveRDS(fit, file='output/P1/org49_sn38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_sn38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -507,7 +511,7 @@ cat(summary[1])
 
 ###### Heatmap of DEGs
 
-```{r, fig.height=8, fig.width=8}
+```{r, fig.height=10, fig.width=10}
 ### Assigning genes of interest from DEgenes table
 ### Formatting counts to log(CPM) for heatmap
 ### subsetting wells of interest
@@ -605,7 +609,7 @@ Voom plot:
 counts<-counts_matrix@assays$RNA$counts
 counts <- DGEList(counts = counts) %>%
   calcNormFactors(method = 'TMMwsp')
-v <- voom(counts, design, plot = T, save.plot = TRUE)
+v <- voom(counts, design, plot = T)
 ```
 
 RLE of all ORG66 wells before and after normalisation:
@@ -626,10 +630,11 @@ Differentially expressed genes between Paclitaxel and DMSO in ORG66:
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, pacVSdmso)
 fit <- treat(fit, fc=absolute_fold_change)
+saveRDS(fit, file='output/P1/org66_pac_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org66_pac_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
-datatable(org38_pac_DEgenes)
+datatable(org66_pac_DEgenes)
 
 ### Print summary of DE genes table
 total <- paste('• TOTAL DE genes:',length(rownames(org66_pac_DEgenes)))
@@ -641,7 +646,7 @@ cat(summary[1])
 
 ###### Heatmap of DEGs
 
-```{r, fig.height=8, fig.width=8}
+```{r, fig.height=10, fig.width=10}
 ### Assigning genes of interest from DEgenes table
 ### Formatting counts to log(CPM) for heatmap
 ### subsetting wells of interest
@@ -675,10 +680,11 @@ Differentially expressed genes between SN38 and DMSO in ORG66:
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, sn38VSdmso)
 fit <- treat(fit, fc=absolute_fold_change)
+saveRDS(fit, file='output/P1/org66_sn38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org66_sn38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
-datatable(org38_sn38_DEgenes)
+datatable(org66_sn38_DEgenes)
 
 ### Print summary of DE genes table
 total <- paste('• TOTAL DE genes:',length(rownames(org66_sn38_DEgenes)))
@@ -690,7 +696,7 @@ cat(summary[1])
 
 ###### Heatmap of DEGs
 
-```{r, fig.height=8, fig.width=8}
+```{r, fig.height=10, fig.width=10}
 ### Assigning genes of interest from DEgenes table
 ### Formatting counts to log(CPM) for heatmap
 ### subsetting wells of interest
@@ -735,3 +741,474 @@ common_genes <- x_attributes$intersections$`PAC-DMSO:SN38-DMSO`
 `r length(common_genes)` genes were found to be shared between nc(PAC-DMSO) and nc(SN38-DMSO) : 
 
   • `r common_genes`
+
+## Pathway Enrichment Analysis 
+
+### Comparing gene lists between organoids {.tabset}
+
+#### Paclitaxel - DMSO
+
+```{r, fig.height=6, fig.width=6}
+### Venn Diagram df
+x <- list(ORG38=rownames(org38_pac_DEgenes),
+          ORG49=rownames(org49_pac_DEgenes),
+          ORG66=rownames(org66_pac_DEgenes))
+
+x.table <- venn(x, show.plot = FALSE)
+x_attributes <- attributes(x.table)
+
+ggvenn(x, 
+       show_percentage = FALSE,
+       text_size = 8)
+
+common_genes <- paste(x_attributes$intersections$`ORG38:ORG49:ORG66`)
+```
+
+`r length(common_genes)` genes were shared across all ORGs. 
+
+  • `r common_genes`
+  
+
+#### SN38 - DMSO
+
+```{r, fig.height=6, fig.width=6}
+### Venn Diagram df
+x <- list(ORG38=rownames(org38_sn38_DEgenes),
+          ORG49=rownames(org49_sn38_DEgenes),
+          ORG66=rownames(org66_sn38_DEgenes))
+
+x.table <- venn(x, show.plot = FALSE)
+x_attributes <- attributes(x.table)
+
+ggvenn(x, 
+       show_percentage = FALSE,
+       text_size = 8)
+
+common_genes <- paste(x_attributes$intersections$`ORG38:ORG49:ORG66`)
+```
+
+`r length(common_genes)` genes were shared across all ORGs. 
+
+  • `r common_genes`
+  
+### Barcode plots + enrichment testing (limma::camera)
+
+#### Between treatments, within an organoid {.tabset}
+
+##### ORG38
+
+DEGs identified from SN38-DMSO comparison in ORG38, ranked against t-statistic generated from PAC-DMSO comparison in ORG38, and corresponding limma::camera enrichment p-values:
+
+```{r, fig.height=5, fig.width=6}
+### first set 
+statistic <- readRDS('output/P1/org38_pac_fit.rds')
+statistic <- statistic$t[,1]
+
+### second (comparison set)
+set2_upregulated <- rownames(org38_sn38_DEgenes[org38_sn38_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org38_sn38_DEgenes[org38_sn38_DEgenes$logFC < 0,])
+
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated")) 
+legend("top",legend=c("upregulated in SN38 - DMSO","downregulated in SN38 - DMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+```
+
+
+DEGs identified from PAC-DMSO comparison in ORG38, ranked against t-statistic generated from SN38-DMSO comparison in ORG38, and corresponding limma::camera enrichment p-values:
+
+```{r, fig.height=5, fig.width=6}
+### first set 
+statistic <- readRDS('output/P1/org38_sn38_fit.rds')
+statistic <- statistic$t[,1]
+
+### second (comparison set)
+set2_upregulated <- rownames(org38_pac_DEgenes[org38_pac_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org38_pac_DEgenes[org38_pac_DEgenes$logFC < 0,])
+
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated")) 
+legend("top",legend=c("upregulated in PAC - DMSO","downregulated in PAC - DMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+```
+
+##### ORG49
+
+DEGs identified from SN38-DMSO comparison in ORG49, ranked against t-statistic generated from PAC-DMSO comparison in ORG49, and corresponding limma::camera enrichment p-values:
+
+```{r, fig.height=5, fig.width=6}
+### first set 
+statistic <- readRDS('output/P1/org49_pac_fit.rds')
+statistic <- statistic$t[,1]
+
+### second (comparison set)
+set2_upregulated <- rownames(org49_sn38_DEgenes[org49_sn38_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org49_sn38_DEgenes[org49_sn38_DEgenes$logFC < 0,])
+
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated")) 
+legend("top",legend=c("upregulated in SN38 - DMSO","downregulated in SN38 - DMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+```
+
+
+DEGs identified from PAC-DMSO comparison in ORG49, ranked against t-statistic generated from SN38-DMSO comparison in ORG49, and corresponding limma::camera enrichment p-values:
+
+```{r, fig.height=5, fig.width=6}
+### first set 
+statistic <- readRDS('output/P1/org49_sn38_fit.rds')
+statistic <- statistic$t[,1]
+
+### second (comparison set)
+set2_upregulated <- rownames(org49_pac_DEgenes[org49_pac_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org49_pac_DEgenes[org49_pac_DEgenes$logFC < 0,])
+
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated")) 
+legend("top",legend=c("upregulated in PAC - DMSO","downregulated in PAC - DMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+```
+
+##### ORG66
+
+DEGs identified from SN38-DMSO comparison in ORG66, ranked against t-statistic generated from PAC-DMSO comparison in ORG66, and corresponding limma::camera enrichment p-values:
+
+```{r, fig.height=5, fig.width=6}
+### first set 
+statistic <- readRDS('output/P1/org66_pac_fit.rds')
+statistic <- statistic$t[,1]
+
+### second (comparison set)
+set2_upregulated <- rownames(org66_sn38_DEgenes[org66_sn38_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org66_sn38_DEgenes[org66_sn38_DEgenes$logFC < 0,])
+
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated")) 
+legend("top",legend=c("upregulated in SN38 - DMSO","downregulated in SN38 - DMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+```
+
+
+DEGs identified from PAC-DMSO comparison in ORG66, ranked against t-statistic generated from SN38-DMSO comparison in ORG66, and corresponding limma::camera enrichment p-values:
+
+```{r, fig.height=5, fig.width=6}
+### first set 
+statistic <- readRDS('output/P1/org66_sn38_fit.rds')
+statistic <- statistic$t[,1]
+
+### second (comparison set)
+set2_upregulated <- rownames(org66_pac_DEgenes[org66_pac_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org66_pac_DEgenes[org66_pac_DEgenes$logFC < 0,])
+
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated")) 
+legend("top",legend=c("upregulated in PAC - DMSO","downregulated in PAC - DMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+```
+
+#### Between orgnaoids, within a treatment {.tabset}
+
+##### Paclitaxel - DMSO {.tabset}
+
+###### ORG38 vs ORG49
+
+DEGs identified from PAC-DMSO comparison in ORG49, ranked against t-statistic generated from PAC-DMSO comparison in ORG38, and corresponding limma::camera enrichment p-values:
+
+```{r, fig.height=5, fig.width=6}
+### first set 
+statistic <- readRDS('output/P1/org38_pac_fit.rds')
+statistic <- statistic$t[,1]
+
+### second (comparison set)
+set2_upregulated <- rownames(org49_pac_DEgenes[org49_pac_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org49_pac_DEgenes[org49_pac_DEgenes$logFC < 0,])
+
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated")) 
+legend("top",legend=c("upregulated in PAC - DMSO","downregulated in PAC - DMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+```
+
+###### ORG49 vs ORG38
+
+DEGs identified from PAC-DMSO comparison in ORG38, ranked against t-statistic generated from PAC-DMSO comparison in ORG49, and corresponding limma::camera enrichment p-values:
+
+```{r, fig.height=5, fig.width=6}
+### first set 
+statistic <- readRDS('output/P1/org49_pac_fit.rds')
+statistic <- statistic$t[,1]
+
+### second (comparison set)
+set2_upregulated <- rownames(org38_pac_DEgenes[org38_pac_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org38_pac_DEgenes[org38_pac_DEgenes$logFC < 0,])
+
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated")) 
+legend("top",legend=c("upregulated in PAC - DMSO","downregulated in PAC - DMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+```
+
+###### ORG38 vs ORG66
+
+DEGs identified from PAC-DMSO comparison in ORG66, ranked against t-statistic generated from PAC-DMSO comparison in ORG38, and corresponding limma::camera enrichment p-values:
+
+```{r, fig.height=5, fig.width=6}
+### first set 
+statistic <- readRDS('output/P1/org38_pac_fit.rds')
+statistic <- statistic$t[,1]
+
+### second (comparison set)
+set2_upregulated <- rownames(org66_pac_DEgenes[org66_pac_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org66_pac_DEgenes[org66_pac_DEgenes$logFC < 0,])
+
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated")) 
+legend("top",legend=c("upregulated in PAC - DMSO","downregulated in PAC - DMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+```
+
+###### ORG66 vs ORG38
+
+DEGs identified from PAC-DMSO comparison in ORG38, ranked against t-statistic generated from PAC-DMSO comparison in ORG66, and corresponding limma::camera enrichment p-values:
+
+```{r, fig.height=5, fig.width=6}
+### first set 
+statistic <- readRDS('output/P1/org66_pac_fit.rds')
+statistic <- statistic$t[,1]
+
+### second (comparison set)
+set2_upregulated <- rownames(org38_pac_DEgenes[org38_pac_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org38_pac_DEgenes[org38_pac_DEgenes$logFC < 0,])
+
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated")) 
+legend("top",legend=c("upregulated in PAC - DMSO","downregulated in PAC - DMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+```
+
+###### ORG49 vs ORG66
+
+DEGs identified from PAC-DMSO comparison in ORG66, ranked against t-statistic generated from PAC-DMSO comparison in ORG49, and corresponding limma::camera enrichment p-values:
+
+```{r, fig.height=5, fig.width=6}
+### first set 
+statistic <- readRDS('output/P1/org49_pac_fit.rds')
+statistic <- statistic$t[,1]
+
+### second (comparison set)
+set2_upregulated <- rownames(org66_pac_DEgenes[org66_pac_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org66_pac_DEgenes[org66_pac_DEgenes$logFC < 0,])
+
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated")) 
+legend("top",legend=c("upregulated in PAC - DMSO","downregulated in PAC - DMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+```
+
+###### ORG66 vs ORG49
+
+DEGs identified from PAC-DMSO comparison in ORG49, ranked against t-statistic generated from PAC-DMSO comparison in ORG66, and corresponding limma::camera enrichment p-values:
+
+```{r, fig.height=5, fig.width=6}
+### first set 
+statistic <- readRDS('output/P1/org66_pac_fit.rds')
+statistic <- statistic$t[,1]
+
+### second (comparison set)
+set2_upregulated <- rownames(org49_pac_DEgenes[org49_pac_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org49_pac_DEgenes[org49_pac_DEgenes$logFC < 0,])
+
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated")) 
+legend("top",legend=c("upregulated in PAC - DMSO","downregulated in PAC - DMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+```
+
+
+##### SN38-DMSO {.tabset}
+
+###### ORG38 vs ORG49
+
+DEGs identified from SN38-DMSO comparison in ORG49, ranked against t-statistic generated from SN38-DMSO comparison in ORG38, and corresponding limma::camera enrichment p-values:
+
+```{r, fig.height=5, fig.width=6}
+### first set 
+statistic <- readRDS('output/P1/org38_sn38_fit.rds')
+statistic <- statistic$t[,1]
+
+### second (comparison set)
+set2_upregulated <- rownames(org49_sn38_DEgenes[org49_sn38_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org49_sn38_DEgenes[org49_sn38_DEgenes$logFC < 0,])
+
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated")) 
+legend("top",legend=c("upregulated in SN38 - DMSO","downregulated in SN38 - DMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+```
+
+###### ORG49 vs ORG38
+
+DEGs identified from SN38-DMSO comparison in ORG38, ranked against t-statistic generated from SN38-DMSO comparison in ORG49, and corresponding limma::camera enrichment p-values:
+
+```{r, fig.height=5, fig.width=6}
+### first set 
+statistic <- readRDS('output/P1/org49_sn38_fit.rds')
+statistic <- statistic$t[,1]
+
+### second (comparison set)
+set2_upregulated <- rownames(org38_sn38_DEgenes[org38_sn38_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org38_sn38_DEgenes[org38_sn38_DEgenes$logFC < 0,])
+
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated")) 
+legend("top",legend=c("upregulated in SN38 - DMSO","downregulated in SN38 - DMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+```
+
+###### ORG38 vs ORG66
+
+DEGs identified from SN38-DMSO comparison in ORG66, ranked against t-statistic generated from SN38-DMSO comparison in ORG38, and corresponding limma::camera enrichment p-values:
+
+```{r, fig.height=5, fig.width=6}
+### first set 
+statistic <- readRDS('output/P1/org38_sn38_fit.rds')
+statistic <- statistic$t[,1]
+
+### second (comparison set)
+set2_upregulated <- rownames(org66_sn38_DEgenes[org66_sn38_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org66_sn38_DEgenes[org66_sn38_DEgenes$logFC < 0,])
+
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated")) 
+legend("top",legend=c("upregulated in SN38 - DMSO","downregulated in SN38 - DMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+```
+
+###### ORG66 vs ORG38
+
+DEGs identified from SN38-DMSO comparison in ORG38, ranked against t-statistic generated from SN38-DMSO comparison in ORG66, and corresponding limma::camera enrichment p-values:
+
+```{r, fig.height=5, fig.width=6}
+### first set 
+statistic <- readRDS('output/P1/org66_sn38_fit.rds')
+statistic <- statistic$t[,1]
+
+### second (comparison set)
+set2_upregulated <- rownames(org38_sn38_DEgenes[org38_sn38_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org38_sn38_DEgenes[org38_sn38_DEgenes$logFC < 0,])
+
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated")) 
+legend("top",legend=c("upregulated in SN38 - DMSO","downregulated in SN38 - DMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+```
+
+###### ORG49 vs ORG66
+
+DEGs identified from SN38-DMSO comparison in ORG66, ranked against t-statistic generated from SN38-DMSO comparison in ORG49, and corresponding limma::camera enrichment p-values:
+
+```{r, fig.height=5, fig.width=6}
+### first set 
+statistic <- readRDS('output/P1/org49_sn38_fit.rds')
+statistic <- statistic$t[,1]
+
+### second (comparison set)
+set2_upregulated <- rownames(org66_sn38_DEgenes[org66_sn38_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org66_sn38_DEgenes[org66_sn38_DEgenes$logFC < 0,])
+
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated")) 
+legend("top",legend=c("upregulated in SN38 - DMSO","downregulated in SN38 - DMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+```
+
+###### ORG66 vs ORG49
+
+DEGs identified from SN38-DMSO comparison in ORG49, ranked against t-statistic generated from SN38-DMSO comparison in ORG66, and corresponding limma::camera enrichment p-values:
+
+```{r, fig.height=5, fig.width=6}
+### first set 
+statistic <- readRDS('output/P1/org66_sn38_fit.rds')
+statistic <- statistic$t[,1]
+
+### second (comparison set)
+set2_upregulated <- rownames(org49_sn38_DEgenes[org49_sn38_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org49_sn38_DEgenes[org49_sn38_DEgenes$logFC < 0,])
+
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated")) 
+legend("top",legend=c("upregulated in SN38 - DMSO","downregulated in SN38 - DMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+```

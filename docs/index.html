@@ -350,7 +350,7 @@ aria-hidden="true"></span> </a>
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2025-08-28
+<strong>Last updated:</strong> 2025-11-13
 </p>
 <p>
 <strong>Checks:</strong> <span
@@ -400,15 +400,15 @@ HTML.</p>
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomkitadalviMACseqSPLINTRProjecttreec26093e0caeb90a2e9c87c003effc89113369100targetblankc26093ea">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomkitadalviMACseqSPLINTRProjecttreea650082ccd620b85c5d8d4deed4548331917fcaetargetblanka650082a">
 <span class="glyphicon glyphicon-ok text-success"
 aria-hidden="true"></span> <strong>Repository version:</strong>
-<a href="https://github.com/kitadalvi/MACseq-SPLINTR-Project/tree/c26093e0caeb90a2e9c87c003effc89113369100" target="_blank">c26093e</a>
+<a href="https://github.com/kitadalvi/MACseq-SPLINTR-Project/tree/a650082ccd620b85c5d8d4deed4548331917fcae" target="_blank">a650082</a>
 </a>
 </p>
 </div>
 <div
-id="strongRepositoryversionstrongahrefhttpsgithubcomkitadalviMACseqSPLINTRProjecttreec26093e0caeb90a2e9c87c003effc89113369100targetblankc26093ea"
+id="strongRepositoryversionstrongahrefhttpsgithubcomkitadalviMACseqSPLINTRProjecttreea650082ccd620b85c5d8d4deed4548331917fcaetargetblanka650082a"
 class="panel-collapse collapse">
 <div class="panel-body">
 <p>
@@ -418,7 +418,7 @@ reproducibility.
 </p>
 <p>
 The results in this page were generated with repository version
-<a href="https://github.com/kitadalvi/MACseq-SPLINTR-Project/tree/c26093e0caeb90a2e9c87c003effc89113369100" target="_blank">c26093e</a>.
+<a href="https://github.com/kitadalvi/MACseq-SPLINTR-Project/tree/a650082ccd620b85c5d8d4deed4548331917fcae" target="_blank">a650082</a>.
 See the <em>Past versions</em> tab to see a history of the changes made
 to the R Markdown and HTML files.
 </p>
@@ -437,22 +437,30 @@ Ignored files:
     Ignored:    .RData
     Ignored:    .Rhistory
     Ignored:    .Rproj.user/
+    Ignored:    analysis/.DS_Store
     Ignored:    analysis/.RData
     Ignored:    analysis/.Rhistory
     Ignored:    data/.DS_Store
     Ignored:    data/DEgenes/
+    Ignored:    data/MSigDB_Curated_Genesets/
+    Ignored:    data/MSigDB_Hallmark_Genesets/
     Ignored:    data/PACLITACEL_DE_genes.tiff
     Ignored:    data/SN38_DE_genes.tiff
     Ignored:    data/bc_data.tsv
     Ignored:    data/enrichedPathways/
     Ignored:    data/images/
     Ignored:    data/rObjects/
+    Ignored:    data/usersguide.pdf
+    Ignored:    output/.DS_Store
 
 Untracked files:
-    Untracked:  analysis/DE_P1_AUG2025.Rmd
+    Untracked:  analysis/DE_P2_v2.Rmd
+    Untracked:  output/P1/
 
 Unstaged changes:
+    Modified:   analysis/DE_P1_AUG2025.Rmd
     Modified:   analysis/DE_P2_APR2025.Rmd
+    Modified:   analysis/QC_P2_APR2025.Rmd
     Modified:   analysis/index.Rmd
 
 </code></pre>
@@ -498,6 +506,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/kitadalvi/MACseq-SPLINTR-Project/blob/3bd3c135c29c4087b07fb47750c5e4d2128c8408/analysis/index.Rmd" target="_blank">3bd3c13</a>
+</td>
+<td>
+kitadalvi
+</td>
+<td>
+2025-08-28
+</td>
+<td>
+Added P1 analysis and updated homepage
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/kitadalvi/MACseq-SPLINTR-Project/3bd3c135c29c4087b07fb47750c5e4d2128c8408/docs/index.html" target="_blank">3bd3c13</a>
+</td>
+<td>
+kitadalvi
+</td>
+<td>
+2025-08-28
+</td>
+<td>
+Added P1 analysis and updated homepage
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -776,70 +818,24 @@ Start workflowr project.
 <td align="left"></td>
 </tr>
 <tr class="odd">
-<td align="left">Differential Expression</td>
-<td align="left"><a href="differential_expression.html">Differential
-Gene Expression (48H)</a></td>
+<td align="left">Differential Expression (CONC together)</td>
+<td align="left"><a href="DE_P1_AUG2025.html">Differential Gene
+Expression (AUG2025)</a></td>
 <td align="left"><a href="DE_P2_APR2025.html">Differential Expression
-(JUNE 2025)</a></td>
+(NOV 2025)</a></td>
 <td align="left"></td>
 </tr>
 <tr class="even">
+<td align="left">Differential Expression (CONC separate)</td>
 <td align="left"></td>
-<td align="left"><a href="differential_expression_24H.html">Differential
-Gene Expression (24H)</a></td>
-<td align="left"></td>
+<td align="left"><a href="DE_P2_v2.html">Differential Expression
+v2</a></td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
-<td align="left"></td>
+<td align="left">SPLINTR Analysis</td>
 <td align="left"><a href="DM_approach.html">Labelled VS Unlabelled
 samples</a></td>
-<td align="left"></td>
-<td align="left"></td>
-</tr>
-<tr class="even">
-<td align="left"></td>
-<td align="left"><a href="DE_Feb_2025.html">Differential Expression (FEB
-2025)</a></td>
-<td align="left"></td>
-<td align="left"></td>
-</tr>
-<tr class="odd">
-<td align="left"></td>
-<td align="left"><a href="DE_P1_APR2025.html">Differential Expression
-(APR 2025)</a></td>
-<td align="left"></td>
-<td align="left"></td>
-</tr>
-<tr class="even">
-<td align="left"></td>
-<td align="left"><a href="DE_P1_AUG2025.html">Differential Expression
-(AUG 2025)</a></td>
-<td align="left"></td>
-<td align="left"></td>
-</tr>
-<tr class="odd">
-<td align="left">Pathway Analysis</td>
-<td align="left"><a href="DGE_VPathwaysEnrichment.html">Pathway
-Analysis</a></td>
-<td align="left"></td>
-<td align="left"></td>
-</tr>
-<tr class="even">
-<td align="left">SPLINTR</td>
-<td align="left"><a href="org38_SPLINTR.html">ORG38</a></td>
-<td align="left"></td>
-<td align="left"></td>
-</tr>
-<tr class="odd">
-<td align="left"></td>
-<td align="left"><a href="org49_SPLINTR.html">ORG49</a></td>
-<td align="left"></td>
-<td align="left"></td>
-</tr>
-<tr class="even">
-<td align="left"></td>
-<td align="left"><a href="org66_SPLINTR.html">ORG66</a></td>
 <td align="left"></td>
 <td align="left"></td>
 </tr>
