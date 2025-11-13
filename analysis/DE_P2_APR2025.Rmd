@@ -252,7 +252,7 @@ Voom plot:
 counts<-counts_matrix@assays$RNA$counts
 counts <- DGEList(counts = counts) %>%
   calcNormFactors(method = 'TMMwsp')
-v <- voom(counts, design, plot = T, save.plot = TRUE)
+v <- voom(counts, design, plot = T)
 org38_voom_mat <- v
 ```
 
@@ -886,7 +886,7 @@ Voom plot:
 counts<-counts_matrix@assays$RNA$counts
 counts <- DGEList(counts = counts) %>%
   calcNormFactors(method = 'TMMwsp')
-v <- voom(counts, design, plot = T, save.plot = TRUE)
+v <- voom(counts, design, plot = T)
 org49_voom_mat <- v
 ```
 
@@ -1321,7 +1321,7 @@ Voom plot:
 counts<-counts_matrix@assays$RNA$counts
 counts <- DGEList(counts = counts) %>%
   calcNormFactors(method = 'TMMwsp')
-v <- voom(counts, design, plot = T, save.plot = TRUE)
+v <- voom(counts, design, plot = T)
 org66_voom_mat <- v
 ```
 
@@ -2274,7 +2274,7 @@ limma::cameraPR(statistic = statistic,
 
 ```{r, fig.height=5, fig.width=6}
 ### first set 
-org38_P1_pac_fit <- readRDS('../output/P1/org38_pac_fit.rds') 
+org38_P1_pac_fit <- readRDS('output/P1/org38_pac_fit.rds') 
 t_stat <- org38_P1_pac_fit$t[,1]
 
 ### compared to ncPAC-ncDMSO
@@ -2320,7 +2320,7 @@ limma::cameraPR(statistic = t_stat,
 
 ```{r, fig.height=5, fig.width=6}
 ### first set 
-org38_P1_sn38_fit <- readRDS('../output/P1/org38_sn38_fit.rds') 
+org38_P1_sn38_fit <- readRDS('output/P1/org38_sn38_fit.rds') 
 t_stat <- org38_P1_sn38_fit$t[,1]
 
 ### compared to ncSN38-ncDMSO
@@ -2366,7 +2366,7 @@ limma::cameraPR(statistic = t_stat,
 
 ```{r, fig.height=5, fig.width=6}
 ### first set 
-org49_P1_sn38_fit <- readRDS('../output/P1/org49_sn38_fit.rds') 
+org49_P1_sn38_fit <- readRDS('output/P1/org49_sn38_fit.rds') 
 t_stat <- org49_P1_sn38_fit$t[,1]
 
 ### compared to ncSN38- ncDMSO
@@ -2408,7 +2408,7 @@ limma::cameraPR(statistic = t_stat,
 
 ```{r, fig.height=5, fig.width=6}
 ### first set 
-org66_P1_pac_fit <- readRDS('../output/P1/org66_pac_fit.rds') 
+org66_P1_pac_fit <- readRDS('output/P1/org66_pac_fit.rds') 
 t_stat <- org66_P1_pac_fit$t[,1]
 
 ### compared to ncPAC-ncDMSO
@@ -2451,7 +2451,7 @@ limma::cameraPR(statistic = t_stat,
 
 ```{r, fig.height=5, fig.width=6}
 ### first set 
-org66_P1_sn38_fit <- readRDS('../output/P1/org66_sn38_fit.rds') 
+org66_P1_sn38_fit <- readRDS('output/P1/org66_sn38_fit.rds') 
 t_stat <- org66_P1_sn38_fit$t[,1]
 
 ### compared to ncSN38-ncDMSO
@@ -2497,26 +2497,26 @@ limma::cameraPR(statistic = t_stat,
 ### Hallmark Genesets {.tabset}
 ```{r, warning=FALSE}
 ### predefined gene sets 
-msigdb_hallmark_dnarepair <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_DNA_REPAIR.v2025.1.Hs.gmt')
-msigdb_hallmark_apoptosis <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_APOPTOSIS.v2025.1.Hs.gmt')
-msigdb_hallmark_EMT <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION.v2025.1.Hs.gmt')
-msigdb_hallmark_p53 <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_P53_PATHWAY.v2025.1.Hs.gmt')
-msigdb_hallmark_G2M <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_G2M_CHECKPOINT.v2025.1.Hs.gmt')
-msigdb_hallmark_Inflammatory_response <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_INFLAMMATORY_RESPONSE.v2025.1.Hs.gmt')
-msigdb_hallmark_Mitotic_Spindle <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_MITOTIC_SPINDLE.v2025.1.Hs.gmt')
-msigdb_hallmark_Notch_signalling <-read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_NOTCH_SIGNALING.v2025.1.Hs.gmt')
-msigdb_hallmark_Oxidative <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_OXIDATIVE_PHOSPHORYLATION.v2025.1.Hs.gmt')
-msigdb_hallmark_WNT_BETA_CATENIN <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_WNT_BETA_CATENIN_SIGNALING.v2025.1.Hs.gmt')
-msigdb_hallmark_E2F <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_E2F_TARGETS.v2025.1.Hs.gmt')
-msigdb_hallmark_COMPLEMENT <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_COMPLEMENT.v2025.1.Hs.gmt')
-msigdb_hallmark_KRAS_UP <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_KRAS_SIGNALING_UP.v2025.1.Hs.gmt')
-msigdb_hallmark_KRAS_DN <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_KRAS_SIGNALING_DN.v2025.1.Hs.gmt')
-msigdb_hallmark_INTERFERON_GAMMA <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_INTERFERON_GAMMA_RESPONSE.v2025.1.Hs.gmt')
-msigdb_hallmark_INTERFERON_ALPHA <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_INTERFERON_ALPHA_RESPONSE.v2025.1.Hs.gmt')
-msigdb_hallmark_IL6_JAKSTAT3 <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_IL6_JAK_STAT3_SIGNALING.v2025.1.Hs.gmt')
-msigdb_hallmark_IL2_STAT5 <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_IL2_STAT5_SIGNALING.v2025.1.Hs.gmt')
-msigdb_hallmark_ROS <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_REACTIVE_OXYGEN_SPECIES_PATHWAY.v2025.1.Hs.gmt')
-msigdb_hallmark_MTORC1 <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_MTORC1_SIGNALING.v2025.1.Hs.gmt')
+msigdb_hallmark_dnarepair <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_DNA_REPAIR.v2025.1.Hs.gmt')
+msigdb_hallmark_apoptosis <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_APOPTOSIS.v2025.1.Hs.gmt')
+msigdb_hallmark_EMT <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION.v2025.1.Hs.gmt')
+msigdb_hallmark_p53 <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_P53_PATHWAY.v2025.1.Hs.gmt')
+msigdb_hallmark_G2M <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_G2M_CHECKPOINT.v2025.1.Hs.gmt')
+msigdb_hallmark_Inflammatory_response <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_INFLAMMATORY_RESPONSE.v2025.1.Hs.gmt')
+msigdb_hallmark_Mitotic_Spindle <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_MITOTIC_SPINDLE.v2025.1.Hs.gmt')
+msigdb_hallmark_Notch_signalling <-read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_NOTCH_SIGNALING.v2025.1.Hs.gmt')
+msigdb_hallmark_Oxidative <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_OXIDATIVE_PHOSPHORYLATION.v2025.1.Hs.gmt')
+msigdb_hallmark_WNT_BETA_CATENIN <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_WNT_BETA_CATENIN_SIGNALING.v2025.1.Hs.gmt')
+msigdb_hallmark_E2F <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_E2F_TARGETS.v2025.1.Hs.gmt')
+msigdb_hallmark_COMPLEMENT <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_COMPLEMENT.v2025.1.Hs.gmt')
+msigdb_hallmark_KRAS_UP <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_KRAS_SIGNALING_UP.v2025.1.Hs.gmt')
+msigdb_hallmark_KRAS_DN <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_KRAS_SIGNALING_DN.v2025.1.Hs.gmt')
+msigdb_hallmark_INTERFERON_GAMMA <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_INTERFERON_GAMMA_RESPONSE.v2025.1.Hs.gmt')
+msigdb_hallmark_INTERFERON_ALPHA <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_INTERFERON_ALPHA_RESPONSE.v2025.1.Hs.gmt')
+msigdb_hallmark_IL6_JAKSTAT3 <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_IL6_JAK_STAT3_SIGNALING.v2025.1.Hs.gmt')
+msigdb_hallmark_IL2_STAT5 <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_IL2_STAT5_SIGNALING.v2025.1.Hs.gmt')
+msigdb_hallmark_ROS <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_REACTIVE_OXYGEN_SPECIES_PATHWAY.v2025.1.Hs.gmt')
+msigdb_hallmark_MTORC1 <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_MTORC1_SIGNALING.v2025.1.Hs.gmt')
 
 msigdb_hallmark_geneset_list <- list(DNA_repair = msigdb_hallmark_dnarepair$gene, 
                     APOPTOSIS = msigdb_hallmark_apoptosis$gene,
@@ -2612,12 +2612,12 @@ limma::cameraPR(statistic = org66_snSN38_fit$t[,1],
 
 ```{r}
 ### predefined gene sets 
-msigdb_LI_cisplatin_UP <- read.gmt('../data/MSigDB_Curated_Genesets/LI_CISPLATIN_RESISTANCE_UP.v2025.1.Hs.gmt')
-msigdb_LI_cisplatin_DN <- read.gmt('../data/MSigDB_Curated_Genesets/LI_CISPLATIN_RESISTANCE_DN.v2025.1.Hs.gmt')
-msigdb_TSUNODA_cisplatin_UP <- read.gmt('../data/MSigDB_Curated_Genesets/TSUNODA_CISPLATIN_RESISTANCE_UP.v2025.1.Hs.gmt')
-msigdb_TSUNODA_cisplatin_DN <- read.gmt('../data/MSigDB_Curated_Genesets/TSUNODA_CISPLATIN_RESISTANCE_DN.v2025.1.Hs.gmt')
-msigdb_WHITESIDE_cisplatin_UP <- read.gmt('../data/MSigDB_Curated_Genesets/WHITESIDE_CISPLATIN_RESISTANCE_UP.v2025.1.Hs.gmt')
-msigdb_WHITESIDE_cisplatin_DN <- read.gmt('../data/MSigDB_Curated_Genesets/WHITESIDE_CISPLATIN_RESISTANCE_DN.v2025.1.Hs.gmt')
+msigdb_LI_cisplatin_UP <- read.gmt('data/MSigDB_Curated_Genesets/LI_CISPLATIN_RESISTANCE_UP.v2025.1.Hs.gmt')
+msigdb_LI_cisplatin_DN <- read.gmt('data/MSigDB_Curated_Genesets/LI_CISPLATIN_RESISTANCE_DN.v2025.1.Hs.gmt')
+msigdb_TSUNODA_cisplatin_UP <- read.gmt('data/MSigDB_Curated_Genesets/TSUNODA_CISPLATIN_RESISTANCE_UP.v2025.1.Hs.gmt')
+msigdb_TSUNODA_cisplatin_DN <- read.gmt('data/MSigDB_Curated_Genesets/TSUNODA_CISPLATIN_RESISTANCE_DN.v2025.1.Hs.gmt')
+msigdb_WHITESIDE_cisplatin_UP <- read.gmt('data/MSigDB_Curated_Genesets/WHITESIDE_CISPLATIN_RESISTANCE_UP.v2025.1.Hs.gmt')
+msigdb_WHITESIDE_cisplatin_DN <- read.gmt('data/MSigDB_Curated_Genesets/WHITESIDE_CISPLATIN_RESISTANCE_DN.v2025.1.Hs.gmt')
 
 msigdb_curated_list <- list(LI_UP = msigdb_LI_cisplatin_UP$gene, 
                     LI_DN = msigdb_LI_cisplatin_DN$gene,
