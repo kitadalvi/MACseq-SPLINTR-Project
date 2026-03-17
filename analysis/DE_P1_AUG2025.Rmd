@@ -22,6 +22,9 @@ library(EnhancedVolcano)
 library(RColorBrewer)
 library(ggvenn)
 library(gplots)
+library(WGCNA)
+library(tidyr)
+library(ggplot2)
 ```
 
 ```{r}
@@ -77,7 +80,7 @@ Thresholds used for DE analysis:
 
 • pvalue threshold = 0.05
 
-• log FC threshold = |lfc| > 0, which is equivalent to an absolute FC of |fc| > 1
+• log FC threshold = log2(1.2) = 20% change in expression compared to control
 
 Differences from previous analyses of MACseq plate 1:
 
@@ -85,8 +88,6 @@ Differences from previous analyses of MACseq plate 1:
 
 ```{r,echo=TRUE}
 ### Threshold Constants
-
-absolute_fold_change <- 1.0
 
 p_value_threshold <- 0.05
 ```
@@ -108,7 +109,6 @@ metadata<-read.csv("/Volumes/bioinf/home/ndalvi/MACseq_PMC228/metadata/PMC228.cs
 ### load in count data 
 raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/3_MACseq_PMC228/raw/PMC228/starsolo/SA_PMC228-null.Solo.out/Gene/raw')
 
-### filter for the minimum number of reads per gene per sample, as per edgeR
 row.names(metadata)<-metadata$label
 
 mac <- CreateSeuratObject(counts = raw_counts,
@@ -145,8 +145,10 @@ create_dt(metadata[metadata$Organoid=="ORG38"| metadata$Organoid=='ORG49' | meta
 ### Violin Plot
 
 ```{r, fig.height=5, fig.width=8}
-VlnPlot(mac, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", "percent.ribo"),
+vlnplot <- VlnPlot(mac, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", "percent.ribo"),
     ncol = 4, group.by = "Organoid")
+
+ggsave(vlnplot, filename = '../output/P1/violin_plot.png', width=8, height=5)
 ```
 
 ### Pre and post normalisation {.tabset}
@@ -178,11 +180,14 @@ group <- as.factor(sampleinfo$interaction_condition)
 organoid <- as.factor(sampleinfo$Organoid)
 design <- model.matrix(~0+organoid+group)
 v <- voom(dge, design)
+```
+
+```{r, fig.width=10, fig.height=5}
+par(mar = c(8, 4, 4, 2) + 0.1)
 
 par(mfrow=c(1,2))
-plotRLE(as.data.frame(rawdata@assays$RNA$counts), main='RLE of all DMSO treated wells - raw')
+plotRLE(as.data.frame(rawdata@assays$RNA$counts), main='RLE of all DMSO treated wells - raw', )
 plotRLE(v$E, main='RLE of all DMSO treated wells - normalised')
-
 ```
 
 ## Differential Expression Analysis 
@@ -240,6 +245,7 @@ counts<-counts_matrix@assays$RNA$counts
 counts <- DGEList(counts = counts) %>%
   calcNormFactors(method = 'TMMwsp')
 v <- voom(counts, design, plot = T)
+org38_voom_matrix <- v
 ```
 
 RLE of all ORG38 wells before and after normalisation:
@@ -259,19 +265,21 @@ Differentially expressed genes between Paclitaxel and DMSO in ORG38:
 ### difference between PAC and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, pacVSdmso)
-fit <- treat(fit, fc=absolute_fold_change)
-saveRDS(fit, file='output/P1/org38_pac_fit.rds')
+fit <- treat(fit, lfc= log2(1.2))
+saveRDS(fit, file='../output/P1/org38_pac_fit.rds')
+
 all_genes <- topTreat(fit, number=Inf)
 org38_pac_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
-datatable(org38_pac_DEgenes)
+datatable(all_genes)
 
 ### Print summary of DE genes table
-total <- paste('• TOTAL DE genes:',length(rownames(org38_pac_DEgenes)))
-up <- paste('• UPREGULATED:',sum(org38_pac_DEgenes$logFC>0))
-down <- paste('• DOWNREGULATED:',sum(org38_pac_DEgenes$logFC<0))
+up <- paste('• UPREGULATED:',sum(org38_pac_DEgenes$logFC > 0))
+down <- paste('• DOWNREGULATED:',sum(org38_pac_DEgenes$logFC< 0))
+total <- paste('• TOTAL DE genes:', length(rownames(org38_pac_DEgenes)))
 summary=paste (total, up, down, sep="\n")
 cat(summary[1])
+
 ```
 
 ###### Heatmap of DEGs
@@ -300,6 +308,43 @@ pheatmap(heatmap_counts[genes[1:50],],
      
 ```
 
+###### Volcano plot
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### labelling 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="Paclitaxel VS DMSO",
+                                subtitle="ORG38",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org38_pac_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                ylim = c(0,4))
+volcano_plot
+
+ggsave(plot= volcano_plot, filename = '../output/P1/VP_org38_pac.png', height=8, width=6)
+
+```
+
 ##### SN38 - DMSO
 
 Differentially expressed genes between SN38 and DMSO in ORG38:
@@ -309,8 +354,8 @@ Differentially expressed genes between SN38 and DMSO in ORG38:
 ### difference between SN38 and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, sn38VSdmso)
-fit <- treat(fit, fc=absolute_fold_change)
-saveRDS(fit, file='output/P1/org38_sn38_fit.rds')
+fit <- treat(fit, lfc = log2(1.2))
+saveRDS(fit, file='../output/P1/org38_sn38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org38_sn38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -348,6 +393,43 @@ pheatmap(heatmap_counts[genes[1:50],],
          cellheight = 8,
          color=rev(red_blue_palette))
      
+```
+
+###### Volcano plot
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### labelling 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="SN38 VS DMSO",
+                                subtitle="ORG38",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org38_sn38_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                ylim = c(0,2))
+volcano_plot
+
+ggsave(plot= volcano_plot, filename = '../output/P1/VP_org38_SN38.png', height=8, width=6)
+
 ```
 
 ##### Gene list comparison
@@ -444,8 +526,8 @@ Differentially expressed genes between Paclitaxel and DMSO in ORG49:
 ### difference between PAC and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, pacVSdmso)
-fit <- treat(fit, fc=absolute_fold_change)
-saveRDS(fit, file='output/P1/org49_pac_fit.rds')
+fit <- treat(fit, lfc=log2(1.2))
+saveRDS(fit, file='../output/P1/org49_pac_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_pac_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -485,6 +567,44 @@ pheatmap(heatmap_counts[genes[1:50],],
      
 ```
 
+###### Volcano Plot
+
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### labelling 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="PAC VS DMSO",
+                                subtitle="ORG49",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org49_pac_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                ylim = c(0,6.5))
+volcano_plot
+
+ggsave(plot= volcano_plot, filename = '../output/P1/VP_org49_pac.png', height=8, width=6)
+
+```
+
 ##### SN38 - DMSO
 
 Differentially expressed genes between SN38 and DMSO in ORG49:
@@ -494,8 +614,8 @@ Differentially expressed genes between SN38 and DMSO in ORG49:
 ### difference between SN38 and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, sn38VSdmso)
-fit <- treat(fit, fc=absolute_fold_change)
-saveRDS(fit, file='output/P1/org49_sn38_fit.rds')
+fit <- treat(fit, lfc=log2(1.2))
+saveRDS(fit, file='../output/P1/org49_sn38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_sn38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -533,6 +653,43 @@ pheatmap(heatmap_counts[genes[1:50],],
          cellheight = 8,
          color=rev(red_blue_palette))
      
+```
+
+###### Volcano Plot 
+
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### labelling 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="SN38 VS DMSO",
+                                subtitle="ORG49",
+                                lab=rownames(all_genes),
+                                #selectLab = rownames(org49_sn38_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
+
+ggsave(plot= volcano_plot, filename = '../output/P1/VP_org49_SN38.png', height=8, width=6)
+
 ```
 
 ##### Gene list comparison
@@ -629,8 +786,8 @@ Differentially expressed genes between Paclitaxel and DMSO in ORG66:
 ### difference between PAC and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, pacVSdmso)
-fit <- treat(fit, fc=absolute_fold_change)
-saveRDS(fit, file='output/P1/org66_pac_fit.rds')
+fit <- treat(fit, lfc=log2(1.2))
+saveRDS(fit, file='../output/P1/org66_pac_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org66_pac_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -670,6 +827,43 @@ pheatmap(heatmap_counts[genes[1:50],],
      
 ```
 
+###### Volcano Plot
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### labelling 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="PAC VS DMSO",
+                                subtitle="ORG66",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org66_pac_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+                                #ylim = c(0,2))
+volcano_plot
+
+ggsave(plot= volcano_plot, filename = '../output/P1/VP_org66_pac.png', height=8, width=6)
+
+```
+
 ##### SN38 - DMSO
 
 Differentially expressed genes between SN38 and DMSO in ORG66:
@@ -679,8 +873,8 @@ Differentially expressed genes between SN38 and DMSO in ORG66:
 ### difference between SN38 and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, sn38VSdmso)
-fit <- treat(fit, fc=absolute_fold_change)
-saveRDS(fit, file='output/P1/org66_sn38_fit.rds')
+fit <- treat(fit, lfc=log2(1.2))
+saveRDS(fit, file='../output/P1/org66_sn38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org66_sn38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -720,6 +914,44 @@ pheatmap(heatmap_counts[genes[1:50],],
      
 ```
 
+###### Volcano Plot
+
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### labelling 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="SN38 VS DMSO",
+                                subtitle="ORG66",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org66_sn38_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                ylim = c(0,4))
+volcano_plot
+
+ggsave(plot= volcano_plot, filename = '../output/P1/VP_org66_SN38.png', height=8, width=6)
+
+```
+
 ##### Gene list comparison
 
 ```{r, fig.height=6, fig.width=6}
@@ -757,16 +989,28 @@ x <- list(ORG38=rownames(org38_pac_DEgenes),
 x.table <- venn(x, show.plot = FALSE)
 x_attributes <- attributes(x.table)
 
-ggvenn(x, 
+venn <- ggvenn(x, 
        show_percentage = FALSE,
        text_size = 8)
 
+ggsave(plot = venn, filename = '../output/P1/VD_all_pac.png', height=6, width=6)
+
 common_genes <- paste(x_attributes$intersections$`ORG38:ORG49:ORG66`)
+common_genes_38_49 <- paste(x_attributes$intersections$`ORG38:ORG49`)
+common_genes_38_66 <- paste(x_attributes$intersections$`ORG38:ORG66`)
 ```
 
 `r length(common_genes)` genes were shared across all ORGs. 
 
   • `r common_genes`
+  
+`r length(common_genes_38_49)` genes were shared between ORG38 and ORG49. 
+
+  • `r common_genes_38_49`
+  
+`r length(common_genes_38_66)` genes were shared between ORG38 and ORG66. 
+
+  • `r common_genes_38_66`
   
 
 #### SN38 - DMSO
@@ -780,9 +1024,11 @@ x <- list(ORG38=rownames(org38_sn38_DEgenes),
 x.table <- venn(x, show.plot = FALSE)
 x_attributes <- attributes(x.table)
 
-ggvenn(x, 
+venn <- ggvenn(x, 
        show_percentage = FALSE,
        text_size = 8)
+
+ggsave(plot = venn, filename = '../output/P1/VD_all_SN38.png', height=6, width=6)
 
 common_genes <- paste(x_attributes$intersections$`ORG38:ORG49:ORG66`)
 ```
@@ -1211,4 +1457,228 @@ legend("top",legend=c("upregulated in SN38 - DMSO","downregulated in SN38 - DMSO
 limma::cameraPR(statistic = statistic,
        index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
        use.ranks = TRUE)
+```
+
+
+### Geneset testing
+
+#### Paclitaxel Resistance {.tabset}
+
+Papers used for comparison:
+
+[Sherman-Baust et al., 2011](https://pmc.ncbi.nlm.nih.gov/articles/PMC3259089/#sec20)
+
+• Generated drug resistant OvCa cell lines (cisplatin, paclitaxel, or doxorubicin)
+
+• Identified DEGs between resistant and sensitive phenotypes 
+
+[McCorkle et al., 2021](https://pmc.ncbi.nlm.nih.gov/articles/PMC8336885/)
+
+• Established in vitro paclitaxel-resistant ovarian cancer cell line and organoid models
+
+• DEGs identified between resistant and sensitive lines and organoids 
+
+[Yang et al., 2024](https://pmc.ncbi.nlm.nih.gov/articles/PMC10996034/#SD2-ol-27-5-14365)
+
+• A2780 cell line and the A2780-Taxol-resistant cell line were purchased and cultured 
+
+• RNAseq between resistant and parental cell lines to identify DEGs
+
+```{r}
+### loading in genesets
+
+### Sherman-Baust, 2011
+sherman_baust <- read_excel('../data/Literature_genesets/SHERMAN_BAUST_2011.XLSX', sheet='geneset_testing')
+sherman_baust_up <- as.data.frame(sherman_baust[sherman_baust$OV90P > 1,c('Symbol')])
+sherman_baust_dn <- as.data.frame(sherman_baust[sherman_baust$OV90P < -1,c('Symbol')])
+
+### McCorkle, 2021
+mccorkle <- read_excel('../data/Literature_genesets/MCCORKLE_2021.xlsx', sheet='geneset_testing')
+mccorkle_up <- as.data.frame(mccorkle[mccorkle$log2FoldChange > 1, c('hgnc_symbol')])
+mccorkle_dn <- as.data.frame(mccorkle[mccorkle$log2FoldChange < -1, c('hgnc_symbol')])
+
+### Yang, 2024
+yang <- read_excel('../data/Literature_genesets/YANGetal2024.xlsx', sheet='geneset_testing')
+yang_up <- as.data.frame(yang[yang$A.128PTX_logFC > 1, c('Gene_name')])
+yang_dn <- as.data.frame(yang[yang$A.128PTX_logFC < -1, c('Gene_name')])
+
+### creating geneset list 
+paclitaxel_resistance_genesets <- list(sherman_baust_up = sherman_baust_up$Symbol,
+                                       sherman_baust_dn = sherman_baust_dn$Symbol,
+                                       mccorkle_up = mccorkle_up$hgnc_symbol,
+                                       mccorkle_dn = mccorkle_dn$hgnc_symbol,
+                                       yang_up = yang_up$Gene_name,
+                                       yang_dn = yang_dn$Gene_name)
+
+
+### loading "fit"
+org38_pac_fit <- readRDS('../output/P1/org38_pac_fit.rds') 
+org38_sn38_fit <- readRDS('../output/P1/org38_sn38_fit.rds') 
+org49_pac_fit <- readRDS('../output/P1/org49_pac_fit.rds') 
+org49_sn38_fit <- readRDS('../output/P1/org49_sn38_fit.rds') 
+org66_pac_fit <- readRDS('../output/P1/org66_pac_fit.rds')
+org66_sn38_fit <- readRDS('../output/P1/org66_sn38_fit.rds') 
+```
+
+##### ORG38
+
+```{r}
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = org38_pac_fit$t[,1],
+       index = paclitaxel_resistance_genesets,
+       use.ranks = TRUE)
+```
+
+##### ORG49
+
+```{r}
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = org49_pac_fit$t[,1],
+       index = paclitaxel_resistance_genesets,
+       use.ranks = TRUE)
+```
+
+##### ORG66
+
+```{r}
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = org66_pac_fit$t[,1],
+       index = paclitaxel_resistance_genesets,
+       use.ranks = TRUE)
+```
+
+#### SN38 Resistance {.tabset}
+
+```{r}
+### Jensen, 2015 - HCT116 cell line
+jensen_HCT116 <- read_excel('../data/Literature_genesets/JENSEN_2015.xlsx', sheet='HCT116-SN38')
+jensen_HCT116_up <- as.data.frame(jensen_HCT116[jensen_HCT116$`Fold-change` > 1,c('GeneSymbol')])
+jensen_HCT116_dn <- as.data.frame(jensen_HCT116[jensen_HCT116$`Fold-change` < -1,c('GeneSymbol')])
+
+### Jensen, 2015 - HT29 cell line
+jensen_HT29 <- read_excel('../data/Literature_genesets/JENSEN_2015.xlsx', sheet='HT29-SN38')
+jensen_HT29_up <- as.data.frame(jensen_HT29[jensen_HT29$`Fold-change` > 1,c('GeneSymbol')])
+jensen_HT29_dn <- as.data.frame(jensen_HT29[jensen_HT29$`Fold-change` < -1,c('GeneSymbol')])
+
+### Jensen, 2015 - LoVo cell line
+jensen_LoVo <- read_excel('../data/Literature_genesets/JENSEN_2015.xlsx', sheet='LoVo-SN38')
+jensen_LoVo_up <- as.data.frame(jensen_LoVo[jensen_LoVo$`Fold-change` > 1,c('GeneSymbol')])
+jensen_LoVo_dn <- as.data.frame(jensen_LoVo[jensen_LoVo$`Fold-change` < -1,c('GeneSymbol')])
+
+### creating SN38 resistance gene lists
+sn38_resistance_genesets <- list(jensen_HCT116_up = jensen_HCT116_up$GeneSymbol,
+                                       jensen_HCT116_dn = jensen_HCT116_dn$GeneSymbol,
+                                       jensen_HT29_up = jensen_HT29_up$GeneSymbol,
+                                       jensen_HT29_dn = jensen_HT29_dn$GeneSymbol,
+                                       jensen_LoVo_up = jensen_LoVo_up$GeneSymbol,
+                                       jensen_LoVo_dn = jensen_LoVo_dn$GeneSymbol)
+```
+
+##### ORG38
+
+```{r}
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = org38_sn38_fit$t[,1],
+       index = sn38_resistance_genesets,
+       use.ranks = TRUE)
+```
+
+##### ORG49
+
+```{r}
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = org49_sn38_fit$t[,1],
+       index = sn38_resistance_genesets,
+       use.ranks = TRUE)
+```
+
+##### ORG66
+
+```{r}
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = org66_sn38_fit$t[,1],
+       index = sn38_resistance_genesets,
+       use.ranks = TRUE)
+```
+
+### Alicia meeting
+```{r, fig.height=3.5, fig.width=6}
+data <- v
+
+### subset genes of interest 
+genes <- c('MUCL3','SDCBP2','PLAUR','TPI1')
+data <- data[genes,]
+
+### identify samples of interest by treatment group
+samples <- sampleinfo[sampleinfo$Drug == 'PACLITAXEL'|
+                        sampleinfo$Drug == 'DMSO',]
+samples <- samples[samples$Time=='48H',]
+samples <- samples$label
+
+### subset data to include only samples of interest
+data <- data[, samples]
+expr_data <- as.data.frame(t(data$E))
+
+### get treatment information
+samples <- rownames(expr_data)
+drug <- sampleinfo[samples, c('Drug')]
+concentration <- sampleinfo[samples, c('Concentration')]
+
+expr_data <- expr_data %>%
+  mutate(drug = drug) %>%
+  mutate(concentration = concentration) %>%
+  mutate(plate= "Plate 1")
+
+### calculate means of each group 
+mean_MUCL3 <- expr_data %>%
+  group_by(drug) %>%
+  summarise(mean_val = mean(MUCL3))
+
+mean_SDCBP2 <- expr_data %>%
+  group_by(drug) %>%
+  summarise(mean_val = mean(SDCBP2))
+
+mean_TPI1 <- expr_data %>%
+  group_by(drug) %>%
+  summarise(mean_val = mean(TPI1))
+
+mean_PLAUR <- expr_data %>%
+  group_by(drug) %>%
+  summarise(mean_val = mean(PLAUR))
+
+### add mean to expr_data for each treatment group
+expr_data <- expr_data %>%
+  mutate(MUCL3_mean = case_when(
+    drug == 'DMSO' ~ '8.49',
+    drug == 'PACLITAXEL' ~ '9.75'
+  )) %>%
+  mutate(SDCBP2_mean = case_when(
+    drug == 'DMSO' ~ '7.03',
+    drug == 'PACLITAXEL' ~ '9.19'
+  )) %>%
+  mutate(TPI1_mean = case_when(
+    drug == 'DMSO' ~ '11.1',
+    drug == 'PACLITAXEL' ~ '10.4'
+  )) %>%
+  mutate(PLAUR_mean = case_when(
+    drug == 'DMSO' ~ '7.28',
+    drug == 'PACLITAXEL' ~ '9.25'
+  ))
+
+### plotting
+ggplot(data=expr_data, aes(y=MUCL3, x=plate, colour = drug)) +
+  geom_point() +
+  geom_hline(data = expr_data, aes(yintercept = as.numeric(MUCL3_mean), col=drug))
+
+ggplot(data=expr_data, aes(y=SDCBP2, x=plate, colour = drug)) +
+  geom_point() +
+  geom_hline(data = expr_data, aes(yintercept = as.numeric(SDCBP2_mean), col=drug))
+
+ggplot(data=expr_data, aes(y=TPI1, x=plate, colour = drug)) +
+  geom_point() +
+  geom_hline(data = expr_data, aes(yintercept = as.numeric(TPI1_mean), col=drug))
+
+ggplot(data=expr_data, aes(y=PLAUR, x=plate, colour = drug)) +
+  geom_point() +
+  geom_hline(data = expr_data, aes(yintercept = as.numeric(PLAUR_mean), col=drug))
 ```

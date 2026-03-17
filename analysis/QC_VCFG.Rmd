@@ -27,42 +27,45 @@ library(ggpubr)
 
 ## Filtering data
 ```{r, echo=TRUE}
+source('/Users/dalvinikita/Desktop/macpie/R/filter_genes_by_expression.R')
 
 #import metadata
 metadata<-read.csv("/Volumes/bioinf/home/ndalvi/MACseq_PMC228/metadata/PMC228.csv",header=T, check.names = FALSE) %>%
   arrange("Barcode") %>%
   mutate(id=gsub("Plate","",Plate_ID)) %>%
-  mutate(Treatment_conc=paste0(Treatment_1,"_",Concentration_1))
+  mutate(Treatment_conc=paste0(Treatment_1,"_",Concentration_1)) %>%
+  mutate(label=paste0(Treatment_1," ","(",Well_ID,")"))
 
 #load in count data 
-raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/MACseq_PMC228/raw/PMC228/starsolo/SA_PMC228-null.Solo.out/Gene/raw')
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/3_MACseq_PMC228/raw/PMC228/starsolo/SA_PMC228-null.Solo.out/Gene/raw')
 
 
-#filter by cpm>10 in at least 2 samples
-keep <- rowSums(cpm(raw_counts)>10) >= 3
-raw_counts <- raw_counts[keep,]
-
-```
-
-## QC Plots
-```{r}
-#filter for the minimum number of reads per gene per sample, as per edgeR
-row.names(metadata)<-metadata$Barcode
+row.names(metadata)<-metadata$label
 
 mac <- CreateSeuratObject(counts = raw_counts,
                           project = 'PMC228',
                           min.cells = 1,
                           min.features = 1)
 
+mac[["percent.mt"]] <- PercentageFeatureSet(mac, pattern = "^mt-|^MT-")
+mac[["percent.ribo"]] <- PercentageFeatureSet(mac, pattern = "^Rp[slp][[:digit:]]|^Rpsa|^RP[SLP][[:digit:]]|^RPSA")
 
-#for humans: MT, and ribosomal protein: RP. if MT> 30 then most likely dead cells
-mac[["percent.mt"]]<-PercentageFeatureSet(mac, pattern = "^MT-")
-mac[["percent.rp"]]<-PercentageFeatureSet(mac, pattern = "^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA")
-
-#add location metadata
+### add location metadata
 mac<- mac %>%
   inner_join(metadata,by=c(".cell"="Barcode"))
+
+mac <- filter_genes_by_expression(mac,
+                                       group_by = "Organoid",
+                                       min_counts = 10,
+                                       min_samples = 80)
+
+### exclude mito and ribo genes from the counts
+mac<-mac[!grepl("^MT-",rownames(mac))]
+mac<-mac[!grepl("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA",rownames(mac))]
+
+colnames(mac)<- mac$label
 ```
+
 
 
 ### Plate QC {.tabset}
@@ -86,19 +89,23 @@ entire_plate <- raw_map(data = mac$nCount_RNA, well = mac$Well_ID, plate = 384) 
 entire_plate
 ```
 
+
 #### ORG49
+
 ```{r}
 g1_org49 = g1[-c(9,10),-c(11)]
 g1_org49
 ```
 
 #### ORG38
+
 ```{r}
 g1_org38 = g1[-c(14,15),-c(7)]
 g1_org38
 ```
 
 #### ORG66
+
 ```{r}
 g1_org66 = g1[-c(9,10),-c(7)]
 g1_org66
@@ -107,7 +114,7 @@ g1_org66
 ### PCA Plots {.tabset}
 
 #### Entire plate
-```{r, fig.height=12, fig.width=16, fig.align='left'}
+```{r, fig.height=12, fig.width=12, fig.align='left'}
 
 #Function for plotting
 pca_plots <- function(df, type){
@@ -128,7 +135,7 @@ pca_plots <- function(df, type){
 
   p1<-FeaturePlot(seurat_object, features = 'nCount_RNA',pt.size = 2)
   p2<-FeaturePlot(seurat_object, features = 'percent.mt',pt.size = 2)
-  p3<-FeaturePlot(seurat_object, features = 'percent.rp',pt.size = 2)
+  p3<-FeaturePlot(seurat_object, features = 'percent.ribo',pt.size = 2)
   p4<-DimPlot(seurat_object, group.by= 'Row',pt.size = 2)
   p5<-DimPlot(seurat_object, group.by= 'Column',pt.size = 2)
   p6<-DimPlot(seurat_object, group.by= 'Organoid',pt.size = 2)
@@ -141,9 +148,10 @@ pca_plots <- function(df, type){
   ggarrange(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12, nrow=4, ncol=3)
 }
 
-pca_plots(mac, 'all')
+p <- pca_plots(mac, 'all')
+p
 
-
+ggsave(p, filename = '/Users/dalvinikita/Documents/7_GitHub/MACseq-SPLINTR-Project/output/P1/P1_QC.png', width = 12, height = 12)
 ```
 
 #### ORG49
@@ -167,7 +175,7 @@ pca_plots <- function(df, type){
 
   p1<-FeaturePlot(seurat_object, features = 'nCount_RNA',pt.size = 2)
   p2<-FeaturePlot(seurat_object, features = 'percent.mt',pt.size = 2)
-  p3<-FeaturePlot(seurat_object, features = 'percent.rp',pt.size = 2)
+  p3<-FeaturePlot(seurat_object, features = 'percent.ribo',pt.size = 2)
   p4<-DimPlot(seurat_object, group.by= 'Row',pt.size = 2)
   p5<-DimPlot(seurat_object, group.by= 'Column',pt.size = 2)
   p6<-DimPlot(seurat_object, group.by= 'Time',pt.size = 2)
@@ -183,18 +191,26 @@ pca_plots <- function(df, type){
   
 }
 
-pca_plots(mac, 'ORG49')
+org49_pca <- pca_plots(mac, 'ORG49')
+org49_pca
 
+ggsave(org49_pca, filename = '/Users/dalvinikita/Documents/7_GitHub/MACseq-SPLINTR-Project/output/P1/ORG49_QC.png', width = 12, height = 12)
 ```
 
 #### ORG38
 ```{r, fig.height=12, fig.width=16, fig.align='left'}
-pca_plots(mac, 'ORG38')
+org38_pca <- pca_plots(mac, 'ORG38')
+org38_pca
+
+ggsave(org38_pca, filename = '/Users/dalvinikita/Documents/7_GitHub/MACseq-SPLINTR-Project/output/P1/ORG38_QC.png', width = 12, height = 12)
 ```
 
 #### ORG66
 ```{r, fig.height=12, fig.width=16, fig.align='left'}
-pca_plots(mac, 'ORG66')
+org66_pca <- pca_plots(mac, 'ORG66')
+org66_pca
+
+ggsave(org66_pca, filename = '/Users/dalvinikita/Documents/7_GitHub/MACseq-SPLINTR-Project/output/P1/ORG66_QC.png', width = 12, height = 12)
 ```
 
 ### Sample Type Distribution

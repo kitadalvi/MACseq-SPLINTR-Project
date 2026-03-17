@@ -1,0 +1,539 @@
+---
+title: "Trajectories of DEGs"
+output: html_document
+date: "2026-03-11"
+---
+```{r setup, echo = FALSE, message =FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.height=8, fig.width = 10)
+```
+
+```{r}
+### loading required packages
+library(tidyverse)
+library(Seurat)
+library(gtools)
+library(tidyseurat)
+library(DESeq2)
+library(edgeR)
+library(DT)
+library(dplyr)
+library(pheatmap)
+library(EnhancedVolcano)
+library(RColorBrewer)
+library(ggvenn)
+library(gplots)
+library(WGCNA)
+library(tidyr)
+library(ggplot2)
+```
+
+```{r}
+### Functions 
+
+source('/Users/dalvinikita/Desktop/macpie/R/filter_genes_by_expression.R')
+
+```
+
+```{r}
+### plate 1 expr_matrix
+### Importing MACseq data
+### Importing metadata
+### Joining data in a Seurat object 
+
+### import metadata
+metadata<-read.csv("/Volumes/bioinf/home/ndalvi/MACseq_PMC228/metadata/PMC228.csv",header=T) %>%
+  arrange("Barcode") %>%
+  mutate(id=gsub("Plate","",Plate_ID)) %>%
+  mutate(label=paste0(Treatment_1," ","(",Well_ID,")")) %>%
+  mutate(interaction_condition=paste0(Drug,".",SPLINTR)) %>%
+  mutate(analysis_condition=paste0(Organoid,".",SPLINTR,".",Time))
+
+### load in count data 
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/3_MACseq_PMC228/raw/PMC228/starsolo/SA_PMC228-null.Solo.out/Gene/raw')
+
+row.names(metadata)<-metadata$label
+
+mac <- CreateSeuratObject(counts = raw_counts,
+                          project = 'PMC228',
+                          min.cells = 1,
+                          min.features = 1)
+
+mac[["percent.mt"]] <- PercentageFeatureSet(mac, pattern = "^mt-|^MT-")
+mac[["percent.ribo"]] <- PercentageFeatureSet(mac, pattern = "^Rp[slp][[:digit:]]|^Rpsa|^RP[SLP][[:digit:]]|^RPSA")
+
+### add location metadata
+mac<- mac %>%
+  inner_join(metadata,by=c(".cell"="Barcode"))
+
+mac <- filter_genes_by_expression(mac,
+                                       group_by = "Organoid",
+                                       min_counts = 10,
+                                       min_samples = 80)
+
+### exclude mito and ribo genes from the counts
+mac<-mac[!grepl("^MT-",rownames(mac))]
+mac<-mac[!grepl("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA",rownames(mac))]
+
+colnames(mac)<- mac$label
+
+### ORG38 
+### selecting metadata and countdata relevant for ORG 38
+### subset metadata to include only ORG38 cells at 48H
+columns <- metadata[metadata$Organoid=='ORG38'&metadata$Time=='48H' & metadata$Treatment_1!="STAUR",]
+sampleinfo <- columns
+columns <- c(columns[,c("label")])
+
+### subset counts to include only relevant ORG38 cells 
+counts_matrix <- mac[,columns]
+
+### factors to include in deisgn matrix: treatment/splintr, concentration, time
+group <- sampleinfo$interaction_condition
+concentration <- sampleinfo$Concentration
+time <- sampleinfo$Time_2
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+group+concentration+time)
+rownames(design) <- rownames(sampleinfo)
+datatable(design)
+
+### Specifying contrasts for analysis
+pacVSdmso <- makeContrasts(((groupPACLITAXEL.SPL1+groupPACLITAXEL.SPL2+groupPACLITAXEL.UNLABELLED)/3)-((groupDMSO.SPL1+groupDMSO.SPL2+groupDMSO.UNLABELLED)/3), levels=colnames(design))
+
+sn38VSdmso <- makeContrasts(((groupSN38.SPL1+groupSN38.SPL2+groupSN38.UNLABELLED)/3)-((groupDMSO.SPL1+groupDMSO.SPL2+groupDMSO.UNLABELLED)/3), levels=colnames(design))
+
+counts<-counts_matrix@assays$RNA$counts
+counts <- DGEList(counts = counts) %>%
+  calcNormFactors(method = 'TMMwsp')
+v <- voom(counts, design, plot = F)
+
+### expr_matrix
+
+data <- v
+
+### subset genes of interest 
+genes <- c('MUCL3','SDCBP2','PLAUR','TPI1')
+data <- data[genes,]
+
+### identify samples of interest by treatment group
+samples <- sampleinfo[sampleinfo$Drug == 'PACLITAXEL'|
+                        sampleinfo$Drug == 'DMSO',]
+samples <- samples[samples$Time=='48H',]
+samples <- samples$label
+
+### subset data to include only samples of interest
+data <- data[, samples]
+expr_data <- as.data.frame(t(data$E))
+
+### get treatment information
+samples <- rownames(expr_data)
+drug <- sampleinfo[samples, c('Drug')]
+concentration <- sampleinfo[samples, c('Concentration')]
+
+expr_data <- expr_data %>%
+  mutate(drug = drug) %>%
+  mutate(concentration = concentration) %>%
+  mutate(plate= "Plate 1")
+
+### calculate means of each group 
+mean_MUCL3 <- expr_data %>%
+  group_by(drug) %>%
+  summarise(mean_val = mean(MUCL3))
+
+mean_SDCBP2 <- expr_data %>%
+  group_by(drug) %>%
+  summarise(mean_val = mean(SDCBP2))
+
+mean_TPI1 <- expr_data %>%
+  group_by(drug) %>%
+  summarise(mean_val = mean(TPI1))
+
+mean_PLAUR <- expr_data %>%
+  group_by(drug) %>%
+  summarise(mean_val = mean(PLAUR))
+
+### add mean to expr_data for each treatment group
+expr_data <- expr_data %>%
+  mutate(MUCL3_mean = case_when(
+    drug == 'DMSO' ~ '8.49',
+    drug == 'PACLITAXEL' ~ '9.75'
+  )) %>%
+  mutate(SDCBP2_mean = case_when(
+    drug == 'DMSO' ~ '7.03',
+    drug == 'PACLITAXEL' ~ '9.19'
+  )) %>%
+  mutate(TPI1_mean = case_when(
+    drug == 'DMSO' ~ '11.1',
+    drug == 'PACLITAXEL' ~ '10.4'
+  )) %>%
+  mutate(PLAUR_mean = case_when(
+    drug == 'DMSO' ~ '7.28',
+    drug == 'PACLITAXEL' ~ '9.25'
+  ))
+
+p1_expr_data <- expr_data
+```
+
+```{r}
+### p2
+### Importing MACseq data
+### Importing metadata
+### Joining data in a Seurat object 
+
+### import metadata
+metadata<-read.csv("/Users/dalvinikita/Documents/11_MACseq_PMMSq042/PMMSq042.csv",header=T) %>%
+  arrange("Barcode") %>%
+  mutate(id=gsub("Plate","",Plate_ID)) %>%
+  mutate(Treatment_Combination=paste0(substr(Cell_type,1,2),'_',substr(Treatment_1,1,4))) %>%
+  mutate(label=paste0(Treatment_Combination,"_",Well_ID)) %>%
+  mutate(Concentration_1=as.factor(Concentration_1)) %>%
+  mutate(SPLINTR = str_sub(Cell_type,-1,-1)) %>%
+  mutate(group = paste0(Treatment_Combination,'.',SPLINTR)) %>%
+  mutate(combined_id = paste0(Cell_type, '_', Treatment_1))
+
+
+### load in count data 
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/11_MACseq_PMMSq042/raw')
+
+### filter for the minimum number of reads per gene per sample, as per edgeR
+row.names(metadata)<-metadata$label
+
+mac <- CreateSeuratObject(counts = raw_counts,
+                          project = 'PMMSq042',
+                          min.cells = 1,
+                          min.features = 1)
+
+mac[["percent.mt"]] <- PercentageFeatureSet(mac, pattern = "^mt-|^MT-")
+mac[["percent.ribo"]] <- PercentageFeatureSet(mac, pattern = "^Rp[slp][[:digit:]]|^Rpsa|^RP[SLP][[:digit:]]|^RPSA")
+
+### add location metadata
+mac<- mac %>%
+  inner_join(metadata,by=c(".cell"="Barcode"))
+
+mac <- filter_genes_by_expression(mac,
+                                       group_by = "Organoid",
+                                       min_counts = 10,
+                                       min_samples = 80)
+
+### exclude mito and ribo genes from the counts
+mac<-mac[!grepl("^MT-",rownames(mac))]
+mac<-mac[!grepl("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA",rownames(mac))]
+
+colnames(mac)<- mac$label
+
+### ORG38
+### selecting metadata and countdata relevant for ORG 38
+### subset metadata to include only ORG38 cells 
+columns <- metadata[metadata$Organoid=='ORG38' & metadata$Treatment_1!="Staurosporine",]
+sampleinfo <- columns
+samples <- c(rownames(sampleinfo))
+counts_matrix <- mac[,samples]
+order <- colnames(counts_matrix)
+sampleinfo <- sampleinfo[colnames(counts_matrix),]
+
+### factors to include in deisgn matrix: SPLINTR group and treatment, concentration
+treatment <- as.factor(sampleinfo$Treatment_Combination)
+concentration <- as.factor(sampleinfo$Concentration_1)
+splintr <- as.factor(sampleinfo$SPLINTR)
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+treatment+splintr+concentration)
+rownames(design) <- rownames(sampleinfo)
+org38_design <- design
+
+### Normalising data
+counts<-counts_matrix@assays$RNA$counts
+counts <- DGEList(counts = counts) %>%
+  calcNormFactors(method = 'TMMwsp')
+v <- voom(counts, design, plot = F)
+org38_voom_mat <- v
+
+data <- org38_voom_mat
+
+### subset genes of interest 
+genes <- c('MUCL3','SDCBP2','PLAUR','TPI1')
+data <- data[genes,]
+
+
+### identify samples of interest by treatment group
+samples <- sampleinfo[sampleinfo$Treatment_Combination == 'NC_DMSO'|
+                        sampleinfo$Treatment_Combination == 'NC_Pacl'|
+                        sampleinfo$Treatment_Combination == 'Pa_Pacl'|
+                        sampleinfo$Treatment_Combination == 'Pa_DMSO',]
+samples <- samples$label
+
+### subset data to include only samples of interest
+data <- data[, samples]
+expr_data <- as.data.frame(t(data$E))
+
+### get treatment information
+samples <- rownames(expr_data)
+pretreatment_data <- sampleinfo[samples, c('PreTreatment')]
+platetreatment_data <- sampleinfo[samples, c('Treatment_1')]
+treatment_combination <- sampleinfo[samples, c('Treatment_Combination')]
+
+expr_data <- expr_data %>%
+  mutate(pretreatment = pretreatment_data) %>%
+  mutate(platetreatment = platetreatment_data) %>%
+  mutate(treatment_combination = treatment_combination) %>%
+  mutate(plate= "Plate 2")
+
+### calculate means of each group 
+mean_MUCL3 <- expr_data %>%
+  group_by(treatment_combination) %>%
+  summarise(mean_val = mean(MUCL3))
+
+mean_SDCBP2 <- expr_data %>%
+  group_by(treatment_combination) %>%
+  summarise(mean_val = mean(SDCBP2))
+
+mean_TPI1 <- expr_data %>%
+  group_by(treatment_combination) %>%
+  summarise(mean_val = mean(TPI1))
+
+mean_PLAUR <- expr_data %>%
+  group_by(treatment_combination) %>%
+  summarise(mean_val = mean(PLAUR))
+
+
+### add mean to expr_data for each treatment group
+expr_data <- expr_data %>%
+  mutate(MUCL3_mean = case_when(
+    treatment_combination == 'NC_DMSO' ~ '8.69',
+    treatment_combination == 'NC_Pacl' ~ '10.8',
+    treatment_combination == 'Pa_DMSO' ~ '8.11',
+    treatment_combination == 'Pa_Pacl' ~ '9.89',
+  )) %>%
+  mutate(SDCBP2_mean = case_when(
+    treatment_combination == 'NC_DMSO' ~ '7.31',
+    treatment_combination == 'NC_Pacl' ~ '8.96',
+    treatment_combination == 'Pa_DMSO' ~ '6.93',
+    treatment_combination == 'Pa_Pacl' ~ '8.60',
+  ))%>%
+  mutate(TPI1_mean = case_when(
+    treatment_combination == 'NC_DMSO' ~ '11.0',
+    treatment_combination == 'NC_Pacl' ~ '9.76',
+    treatment_combination == 'Pa_DMSO' ~ '10.5',
+    treatment_combination == 'Pa_Pacl' ~ '9.65',
+  ))%>%
+  mutate(PLAUR_mean = case_when(
+    treatment_combination == 'NC_DMSO' ~ '8.02',
+    treatment_combination == 'NC_Pacl' ~ '8.83',
+    treatment_combination == 'Pa_DMSO' ~ '7.07',
+    treatment_combination == 'Pa_Pacl' ~ '8.32',
+  ))
+
+p2_expr_data <- expr_data
+```
+
+```{r}
+
+### p3
+### import metadata
+metadata<-read.csv("/Users/dalvinikita/Documents/13_MACseq_PMMSq057/metadata/PMMSq057_metadata.csv",header=T) %>%
+  arrange("Barcode") %>%
+  mutate(id=gsub("Plate","",Plate_ID)) %>%
+  mutate(Treatment_Combination=paste0(PreTreatment,'_',substr(Treatment_1,1,4))) %>%
+  mutate(label=paste0(Treatment_Combination,"_",Well_ID)) %>%
+  mutate(Concentration_1=as.factor(Concentration_1)) %>%
+  mutate(group = paste0(Treatment_Combination,'.',SPLINTR))
+
+row.names(metadata)<-metadata$label
+
+### load in count data 
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/13_MACseq_PMMSq057/raw/starsolo/')
+
+### filter for the minimum number of reads per gene per sample, as per edgeR
+mac <- CreateSeuratObject(counts = raw_counts,
+                          project = 'PMMSq057',
+                          min.cells = 1,
+                          min.features = 0)
+
+mac[["percent.mt"]] <- PercentageFeatureSet(mac, pattern = "^mt-|^MT-")
+mac[["percent.ribo"]] <- PercentageFeatureSet(mac, pattern = "^Rp[slp][[:digit:]]|^Rpsa|^RP[SLP][[:digit:]]|^RPSA")
+
+### add location metadata
+mac<- mac %>%
+  dplyr::inner_join(metadata,by=c(".cell"="Barcode"))
+
+colnames(mac)<- mac$label
+
+mac <- filter_genes_by_expression(mac,
+                                       group_by = "Organoid",
+                                       min_counts = 10,
+                                       min_samples = 80)
+
+### exclude mito and ribo genes from the counts
+mac<-mac[!grepl("^MT-",rownames(mac))]
+mac<-mac[!grepl("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA",rownames(mac))]
+
+### removing ORG60 as not part of chemoresistance experiment
+mac_filtered <- mac[,mac$Organoid!='Org60']
+#mac_filtered <- mac_filtered[,mac_filtered$Treatment_1!='STAUR']
+
+### removing Org60 from metadata 
+samples <- colnames(mac_filtered)
+metadata_filtered <- metadata[samples,]
+
+### org38
+### selecting metadata and countdata relevant for ORG 38
+### subset metadata to include only ORG38 cells 
+columns <- metadata_filtered[metadata_filtered$Organoid=='Org38' & metadata_filtered$Treatment_1!="STAUR",]
+sampleinfo <- columns
+samples <- c(rownames(sampleinfo))
+counts_matrix <- mac_filtered[,samples]
+order <- colnames(counts_matrix)
+sampleinfo <- sampleinfo[colnames(counts_matrix),]
+
+### factors to include in deisgn matrix: SPLINTR group and treatment, concentration
+treatment <- as.factor(sampleinfo$Treatment_Combination)
+concentration <- as.factor(sampleinfo$Concentration_1)
+splintr <- as.factor(sampleinfo$SPLINTR)
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+treatment+splintr+concentration)
+rownames(design) <- rownames(sampleinfo)
+#create_dt(design)
+org38_design <- design
+
+### Normalising data
+counts<-counts_matrix@assays$RNA$counts
+counts <- DGEList(counts = counts) %>%
+  calcNormFactors(method = 'TMMwsp')
+v <- voom(counts, design, plot = F)
+org38_voom_mat <- v
+
+### expr_data
+data <- org38_voom_mat
+
+### subset genes of interest 
+genes <- c('MUCL3','SDCBP2','PLAUR','TPI1')
+data <- data[genes,]
+
+### identify samples of interest by treatment group
+samples <- sampleinfo[sampleinfo$Treatment_Combination == 'NC_DMSO'|
+                        sampleinfo$Treatment_Combination == 'NC_PACL'|
+                        sampleinfo$Treatment_Combination == 'PAC_PACL'|
+                        sampleinfo$Treatment_Combination == 'PAC_DMSO',]
+samples <- samples$label
+
+### subset data to include only samples of interest
+data <- data[, samples]
+expr_data <- as.data.frame(t(data$E))
+
+### get treatment information
+samples <- rownames(expr_data)
+pretreatment_data <- sampleinfo[samples, c('PreTreatment')]
+platetreatment_data <- sampleinfo[samples, c('Treatment_1')]
+treatment_combination <- sampleinfo[samples, c('Treatment_Combination')]
+
+expr_data <- expr_data %>%
+  mutate(pretreatment = pretreatment_data) %>%
+  mutate(platetreatment = platetreatment_data) %>%
+  mutate(treatment_combination = treatment_combination) %>%
+  mutate(plate= "Plate 3")
+
+### calculate means of each group 
+mean_MUCL3 <- expr_data %>%
+  group_by(treatment_combination) %>%
+  summarise(mean_val = mean(MUCL3))
+
+mean_SDCBP2 <- expr_data %>%
+  group_by(treatment_combination) %>%
+  summarise(mean_val = mean(SDCBP2))
+
+mean_TPI1 <- expr_data %>%
+  group_by(treatment_combination) %>%
+  summarise(mean_val = mean(TPI1))
+
+mean_PLAUR <- expr_data %>%
+  group_by(treatment_combination) %>%
+  summarise(mean_val = mean(PLAUR))
+
+### add mean to expr_data for each treatment group
+expr_data <- expr_data %>%
+  mutate(MUCL3_mean = case_when(
+    treatment_combination == 'NC_DMSO' ~ '8.02',
+    treatment_combination == 'NC_PACL' ~ '10.2',
+    treatment_combination == 'PAC_DMSO' ~ '6.31',
+    treatment_combination == 'PAC_PACL' ~ '8.48',
+  )) %>%
+  mutate(SDCBP2_mean = case_when(
+    treatment_combination == 'NC_DMSO' ~ '7.26',
+    treatment_combination == 'NC_PACL' ~ '8.23',
+    treatment_combination == 'PAC_DMSO' ~ '6.84',
+    treatment_combination == 'PAC_PACL' ~ '8.51',
+  ))%>%
+  mutate(TPI1_mean = case_when(
+    treatment_combination == 'NC_DMSO' ~ '10.9',
+    treatment_combination == 'NC_PACL' ~ '9.62',
+    treatment_combination == 'PAC_DMSO' ~ '11.0',
+    treatment_combination == 'PAC_PACL' ~ '9.92',
+  ))%>%
+  mutate(PLAUR_mean = case_when(
+    treatment_combination == 'NC_DMSO' ~ '7.85',
+    treatment_combination == 'NC_PACL' ~ '9.36',
+    treatment_combination == 'PAC_DMSO' ~ '7.26',
+    treatment_combination == 'PAC_PACL' ~ '8.67',
+  ))
+
+p3_expr_data <- expr_data
+```
+
+```{r}
+
+p1_expr_data <- p1_expr_data %>%
+  mutate(pretreatment = paste0('NC')) %>%
+  mutate(platetreatment = paste0(drug)) %>%
+  mutate(treatment_combination = paste0("NC_",drug)) %>%
+  mutate(treatment_combination = recode(treatment_combination,
+                                        "NC_PACLITAXEL" ="NC_PACL"))
+
+p2_expr_data <- p2_expr_data %>%
+  mutate(treatment_combination = recode(treatment_combination,
+                                        "NC_Pacl" ="NC_PACL",
+                                        "Pa_DMSO"= "PAC_DMSO",
+                                        "Pa_Pacl"="PAC_PACL")) %>%
+  mutate(pretreatment = str_sub(treatment_combination,1,2)) %>%
+  mutate(pretreatment = recode(pretreatment,
+                               "PA" = "PAC"))
+
+columns <- c('MUCL3','SDCBP2','TPI1','PLAUR','MUCL3_mean','SDCBP2_mean','TPI1_mean','PLAUR_mean','plate','pretreatment','platetreatment','treatment_combination')
+
+p1 <- p1_expr_data[,columns]
+p2 <- p2_expr_data[,columns]
+p3 <- p3_expr_data[,columns]
+
+df <- rbind(p1,p2)
+df <- rbind(df,p3)
+```
+
+```{r, fig.height=4, fig.width=7}
+ggplot(data=df, aes(y=MUCL3, x=plate, colour = treatment_combination)) +
+  geom_point() +
+  facet_grid(~pretreatment) 
+  #geom_hline(data = df, aes(yintercept = as.numeric(MUCL3_mean), col=plate))
+```
+
+```{r, fig.height=4, fig.width=7}
+ggplot(data=df, aes(y=SDCBP2, x=plate, colour = treatment_combination)) +
+  geom_point() +
+  facet_grid(~pretreatment) 
+  #geom_hline(data = df, aes(yintercept = as.numeric(MUCL3_mean), col=plate))
+```
+
+```{r, fig.height=4, fig.width=7}
+ggplot(data=df, aes(y=TPI1, x=plate, colour = treatment_combination)) +
+  geom_point() +
+  facet_grid(~pretreatment) 
+  #geom_hline(data = df, aes(yintercept = as.numeric(MUCL3_mean), col=plate))
+```
+
+```{r, fig.height=4, fig.width=7}
+ggplot(data=df, aes(y=PLAUR, x=plate, colour = treatment_combination)) +
+  geom_point() +
+  facet_grid(~pretreatment) 
+  #geom_hline(data = df, aes(yintercept = as.numeric(MUCL3_mean), col=plate))
+```

@@ -6,6 +6,7 @@ date: "2025-04-28"
 
 ```{r setup}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.height=8, fig.width = 10)
+
 ```
 
 ```{r}
@@ -81,13 +82,10 @@ Thresholds used for DE analysis:
 
 • pvalue threshold = 0.05
 
-• log FC threshold = |lfc| > 0.58, which is equivalent to an absolute FC of |fc| > 1.5
+• log FC threshold = log2(1.2) = 20% change in expression compared to control
 
 ```{r, echo=TRUE}
 ### Threshold Constants
-
-absolute_fold_change <- 1.0
-
 p_value_threshold <- 0.05
 ```
 
@@ -151,11 +149,10 @@ create_dt(metadata[metadata$Sample_type!="EMPTY",c("Well_ID","Barcode","Organoid
 ### Violin Plot
 
 ```{r, fig.height=5, fig.width=8}
-VlnPlot(mac, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", "percent.ribo"),
+vlnplot <- VlnPlot(mac, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", "percent.ribo"),
     ncol = 4, group.by = "Organoid")
 
-VlnPlot(mac, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", "percent.ribo"),
-    ncol = 4, group.by = "Sample_type")
+ggsave(vlnplot, filename = '../output/P2/violin_plot.png', width=8, height=5)
 ```
 
 ### Pre and post normalisation {.tabset}
@@ -189,7 +186,10 @@ concentration <- as.factor(sampleinfo$Concentration_1)
 organoid <- as.factor(sampleinfo$Organoid)
 design <- model.matrix(~0+organoid+treatment_combination+splintr+concentration)
 v <- voom(dge, design)
+```
 
+```{r, fig.width=10, fig.height=5}
+par(mar = c(8, 4, 4, 2) + 0.1)
 par(mfrow=c(1,2))
 plotRLE(as.data.frame(rawdata@assays$RNA$counts), main='RLE of all DMSO treated wells - raw')
 plotRLE(v$E, main='RLE of all DMSO treated wells - normalised')
@@ -238,6 +238,8 @@ NC_pacvsdmso <- makeContrasts(treatmentNC_Pacl-treatmentNC_DMSO,levels=colnames(
 NC_sn38vsdmso <- makeContrasts(treatmentNC_SN38-treatmentNC_DMSO,levels=colnames(design))
 PAC_pacvsdmso <- makeContrasts(treatmentPa_Pacl-treatmentPa_DMSO,levels=colnames(design))
 SN38_sn38vsdmso <- makeContrasts(treatmentSN_SN38-treatmentSN_DMSO,levels=colnames(design))
+PDMSOvsDMSO <- makeContrasts(treatmentPa_DMSO-treatmentNC_DMSO,levels=colnames(design))
+SNDMSOvsDMSO <- makeContrasts(treatmentSN_DMSO-treatmentNC_DMSO,levels=colnames(design))
 long_PAC <- makeContrasts((treatmentPa_Pacl-treatmentPa_DMSO)-(treatmentNC_Pacl-treatmentNC_DMSO),levels=colnames(design))
 long_SN38 <- makeContrasts((treatmentSN_SN38-treatmentSN_DMSO)-(treatmentNC_SN38-treatmentNC_DMSO),levels=colnames(design))
 
@@ -273,10 +275,12 @@ Differentially expressed genes between NC Pac and NC DMSO in ORG38:
 ### difference between PAC and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_pacvsdmso)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org38_ncPAC_fit <- fit
+saveRDS(org38_ncPAC_fit, file = '../output/P2/org38_ncPAC_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org38_ncPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+write.csv(org38_ncPAC_DEgenes, file = '../data/DEgenes/P2/ORG38_NCPAC.csv')
 
 create_dt_genes(org38_ncPAC_DEgenes)
 
@@ -288,57 +292,9 @@ summary=paste (total, up, down, sep="\n")
 cat(summary[1])
 ```
 
-```{r, fig.height=6, fig.width=8}
-### Assign Significance 
-all_genes$significance <- 'nonsignificant'
-all_genes[all_genes$logFC < -1 & all_genes$adj.P.Val < 0.05,c('significance')] <- 'downregulated'
-all_genes[all_genes$logFC >1 & all_genes$adj.P.Val < 0.05,c('significance')] <- 'upregulated'
-
-### MA plot
-MA <- new("MAList")
-MA$A <- all_genes$AveExpr
-MA$M <- all_genes$logFC
-status <- all_genes$significance
-values <- c("downregulated","upregulated","nonsignificant")
-col <- c("blue", "red", "black")
-plotMA(MA,main="MA-Plot with significant genes highlighted",
-       status=status, values=values, hl.col=col)
-```
-
-
-Next, we can look the differentially expressed genes by visualising the voom-transformed counts of the treated and DMSO samples in a heatmap, to make sure that the DEgenes we've identified actually look "different" in terms of their expression. 
-
-```{r}
-### Assigning genes of interest from DEgenes table
-### Formatting counts to log(CPM) for heatmap
-### subsetting wells of interest
-genes <- rownames(org38_ncPAC_DEgenes)
-samples_of_interest <- sampleinfo[sampleinfo$Treatment_Combination=='NC_Pacl'|sampleinfo$Treatment_Combination=='NC_DMSO',c('label')]
-heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
-
-
-### Setting up annotation data frame
-type_annotation <- data.frame(Treatment = as.factor(sampleinfo[,c(18)]),
-                              Concentration = as.factor(sampleinfo[,c(11)]),
-                              SPLINTR = as.factor(sampleinfo[,c(16)]))
-rownames(type_annotation) <- rownames(sampleinfo)
-```
-
-Heatmap of top 50 differentially expressed genes between NC_PAC and NC_DMSO in PAC/DMSO samples in ORG38:
-
-```{r}
-pheatmap(heatmap_counts[genes[1:50],],
-         border_color = 'NA',
-         annotation_col = type_annotation,
-         treeheight_row = 0,
-         cellheight = 8,
-         color=rev(red_blue_palette))
-```
-
-
 Volcano plot of differentially expressed genes with top 10 differentially expressed genes labelled:
 
-```{r, fig.height=6, fig.width=6}
+```{r, fig.height=8, fig.width=6}
 ### Assigning different colours for upregulated/downregulates genes
 keyvals <- ifelse(
     all_genes$logFC < -1, 'darkred',
@@ -368,33 +324,9 @@ volcano_plot <- EnhancedVolcano(all_genes,
                                 legendPosition = "bottom",
                                 colCustom = keyvals)
 volcano_plot
+
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org38_ncpac.png', height=8, width=6)
 ```
-
-```{r}
-### returning a list of corresponding entrez IDs for gene names in DE genes
-entrezids <- bitr(rownames(org38_ncPAC_DEgenes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
-
-### add entrezid data
-org38_ncPAC_DEgenes$gene <- rownames(org38_ncPAC_DEgenes)
-pathway_data<- left_join(org38_ncPAC_DEgenes, entrezids, by=join_by(gene==SYMBOL))
-
-### removing genes that dont map to an entrezID (~0%)
-pathway_data <- drop_na(pathway_data)
-
-### setting up gene list
-geneList <- pathway_data$logFC
-names(geneList)<- pathway_data$ENTREZID
-
-#performing reactome enrichment analysis 
-x <- ReactomePA::enrichPathway(gene=names(geneList),
-                               organism='human',
-                               pvalueCutoff = 1,
-                               qvalueCutoff = 1,
-                               readable=TRUE)
-x2 <- pairwise_termsim(x)
-enrichplot::treeplot(x2, fontsize=2, nWords=3)
-```
-
 
 ##### NC_SN38-NC_DMSO
 
@@ -405,10 +337,12 @@ Differentially expressed genes between NC SN38 and NC DMSO in ORG38:
 ### difference between SN38 and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_sn38vsdmso)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org38_ncSN38_fit <- fit
+saveRDS(org38_ncSN38_fit, file = '../output/P2/org38_ncSN38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org38_ncSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+write.csv(org38_ncSN38_DEgenes, file = '../data/DEgenes/P2/ORG38_NCSN38.csv')
 
 create_dt_genes(org38_ncSN38_DEgenes)
 
@@ -420,71 +354,40 @@ summary=paste (total, up, down, sep="\n")
 cat(summary[1])
 ```
 
-```{r}
-### Assign Significance 
-all_genes$significance <- 'nonsignificant'
-all_genes[all_genes$logFC < -1 & all_genes$adj.P.Val < 0.05,c('significance')] <- 'downregulated'
-all_genes[all_genes$logFC >1 & all_genes$adj.P.Val < 0.05,c('significance')] <- 'upregulated'
+Volcano plot:
 
-### MA plot
-MA <- new("MAList")
-MA$A <- all_genes$AveExpr
-MA$M <- all_genes$logFC
-status <- all_genes$significance
-values <- c("downregulated","upregulated","nonsignificant")
-col <- c("blue", "red", "black")
-plotMA(MA,main="MA-Plot with significant genes highlighted",
-       status=status, values=values, hl.col=col)
-```
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="NC SN38 VS NC DMSO",
+                                subtitle="ORG38",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org38_ncSN38_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
 
-Heatmap of top 50 differentially expressed genes between NC_SN38 and NC_DMSO in SN38/DMSO samples in ORG38:
-
-```{r}
-### Assigning genes of interest from DEgenes table
-### Formatting counts to log(CPM) for heatmap
-### subsetting wells of interest
-genes <- rownames(org38_ncSN38_DEgenes)
-samples_of_interest <- sampleinfo[sampleinfo$Treatment_Combination=='NC_SN38'|sampleinfo$Treatment_Combination=='NC_DMSO',c('label')]
-heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
-
-
-### Setting up annotation data frame
-type_annotation <- data.frame(Treatment = as.factor(sampleinfo[,c(18)]),
-                              Concentration = as.factor(sampleinfo[,c(11)]),
-                              SPLINTR = as.factor(sampleinfo[,c(16)]))
-rownames(type_annotation) <- rownames(sampleinfo)
-
-pheatmap(heatmap_counts[genes[1:50],],
-         border_color = 'NA',
-         annotation_col = type_annotation,
-         treeheight_row = 0,
-         cellheight = 8,
-         color=rev(red_blue_palette))
-```
-
-```{r}
-### returning a list of corresponding entrez IDs for gene names in DE genes
-entrezids <- bitr(rownames(org38_ncSN38_DEgenes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
-
-### add entrezid data
-org38_ncSN38_DEgenes$gene <- rownames(org38_ncSN38_DEgenes)
-pathway_data<- left_join(org38_ncSN38_DEgenes, entrezids, by=join_by(gene==SYMBOL))
-
-### removing genes that dont map to an entrezID (~0%)
-pathway_data <- drop_na(pathway_data)
-
-### setting up gene list
-geneList <- pathway_data$logFC
-names(geneList)<- pathway_data$ENTREZID
-
-#performing reactome enrichment analysis 
-x <- ReactomePA::enrichPathway(gene=names(geneList),
-                               organism='human',
-                               pvalueCutoff = 1,
-                               qvalueCutoff = 1,
-                               readable=TRUE)
-x2 <- pairwise_termsim(x)
-enrichplot::treeplot(x2, fontsize=2, nWords=3)
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org38_ncsn38.png', height=8, width=6)
 ```
 
 ##### PAC_PAC - PAC_DMSO
@@ -496,10 +399,12 @@ Differentially expressed genes between PAC_PAC and PAC_DMSO in ORG38:
 ### difference between PAC and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, PAC_pacvsdmso)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org38_paPAC_fit <- fit
+saveRDS(org38_paPAC_fit, file = '../output/P2/org38_paPAC_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org38_paPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+write.csv(org38_paPAC_DEgenes, file = '../data/DEgenes/P2/ORG38_PACPAC.csv')
 
 create_dt_genes(org38_paPAC_DEgenes)
 
@@ -513,7 +418,7 @@ cat(summary[1])
 
 Heatmap of differentially expressed genes between PAC_PAC nad PAC_DMSO in ORG38:
 
-```{r}
+```{r, fig.height=8, fig.width=6}
 ### Assigning genes of interest from DEgenes table
 ### Formatting counts to log(CPM) for heatmap
 ### subsetting wells of interest
@@ -536,32 +441,44 @@ pheatmap(heatmap_counts[genes[1:50],],
          color=rev(red_blue_palette))
 ```
 
-```{r}
-### returning a list of corresponding entrez IDs for gene names in DE genes
-entrezids <- bitr(rownames(org38_paPAC_DEgenes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
+Volcano plot:
 
-### add entrezid data
-org38_paPAC_DEgenes$gene <- rownames(org38_paPAC_DEgenes)
-pathway_data<- left_join(org38_paPAC_DEgenes, entrezids, by=join_by(gene==SYMBOL))
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="Pre-treated Paclitaxel VS DMSO",
+                                subtitle="ORG38",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org38_paPAC_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                ylim=c(0,7.5))
+volcano_plot
 
-### removing genes that dont map to an entrezID (~0%)
-pathway_data <- drop_na(pathway_data)
-
-### setting up gene list
-geneList <- pathway_data$logFC
-names(geneList)<- pathway_data$ENTREZID
-
-#performing reactome enrichment analysis 
-x <- ReactomePA::enrichPathway(gene=names(geneList),
-                               organism='human',
-                               pvalueCutoff = 1,
-                               qvalueCutoff = 1,
-                               readable=TRUE)
-x2 <- pairwise_termsim(x)
-enrichplot::treeplot(x2, fontsize=2, nWords=3)
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org38_paPAC.png', height=8, width=6)
 ```
 
-##### SN38_SN38 - SN38_DMSO)
+##### SN38_SN38 - SN38_DMSO
 
 Differentially expressed genes between SN38_SN38 and SN38_DMSO in ORG38:
 
@@ -570,10 +487,12 @@ Differentially expressed genes between SN38_SN38 and SN38_DMSO in ORG38:
 ### difference between SN38 and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, SN38_sn38vsdmso)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org38_snSN38_fit <- fit
+saveRDS(org38_snSN38_fit, file = '../output/P2/org38_snSN38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org38_snSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+write.csv(org38_snSN38_DEgenes, file = '../data/DEgenes/P2/ORG38_SNSN38.csv')
 
 create_dt_genes(org38_snSN38_DEgenes)
 
@@ -587,7 +506,7 @@ cat(summary[1])
 
 Heatmap of top 50 differentially expressed genes between SN_SN38 and SN_DMSO in SN38/DMSO samples in ORG38:
 
-```{r}
+```{r, fig.height=8, fig.width=6}
 ### Assigning genes of interest from DEgenes table
 ### Formatting counts to log(CPM) for heatmap
 ### subsetting wells of interest
@@ -610,30 +529,164 @@ pheatmap(heatmap_counts[genes[1:50],],
          color=rev(red_blue_palette))
 ```
 
-```{r}
-### returning a list of corresponding entrez IDs for gene names in DE genes
-entrezids <- bitr(rownames(org38_snSN38_DEgenes), fromType=c("SYMBOL"), toType="ENTREZID", OrgDb="org.Hs.eg.db")
+Volcano plot:
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="Pre-treated SN38 VS DMSO",
+                                subtitle="ORG38",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org38_snSN38_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
 
-### add entrezid data
-org38_snSN38_DEgenes$gene <- rownames(org38_snSN38_DEgenes)
-pathway_data<- left_join(org38_snSN38_DEgenes, entrezids, by=join_by(gene==SYMBOL))
-
-### removing genes that dont map to an entrezID (~0%)
-pathway_data <- drop_na(pathway_data)
-
-### setting up gene list
-geneList <- pathway_data$logFC
-names(geneList)<- pathway_data$ENTREZID
-
-#performing reactome enrichment analysis 
-x <- ReactomePA::enrichPathway(gene=names(geneList),
-                               organism='human',
-                               pvalueCutoff = 1,
-                               qvalueCutoff = 1,
-                               readable=TRUE)
-x2 <- pairwise_termsim(x)
-enrichplot::treeplot(x2, fontsize=2, nWords=3)
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org38_snSN38.png', height=8, width=6)
 ```
+
+##### PAC_DMSO - NC_DMSO
+
+Differentially expressed genes between PAC_DMSO and NC_DMSO in ORG38:
+
+```{r}
+### following limma workflow
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, PDMSOvsDMSO)
+fit <- treat(fit, lfc=log2(1.2))
+org38_PDMSOvsDMSO_fit <- fit
+saveRDS(org38_PDMSOvsDMSO_fit, file = '../output/P2/org38_PDMSOvsDMSO_fit.rds')
+all_genes <- topTreat(fit, number=Inf)
+org38_PDMSOvsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+write.csv(org38_PDMSOvsDMSO_DEgenes, file = '../data/DEgenes/P2/ORG38_PDMSOvsDMSO.csv')
+
+create_dt_genes(org38_PDMSOvsDMSO_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org38_PDMSOvsDMSO_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org38_PDMSOvsDMSO_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org38_PDMSOvsDMSO_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+Volcano plot:
+
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="PAC-treated DMSO VS NC DMSO",
+                                subtitle="ORG38",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org38_PDMSOvsDMSO_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
+
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org38_PDMSOvsDMSO.png', height=8, width=6)
+```
+
+##### SN38_DMSO - NC_DMSO
+
+Differentially expressed genes between SN38_DMSO and NC_DMSO in ORG38:
+
+```{r}
+### following limma workflow
+
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, SNDMSOvsDMSO)
+fit <- treat(fit, lfc=log2(1.2))
+org38_SNDMSOvsDMSO_fit <- fit
+saveRDS(org38_SNDMSOvsDMSO_fit, file = '../output/P2/org38_SNDMSOvsDMSO_fit.rds')
+all_genes <- topTreat(fit, number=Inf)
+org38_SNDMSOvsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+write.csv(org38_SNDMSOvsDMSO_DEgenes, file = '../data/DEgenes/P2/ORG38_SNDMSOvsDMSO.csv')
+
+create_dt_genes(org38_SNDMSOvsDMSO_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org38_SNDMSOvsDMSO_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org38_SNDMSOvsDMSO_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org38_SNDMSOvsDMSO_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+Volcano plot: 
+
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="SN38-treated DMSO VS NC DMSO",
+                                subtitle="ORG38",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org38_SNDMSOvsDMSO_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
+
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org38_SNDMSOvsDMSO.png', height=8, width=6)
+```
+
 
 ##### (PAC_PAC - PAC_DMSO) - (NC_PAC-NC_DMSO)
 
@@ -644,7 +697,7 @@ Differentially expressed genes between (PAC_PAC - PAC_DMSO) and (NC_PAC-NC_DMSO)
 ### difference between PAC and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, long_PAC)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 all_genes <- topTreat(fit, number=Inf)
 org38_longPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -697,7 +750,7 @@ Differentially expressed genes between (SN38_SN38 - SN38_DMSO) and (NC_SN38-NC_D
 ### difference between SN38 and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, long_SN38)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 all_genes <- topTreat(fit, number=Inf)
 org38_longSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -747,8 +800,8 @@ pheatmap(heatmap_counts[genes,],
 
 x <- list(`nc(PAC-DMSO)`=rownames(org38_ncPAC_DEgenes),
           `nc(SN38-DMSO)`=rownames(org38_ncSN38_DEgenes),
-          `pa(PAC-DMSO)`=rownames(org38_paPAC_DEgenes),
-          `sn(SN38-DMSO)`=rownames(org38_snSN38_DEgenes))
+          `PDMSOvsDMSO`=rownames(org38_PDMSOvsDMSO_DEgenes),
+          `SNDMSOvsDMSO`=rownames(org38_SNDMSOvsDMSO_DEgenes))
 
 ```
 
@@ -770,49 +823,49 @@ common_genes <- x_attributes$intersections$`nc(PAC-DMSO):nc(SN38-DMSO)`
 
 ##### ncPAC VS paPAC
 ```{r, fig.height=6, fig.width=6}
-x.table <- venn(x[c("nc(PAC-DMSO)","pa(PAC-DMSO)")], show.plot = FALSE)
+x.table <- venn(x[c("nc(PAC-DMSO)","PDMSOvsDMSO")], show.plot = FALSE)
 x_attributes <- attributes(x.table)
 
-ggvenn(x, columns = c('nc(PAC-DMSO)','pa(PAC-DMSO)'), 
+ggvenn(x, columns = c('nc(PAC-DMSO)','PDMSOvsDMSO'), 
        show_percentage = FALSE,
        text_size = 8)
 
-common_genes <- x_attributes$intersections$`nc(PAC-DMSO):pa(PAC-DMSO)`
+common_genes <- x_attributes$intersections$`nc(PAC-DMSO):PDMSOvsDMSO`
 ```
 
-`r length(common_genes)` genes were found to be shared between nc(PAC-DMSO) and pa(PAC-DMSO) : 
+`r length(common_genes)` genes were found to be shared between (ncPAC vs ncDMSO) and (pPAC vs ncDMSO) : 
 
   • `r common_genes`
 
 ##### ncSN38 VS snSN38
 ```{r, fig.height=6, fig.width=6}
-x.table <- venn(x[c("nc(SN38-DMSO)","sn(SN38-DMSO)")], show.plot = FALSE)
+x.table <- venn(x[c("nc(SN38-DMSO)","SNDMSOvsDMSO")], show.plot = FALSE)
 x_attributes <- attributes(x.table)
 
-ggvenn(x, columns = c('nc(SN38-DMSO)','sn(SN38-DMSO)'), 
+ggvenn(x, columns = c('nc(SN38-DMSO)','SNDMSOvsDMSO'), 
        show_percentage = FALSE,
        text_size = 8)
 
-common_genes <- x_attributes$intersections$`nc(SN38-DMSO):sn(SN38-DMSO)`
+common_genes <- x_attributes$intersections$`nc(SN38-DMSO):SNDMSOvsDMSO`
 ```
 
-`r length(common_genes)` genes were found to be shared between nc(SN38-DMSO) and sn(SN38-DMSO) : 
+`r length(common_genes)` genes were found to be shared between (ncSN38 vs ncDMSO) and (snSN38 vs ncDMSO) : 
 
   • `r common_genes`
 
 ##### paPAC VS snSN38
 ```{r, fig.height=6, fig.width=6}
-x.table <- venn(x[c("pa(PAC-DMSO)","sn(SN38-DMSO)")], show.plot = FALSE)
+x.table <- venn(x[c("PDMSOvsDMSO","SNDMSOvsDMSO")], show.plot = FALSE)
 x_attributes <- attributes(x.table)
 
-ggvenn(x, columns = c('pa(PAC-DMSO)','sn(SN38-DMSO)'), 
+ggvenn(x, columns = c("PDMSOvsDMSO","SNDMSOvsDMSO"), 
        show_percentage = FALSE,
        text_size = 8)
 
-common_genes <- x_attributes$intersections$`pa(PAC-DMSO):sn(SN38-DMSO)`
+common_genes <- x_attributes$intersections$`PDMSOvsDMSO:SNDMSOvsDMSO`
 ```
 
-`r length(common_genes)` genes were found to be shared between pa(PAC-DMSO) and sn(SN38-DMSO) : 
+`r length(common_genes)` genes were found to be shared between (pPAC vs ncDMSO) and (snSN38 and ncDMSO): 
 
   • `r common_genes`
 
@@ -825,7 +878,7 @@ ggvenn(x,
        show_percentage = FALSE,
        text_size = 8)
 
-common_genes <- x_attributes$intersections$`nc(PAC-DMSO):nc(SN38-DMSO):pa(PAC-DMSO):sn(SN38-DMSO)`
+common_genes <- x_attributes$intersections$`nc(PAC-DMSO):nc(SN38-DMSO):PDMSOvsDMSO:SNDMSOvsDMSO`
 ```
 
 `r length(common_genes)` genes were found to be shared between all treatments:
@@ -872,6 +925,8 @@ NC_pacvsdmso <- makeContrasts(treatmentNC_Pacl-treatmentNC_DMSO,levels=colnames(
 NC_sn38vsdmso <- makeContrasts(treatmentNC_SN38-treatmentNC_DMSO,levels=colnames(design))
 PAC_pacvsdmso <- makeContrasts(treatmentPa_Pacl-treatmentPa_DMSO,levels=colnames(design))
 SN38_sn38vsdmso <- makeContrasts(treatmentSN_SN38-treatmentSN_DMSO,levels=colnames(design))
+PDMSOvsDMSO <- makeContrasts(treatmentPa_DMSO-treatmentNC_DMSO,levels=colnames(design))
+SNDMSOvsDMSO <- makeContrasts(treatmentSN_DMSO-treatmentNC_DMSO,levels=colnames(design))
 long_PAC <- makeContrasts((treatmentPa_Pacl-treatmentPa_DMSO)-(treatmentNC_Pacl-treatmentNC_DMSO),levels=colnames(design))
 long_SN38 <- makeContrasts((treatmentSN_SN38-treatmentSN_DMSO)-(treatmentNC_SN38-treatmentNC_DMSO),levels=colnames(design))
 
@@ -907,10 +962,12 @@ Differentially expressed genes between NC Pac and NC DMSO in ORG49:
 ### difference between PAC and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_pacvsdmso)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org49_ncPAC_fit <- fit
+saveRDS(org49_ncPAC_fit, file = '../output/P2/org49_ncPAC_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_ncPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+#write.csv(org49_ncPAC_DEgenes, file = '../data/DEgenes/P2/ORG49_NCPAC.csv')
 
 ### Print summary of DE genes table
 total <- paste('• TOTAL DE genes:',length(rownames(org49_ncPAC_DEgenes)))
@@ -918,6 +975,40 @@ up <- paste('• UPREGULATED:',sum(org49_ncPAC_DEgenes$logFC>0))
 down <- paste('• DOWNREGULATED:',sum(org49_ncPAC_DEgenes$logFC<0))
 summary=paste (total, up, down, sep="\n")
 cat(summary[1])
+```
+Volcano plot:
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="NC Paclitaxel VS NC DMSO",
+                                subtitle="ORG49",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org49_ncPAC_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
+
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org39_ncpac.png', height=8, width=6)
 ```
 
 ##### NC_SN38-NC_DMSO
@@ -929,8 +1020,9 @@ Differentially expressed genes between NC SN38 and NC DMSO in ORG49:
 ### difference between SN38 and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_sn38vsdmso)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org49_ncSN38_fit <- fit
+saveRDS(org49_ncSN38_fit, file = '../output/P2/org49_ncSN38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_ncSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -944,29 +1036,40 @@ summary=paste (total, up, down, sep="\n")
 cat(summary[1])
 ```
 
-Heatmap of differentially expressed genes between NC_SN38 and NC_DMSO in SN38/DMSO samples in ORG49:
+Volcano plot:
 
-```{r}
-### Assigning genes of interest from DEgenes table
-### Formatting counts to log(CPM) for heatmap
-### subsetting wells of interest
-genes <- rownames(org49_ncSN38_DEgenes)
-samples_of_interest <- sampleinfo[sampleinfo$Treatment_Combination=='NC_SN38'|sampleinfo$Treatment_Combination=='NC_DMSO',c('label')]
-heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="NC SN38 VS NC DMSO",
+                                subtitle="ORG49",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org49_ncSN38_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
 
-
-### Setting up annotation data frame
-type_annotation <- data.frame(Treatment = as.factor(sampleinfo[,c(18)]),
-                              Concentration = as.factor(sampleinfo[,c(11)]),
-                              SPLINTR = as.factor(sampleinfo[,c(16)]))
-rownames(type_annotation) <- rownames(sampleinfo)
-
-pheatmap(heatmap_counts[genes,],
-         border_color = 'NA',
-         annotation_col = type_annotation,
-         treeheight_row = 0,
-         cellheight = 8,
-         color=rev(red_blue_palette))
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org49_ncSN38.png', height=8, width=6)
 ```
 
 ##### PAC_PAC - PAC_DMSO
@@ -978,7 +1081,8 @@ Differentially expressed genes between PAC_PAC and PAC_DMSO in ORG49:
 ### difference between PAC and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, PAC_pacvsdmso)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
+saveRDS(fit, file = '../output/P2/org49_paPAC_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_paPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -988,6 +1092,41 @@ up <- paste('• UPREGULATED:',sum(org49_paPAC_DEgenes$logFC>0))
 down <- paste('• DOWNREGULATED:',sum(org49_paPAC_DEgenes$logFC<0))
 summary=paste (total, up, down, sep="\n")
 cat(summary[1])
+```
+Volcano plot:
+
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="Pre-treated Paclitaxel VS DMSO",
+                                subtitle="ORG49",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org49_paPAC_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
+
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org49_paPAC.png', height=8, width=6)
 ```
 
 ##### SN38_SN38 - SN38_DMSO)
@@ -999,8 +1138,9 @@ Differentially expressed genes between SN38_SN38 and SN38_DMSO in ORG49:
 ### difference between SN38 and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, SN38_sn38vsdmso)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org49_snSN38_fit <- fit
+saveRDS(org49_snSN38_fit, file = '../output/P2/org49_snSN38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_snSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -1014,29 +1154,166 @@ summary=paste (total, up, down, sep="\n")
 cat(summary[1])
 ```
 
-Heatmap of top 50 differentially expressed genes between SN_SN38 and SN_DMSO in SN38/DMSO samples in ORG49:
+
+Volcano plot:
+
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="Pre-treated SN38 VS DMSO",
+                                subtitle="ORG49",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org49_snSN38_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
+
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org49_snSN38.png', height=8, width=6)
+```
+
+##### PAC_DMSO - NC_DMSO
+
+Differentially expressed genes between PAC_DMSO and NC_DMSO in ORG49:
 
 ```{r}
-### Assigning genes of interest from DEgenes table
-### Formatting counts to log(CPM) for heatmap
-### subsetting wells of interest
-genes <- rownames(org49_snSN38_DEgenes)
-samples_of_interest <- sampleinfo[sampleinfo$Treatment_Combination=='SN_SN38'|sampleinfo$Treatment_Combination=='SN_DMSO',c('label')]
-heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
+### following limma workflow
+
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, PDMSOvsDMSO)
+fit <- treat(fit, lfc=log2(1.2))
+org49_PDMSOvsDMSO_fit <- fit
+saveRDS(org49_PDMSOvsDMSO_fit, file = '../output/P2/org49_PDMSOvsDMSO_fit.rds')
+all_genes <- topTreat(fit, number=Inf)
+org49_PDMSOvsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+write.csv(org49_PDMSOvsDMSO_DEgenes, file = '../data/DEgenes/P2/ORG49_PDMSOvsDMSO.csv')
+
+create_dt_genes(org49_PDMSOvsDMSO_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org49_PDMSOvsDMSO_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org49_PDMSOvsDMSO_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org49_PDMSOvsDMSO_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+Volcano plot:
+
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="PAC-treated DMSO VS NC DMSO",
+                                subtitle="ORG49",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org49_PDMSOvsDMSO_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
+
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org49_PDMSOvsDMSO.png', height=8, width=6)
+```
 
 
-### Setting up annotation data frame
-type_annotation <- data.frame(Treatment = as.factor(sampleinfo[,c(18)]),
-                              Concentration = as.factor(sampleinfo[,c(11)]),
-                              SPLINTR = as.factor(sampleinfo[,c(16)]))
-rownames(type_annotation) <- rownames(sampleinfo)
+##### SN38_SN38 - NC_DMSO
 
-pheatmap(heatmap_counts[genes[1:50],],
-         border_color = 'NA',
-         annotation_col = type_annotation,
-         treeheight_row = 0,
-         cellheight = 8,
-         color=rev(red_blue_palette))
+Differentially expressed genes between SN38_DMSO and NC_DMSO in ORG49:
+
+```{r}
+### following limma workflow
+
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, SNDMSOvsDMSO)
+fit <- treat(fit, lfc=log2(1.2))
+org49_SNDMSOvsDMSO_fit <- fit
+saveRDS(org49_SNDMSOvsDMSO_fit, file = '../output/P2/org49_SNDMSOvsDMSO_fit.rds')
+all_genes <- topTreat(fit, number=Inf)
+org49_SNDMSOvsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+write.csv(org49_SNDMSOvsDMSO_DEgenes, file = '../data/DEgenes/P2/ORG49_SNDMSOvsDMSO.csv')
+
+create_dt_genes(org49_SNDMSOvsDMSO_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org49_SNDMSOvsDMSO_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org49_SNDMSOvsDMSO_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org49_SNDMSOvsDMSO_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+Volcano plot:
+
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="SN38-treated DMSO VS NC DMSO",
+                                subtitle="ORG49",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org49_SNDMSOvsDMSO_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
+
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org49_SNDMSOvsDMSO.png', height=8, width=6)
 ```
 
 ##### (PAC_PAC - PAC_DMSO) - (NC_PAC-NC_DMSO)
@@ -1048,7 +1325,7 @@ Differentially expressed genes between (PAC_PAC - PAC_DMSO) and (NC_PAC-NC_DMSO)
 ### difference between PAC and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, long_PAC)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 all_genes <- topTreat(fit, number=Inf)
 org49_longPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -1069,7 +1346,7 @@ Differentially expressed genes between (SN38_SN38 - SN38_DMSO) and (NC_SN38-NC_D
 ### difference between SN38 and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, long_SN38)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 all_genes <- topTreat(fit, number=Inf)
 org49_longSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -1103,90 +1380,12 @@ type_annotation <- data.frame(Treatment = as.factor(sampleinfo[,c(18)]),
                               SPLINTR = as.factor(sampleinfo[,c(16)]))
 rownames(type_annotation) <- rownames(sampleinfo)
 
-pheatmap(heatmap_counts[genes[1:50],],
+pheatmap(heatmap_counts[genes[1:25],],
          border_color = 'NA',
          annotation_col = type_annotation,
          treeheight_row = 0,
          cellheight = 8,
          color=rev(red_blue_palette))
-```
-
-#### ORG49 Paclitaxel sample testing
-
-##### Heatmaps 
-
-```{r}
-### Heatmap of ORG38 nc_pac genes in ORG49
-genes <- rownames(org38_ncPAC_DEgenes)
-samples_of_interest <- sampleinfo[sampleinfo$Treatment_Combination=='NC_Pacl'|
-                                    sampleinfo$Treatment_Combination=='NC_DMSO',c('label')]
-heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
-
-
-### Setting up annotation data frame
-type_annotation <- data.frame(Treatment = as.factor(sampleinfo[,c(18)]),
-                              Concentration = as.factor(sampleinfo[,c(11)]),
-                              SPLINTR = as.factor(sampleinfo[,c(16)]))
-rownames(type_annotation) <- rownames(sampleinfo)
-
-pheatmap(heatmap_counts[genes[1:50],],
-         border_color = 'NA',
-         annotation_col = type_annotation,
-         treeheight_row = 0,
-         cellheight = 8,
-         color=rev(red_blue_palette))
-
-### Heatmap of org38 PAC_PAC genes
-genes <- rownames(org38_paPAC_DEgenes)
-samples_of_interest <- sampleinfo[sampleinfo$Treatment_Combination=='Pa_Pacl'|
-                                    sampleinfo$Treatment_Combination=='Pa_DMSO',c('label')]
-heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
-
-
-### Setting up annotation data frame
-type_annotation <- data.frame(Treatment = as.factor(sampleinfo[,c(18)]),
-                              Concentration = as.factor(sampleinfo[,c(11)]),
-                              SPLINTR = as.factor(sampleinfo[,c(16)]))
-rownames(type_annotation) <- rownames(sampleinfo)
-
-pheatmap(heatmap_counts[genes[1:50],],
-         border_color = 'NA',
-         annotation_col = type_annotation,
-         treeheight_row = 0,
-         cellheight = 8,
-         color=rev(red_blue_palette))
-
-```
-
-##### Boxplots 
-
-```{r}
-v$targets$Treatment_Combination <- counts_matrix$Treatment_Combination
-
-boxplot(counts_matrix@assays$RNA$counts["SCD",] ~ counts_matrix$Treatment_Combination, col=c('lightblue','skyblue3','skyblue4','pink','palevioletred','purple1', 'purple4'))
-title('boxplot of raw RNA counts - SCD')
-
-boxplot(v$E["SCD",] ~ v$targets$Treatment_Combination, col=c('lightblue','skyblue3','skyblue4','pink','palevioletred','purple1', 'purple4'))
-title('boxplot of voom transformed RNA counts - SCD')
-
-boxplot(counts_matrix@assays$RNA$counts["CA9",] ~ counts_matrix$Treatment_Combination, col=c('lightblue','skyblue3','skyblue4','pink','palevioletred','purple1', 'purple4'))
-title('boxplot of raw RNA counts - CA9')
-
-boxplot(v$E["CA9",] ~ v$targets$Treatment_Combination, col=c('lightblue','skyblue3','skyblue4','pink','palevioletred','purple1', 'purple4'))
-title('boxplot of voom transformed RNA counts - CA9')
-
-boxplot(counts_matrix@assays$RNA$counts["AQP5",] ~ counts_matrix$Treatment_Combination, col=c('lightblue','skyblue3','skyblue4','pink','palevioletred','purple1', 'purple4'))
-title('boxplot of raw RNA counts - AQP5')
-
-boxplot(v$E["AQP5",] ~ v$targets$Treatment_Combination, col=c('lightblue','skyblue3','skyblue4','pink','palevioletred','purple1', 'purple4'))
-title('boxplot of voom transformed RNA counts - AQP5')
-
-boxplot(counts_matrix@assays$RNA$counts["PLK1",] ~ counts_matrix$Treatment_Combination, col=c('lightblue','skyblue3','skyblue4','pink','palevioletred','purple1', 'purple4'))
-title('boxplot of raw RNA counts - PLK1')
-
-boxplot(v$E["PLK1",] ~ v$targets$Treatment_Combination, col=c('lightblue','skyblue3','skyblue4','pink','palevioletred','purple1', 'purple4'))
-title('boxplot of voom transformed RNA counts - PLK1')
-
 ```
 
 #### ORG49 Gene list comparison {.tabset}
@@ -1196,8 +1395,8 @@ title('boxplot of voom transformed RNA counts - PLK1')
 
 x <- list(`nc(PAC-DMSO)`=rownames(org49_ncPAC_DEgenes),
           `nc(SN38-DMSO)`=rownames(org49_ncSN38_DEgenes),
-          `pa(PAC-DMSO)`=rownames(org49_paPAC_DEgenes),
-          `sn(SN38-DMSO)`=rownames(org49_snSN38_DEgenes))
+          `PDMSOvsDMSO`=rownames(org49_PDMSOvsDMSO_DEgenes),
+          `SNDMSOvsDMSO`=rownames(org49_SNDMSOvsDMSO_DEgenes))
 
 ```
 
@@ -1219,38 +1418,46 @@ common_genes <- x_attributes$intersections$`nc(PAC-DMSO):nc(SN38-DMSO)`
 
 ##### ncPAC VS paPAC
 
-0 DEGs identified for both comparisons. 
+```{r, fig.height=6, fig.width=6}
+x.table <- venn(x[c("nc(PAC-DMSO)","PDMSOvsDMSO")], show.plot = FALSE)
+x_attributes <- attributes(x.table)
+
+ggvenn(x, columns = c('nc(PAC-DMSO)','PDMSOvsDMSO'), 
+       show_percentage = FALSE,
+       text_size = 8)
+
+```
 
 
 ##### ncSN38 VS snSN38
 ```{r, fig.height=6, fig.width=6}
-x.table <- venn(x[c("nc(SN38-DMSO)","sn(SN38-DMSO)")], show.plot = FALSE)
+x.table <- venn(x[c("nc(SN38-DMSO)","SNDMSOvsDMSO")], show.plot = FALSE)
 x_attributes <- attributes(x.table)
 
-ggvenn(x, columns = c('nc(SN38-DMSO)','sn(SN38-DMSO)'), 
+ggvenn(x, columns = c('nc(SN38-DMSO)',"SNDMSOvsDMSO"), 
        show_percentage = FALSE,
        text_size = 8)
 
-common_genes <- x_attributes$intersections$`nc(SN38-DMSO):sn(SN38-DMSO)`
+common_genes <- x_attributes$intersections$`nc(SN38-DMSO):SNDMSOvsDMSO`
 ```
 
-`r length(common_genes)` genes were found to be shared between nc(SN38-DMSO) and sn(SN38-DMSO) : 
+`r length(common_genes)` genes were found to be shared between (ncSN38 vs ncDMSO) and (snDMSO vs ncDMSO) : 
 
   • `r common_genes`
 
 ##### paPAC VS snSN38
 ```{r, fig.height=6, fig.width=6}
-x.table <- venn(x[c("pa(PAC-DMSO)","sn(SN38-DMSO)")], show.plot = FALSE)
+x.table <- venn(x[c("PDMSOvsDMSO","SNDMSOvsDMSO")], show.plot = FALSE)
 x_attributes <- attributes(x.table)
 
-ggvenn(x, columns = c('pa(PAC-DMSO)','sn(SN38-DMSO)'), 
+ggvenn(x, columns = c("PDMSOvsDMSO","SNDMSOvsDMSO"), 
        show_percentage = FALSE,
        text_size = 8)
 
-common_genes <- x_attributes$intersections$`pa(PAC-DMSO):sn(SN38-DMSO)`
+common_genes <- x_attributes$intersections$`PDMSOvsDMSO:SNDMSOvsDMSO`
 ```
 
-`r length(common_genes)` genes were found to be shared between pa(PAC-DMSO) and sn(SN38-DMSO) : 
+`r length(common_genes)` genes were found to be shared between (pPAC vs ncDMSO) and (snSN38 vs ncDMSO) : 
 
   • `r common_genes`
 
@@ -1263,10 +1470,10 @@ ggvenn(x,
        show_percentage = FALSE,
        text_size = 8)
 
-common_genes <- x_attributes$intersections$`nc(PAC-DMSO):nc(SN38-DMSO):pa(PAC-DMSO):sn(SN38-DMSO)`
+common_genes <- x_attributes$intersections$`nc(SN38-DMSO):PDMSOvsDMSO:SNDMSOvsDMSO`
 ```
 
-`r length(common_genes)` genes were found to be shared between all treatments
+`r length(common_genes)` genes were found to be shared between all treatments (exclusing ncPAC-ncDMSO)
 
 ### ORG66 
 
@@ -1308,6 +1515,8 @@ NC_pacvsdmso <- makeContrasts(treatmentNC_Pacl-treatmentNC_DMSO,levels=colnames(
 NC_sn38vsdmso <- makeContrasts(treatmentNC_SN38-treatmentNC_DMSO,levels=colnames(design))
 PAC_pacvsdmso <- makeContrasts(treatmentPa_Pacl-treatmentPa_DMSO,levels=colnames(design))
 SN38_sn38vsdmso <- makeContrasts(treatmentSN_SN38-treatmentSN_DMSO,levels=colnames(design))
+PDMSOvsDMSO <- makeContrasts(treatmentPa_DMSO-treatmentNC_DMSO,levels=colnames(design))
+SNDMSOvsDMSO <- makeContrasts(treatmentSN_DMSO-treatmentNC_DMSO,levels=colnames(design))
 long_PAC <- makeContrasts((treatmentPa_Pacl-treatmentPa_DMSO)-(treatmentNC_Pacl-treatmentNC_DMSO),levels=colnames(design))
 long_SN38 <- makeContrasts((treatmentSN_SN38-treatmentSN_DMSO)-(treatmentNC_SN38-treatmentNC_DMSO),levels=colnames(design))
 ```
@@ -1325,7 +1534,7 @@ v <- voom(counts, design, plot = T)
 org66_voom_mat <- v
 ```
 
-RLE of all ORG38 wells before and after normalisation:
+RLE of all ORG66 wells before and after normalisation:
 
 ```{r, fig.width=16}
 par(mfrow=c(1,2))
@@ -1342,8 +1551,9 @@ Differentially expressed genes between NC Pac and NC DMSO in ORG66:
 ### difference between PAC and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_pacvsdmso)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org66_ncPAC_fit <- fit
+saveRDS(org66_ncPAC_fit, file = '../output/P2/org66_ncPAC_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org66_ncPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -1357,30 +1567,41 @@ summary=paste (total, up, down, sep="\n")
 cat(summary[1])
 ```
 
-Heatmap of  differentially expressed genes between PAC and DMSO in PAC/DMSO samples in ORG66:
+Volcano plot:
 
-```{r}
-### Assigning genes of interest from DEgenes table
-### Formatting counts to log(CPM) for heatmap
-### subsetting wells of interest
-genes <- rownames(org66_ncPAC_DEgenes)
-samples_of_interest <- sampleinfo[sampleinfo$Treatment_Combination=='NC_Pacl'|
-                                    sampleinfo$Treatment_Combination=='NC_DMSO',c('label')]
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="NC Paclitaxel VS NC DMSO",
+                                subtitle="ORG66",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org66_ncPAC_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                ylim=c(0,6.5))
+volcano_plot
 
-heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
-
-### Setting up annotation data frame
-type_annotation <- data.frame(Treatment = as.factor(sampleinfo[,c(18)]),
-                              Concentration = as.factor(sampleinfo[,c(11)]),
-                              SPLINTR = as.factor(sampleinfo[,c(16)]))
-rownames(type_annotation) <- rownames(sampleinfo)
-
-pheatmap(heatmap_counts[genes,],
-         border_color = 'NA',
-         annotation_col = type_annotation,
-         treeheight_row = 0,
-         cellheight = 8,
-         color=rev(red_blue_palette))
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org66_ncpac.png', height=8, width=6)
 ```
 
 ##### NC_SN38-NC_DMSO
@@ -1392,8 +1613,9 @@ Differentially expressed genes between NC SN38 and NC DMSO in ORG66:
 ### difference between SN38 and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_sn38vsdmso)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org66_ncSN38_fit <- fit
+saveRDS(org66_ncSN38_fit, file = '../output/P2/org66_ncSN38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org66_ncSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -1407,29 +1629,42 @@ summary=paste (total, up, down, sep="\n")
 cat(summary[1])
 ```
 
-Heatmap of top 50 differentially expressed genes between NC_SN38 and NC_DMSO in SN38/DMSO samples in ORG66:
-
-```{r}
-### Assigning genes of interest from DEgenes table
-### Formatting counts to log(CPM) for heatmap
-### subsetting wells of interest
-genes <- rownames(org66_ncSN38_DEgenes)
-samples_of_interest <- sampleinfo[sampleinfo$Treatment_Combination=='NC_SN38'|sampleinfo$Treatment_Combination=='NC_DMSO',c('label')]
-heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
 
 
-### Setting up annotation data frame
-type_annotation <- data.frame(Treatment = as.factor(sampleinfo[,c(18)]),
-                              Concentration = as.factor(sampleinfo[,c(11)]),
-                              SPLINTR = as.factor(sampleinfo[,c(16)]))
-rownames(type_annotation) <- rownames(sampleinfo)
+Volcano plot:
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="NC SN38 VS NC DMSO",
+                                subtitle="ORG66",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org66_ncSN38_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                ylim=c(0,10.5))
+volcano_plot
 
-pheatmap(heatmap_counts[genes[1:50],],
-         border_color = 'NA',
-         annotation_col = type_annotation,
-         treeheight_row = 0,
-         cellheight = 8,
-         color=rev(red_blue_palette))
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org66_ncSN38.png', height=8, width=6)
 ```
 
 ##### PAC_PAC - PAC_DMSO
@@ -1441,8 +1676,9 @@ Differentially expressed genes between PAC_PAC and PAC_DMSO in ORG66:
 ### difference between PAC and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, PAC_pacvsdmso)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org66_paPAC_fit <- fit
+saveRDS(org66_paPAC_fit, file = '../output/P2/org66_paPAC_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org66_paPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -1456,34 +1692,45 @@ summary=paste (total, up, down, sep="\n")
 cat(summary[1])
 ```
 
-Heatmap of  differentially expressed genes between PAC_PAC and PAC_DMSO in PAC/DMSO samples in ORG66:
 
-```{r}
-### Assigning genes of interest from DEgenes table
-### Formatting counts to log(CPM) for heatmap
-### subsetting wells of interest
-genes <- rownames(org66_paPAC_DEgenes)
-samples_of_interest <- sampleinfo[sampleinfo$Treatment_Combination=='Pa_Pacl'|
-                                    sampleinfo$Treatment_Combination=='Pa_DMSO',c('label')]
+Volcano plot:
 
-heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="Pre-treated Paclitaxel VS DMSO",
+                                subtitle="ORG66",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org66_paPAC_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                ylim=c(0,8.5))
+volcano_plot
 
-
-### Setting up annotation data frame
-type_annotation <- data.frame(Treatment = as.factor(sampleinfo[,c(18)]),
-                              Concentration = as.factor(sampleinfo[,c(11)]),
-                              SPLINTR = as.factor(sampleinfo[,c(16)]))
-rownames(type_annotation) <- rownames(sampleinfo)
-
-pheatmap(heatmap_counts[genes[1:50],],
-         border_color = 'NA',
-         annotation_col = type_annotation,
-         treeheight_row = 0,
-         cellheight = 8,
-         color=rev(red_blue_palette))
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org66_paPAC.png', height=8, width=6)
 ```
 
-##### SN38_SN38 - SN38_DMSO)
+##### SN38_SN38 - SN38_DMSO
 
 Differentially expressed genes between SN38_SN38 and SN38_DMSO in ORG66:
 
@@ -1492,8 +1739,9 @@ Differentially expressed genes between SN38_SN38 and SN38_DMSO in ORG66:
 ### difference between SN38 and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, SN38_sn38vsdmso)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org66_snSN38_fit <- fit
+saveRDS(org66_snSN38_fit, file = '../output/P2/org66_snSN38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org66_snSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -1507,29 +1755,165 @@ summary=paste (total, up, down, sep="\n")
 cat(summary[1])
 ```
 
-Heatmap of differentially expressed genes between SN_SN38 and SN_DMSO in SN38/DMSO samples in ORG66:
+Volcano plot:
+
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="Pre-treated SN38 VS DMSO",
+                                subtitle="ORG66",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org66_snSN38_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                ylim=c(0,6.5))
+volcano_plot
+
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org66_snSN38.png', height=8, width=6)
+```
+
+##### PAC_DMSO - NC_DMSO
+
+Differentially expressed genes between PAC_DMSO and NC_DMSO in ORG66:
 
 ```{r}
-### Assigning genes of interest from DEgenes table
-### Formatting counts to log(CPM) for heatmap
-### subsetting wells of interest
-genes <- rownames(org66_snSN38_DEgenes)
-samples_of_interest <- sampleinfo[sampleinfo$Treatment_Combination=='SN_SN38'|sampleinfo$Treatment_Combination=='SN_DMSO',c('label')]
-heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
+### following limma workflow
 
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, PDMSOvsDMSO)
+fit <- treat(fit, lfc=log2(1.2))
+org66_PDMSOvsDMSO_fit <- fit
+saveRDS(org66_PDMSOvsDMSO_fit, file = '../output/P2/org66_PDMSOvsDMSO_fit.rds')
+all_genes <- topTreat(fit, number=Inf)
+org66_PDMSOvsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+write.csv(org66_PDMSOvsDMSO_DEgenes, file = '../data/DEgenes/P2/ORG66_PDMSOvsDMSO.csv')
 
-### Setting up annotation data frame
-type_annotation <- data.frame(Treatment = as.factor(sampleinfo[,c(18)]),
-                              Concentration = as.factor(sampleinfo[,c(11)]),
-                              SPLINTR = as.factor(sampleinfo[,c(16)]))
-rownames(type_annotation) <- rownames(sampleinfo)
+create_dt_genes(org66_PDMSOvsDMSO_DEgenes)
 
-pheatmap(heatmap_counts[genes[1:50],],
-         border_color = 'NA',
-         annotation_col = type_annotation,
-         treeheight_row = 0,
-         cellheight = 8,
-         color=rev(red_blue_palette))
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org66_PDMSOvsDMSO_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org66_PDMSOvsDMSO_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org66_PDMSOvsDMSO_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+Volcano plot:
+
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="PAC-treated DMSO VS NC DMSO",
+                                subtitle="ORG66",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org66_PDMSOvsDMSO_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
+
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org66_PDMSOvsDMSO.png', height=8, width=6)
+```
+
+##### SN38_SN38 - NC_DMSO
+
+Differentially expressed genes between SN38_DMSO and NC_DMSO in ORG66:
+
+```{r}
+### following limma workflow
+
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, SNDMSOvsDMSO)
+fit <- treat(fit, lfc=log2(1.2))
+org66_SNDMSOvsDMSO_fit <- fit
+saveRDS(org66_SNDMSOvsDMSO_fit, file = '../output/P2/org66_SNDMSOvsDMSO_fit.rds')
+all_genes <- topTreat(fit, number=Inf)
+org66_SNDMSOvsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+write.csv(org66_SNDMSOvsDMSO_DEgenes, file = '../data/DEgenes/P2/ORG66_SNDMSOvsDMSO.csv')
+
+create_dt_genes(org66_SNDMSOvsDMSO_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org66_SNDMSOvsDMSO_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org66_SNDMSOvsDMSO_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org66_SNDMSOvsDMSO_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+Volcano plot:
+
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="SN38-treated DMSO VS NC DMSO",
+                                subtitle="ORG66",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org66_SNDMSOvsDMSO_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
+
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org66_SNDMSOvsDMSO.png', height=8, width=6)
 ```
 
 ##### (PAC_PAC - PAC_DMSO) - (NC_PAC-NC_DMSO)
@@ -1541,7 +1925,7 @@ Differentially expressed genes between (PAC_PAC - PAC_DMSO) and (NC_PAC-NC_DMSO)
 ### difference between PAC and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, long_PAC)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 all_genes <- topTreat(fit, number=Inf)
 org66_longPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -1565,7 +1949,7 @@ Differentially expressed genes between (SN38_SN38 - SN38_DMSO) and (NC_SN38-NC_D
 ### difference between SN38 and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, long_SN38)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 all_genes <- topTreat(fit, number=Inf)
 org66_longSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -1586,8 +1970,8 @@ cat(summary[1])
 
 x <- list(`nc(PAC-DMSO)`=rownames(org66_ncPAC_DEgenes),
           `nc(SN38-DMSO)`=rownames(org66_ncSN38_DEgenes),
-          `pa(PAC-DMSO)`=rownames(org66_paPAC_DEgenes),
-          `sn(SN38-DMSO)`=rownames(org66_snSN38_DEgenes))
+          `PDMSOvsDMSO`=rownames(org66_PDMSOvsDMSO_DEgenes),
+          `SNDMSOvsDMSO`=rownames(org66_SNDMSOvsDMSO_DEgenes))
 
 ```
 
@@ -1609,51 +1993,49 @@ common_genes <- x_attributes$intersections$`nc(PAC-DMSO):nc(SN38-DMSO)`
 
 ##### ncPAC VS paPAC
 ```{r, fig.height=6, fig.width=6}
-x.table <- venn(x[c("nc(PAC-DMSO)","pa(PAC-DMSO)")], show.plot = FALSE)
+x.table <- venn(x[c("nc(PAC-DMSO)","PDMSOvsDMSO")], show.plot = FALSE)
 x_attributes <- attributes(x.table)
 
-ggvenn(x, columns = c('nc(PAC-DMSO)','pa(PAC-DMSO)'), 
+ggvenn(x, columns = c('nc(PAC-DMSO)','PDMSOvsDMSO'), 
        show_percentage = FALSE,
        text_size = 8)
 
-common_genes <- x_attributes$intersections$`nc(PAC-DMSO):pa(PAC-DMSO)`
+common_genes <- x_attributes$intersections$`nc(PAC-DMSO):PDMSOvsDMSO`
 ```
 
-`r length(common_genes)` genes were found to be shared between nc(PAC-DMSO) and pa(PAC-DMSO) : 
+`r length(common_genes)` genes were found to be shared between (ncPAC vs ncDMSO) and (paDMSO vs ncDMSO): 
 
   • `r common_genes`
 
 ##### ncSN38 VS snSN38
 ```{r, fig.height=6, fig.width=6}
-x.table <- venn(x[c("nc(SN38-DMSO)","sn(SN38-DMSO)")], show.plot = FALSE)
+x.table <- venn(x[c("nc(SN38-DMSO)","SNDMSOvsDMSO")], show.plot = FALSE)
 x_attributes <- attributes(x.table)
 
-ggvenn(x, columns = c('nc(SN38-DMSO)','sn(SN38-DMSO)'), 
+ggvenn(x, columns = c('nc(SN38-DMSO)','SNDMSOvsDMSO'), 
        show_percentage = FALSE,
        text_size = 8)
 
-common_genes <- x_attributes$intersections$`nc(SN38-DMSO):sn(SN38-DMSO)`
+common_genes <- x_attributes$intersections$`nc(SN38-DMSO):SNDMSOvsDMSO`
 ```
 
-`r length(common_genes)` genes were found to be shared between nc(SN38-DMSO) and sn(SN38-DMSO) : 
+`r length(common_genes)` genes were found to be shared between (ncSN38 vs ncDMSO) and (snDMSO and ncDMSO) : 
 
   • `r common_genes`
 
 ##### paPAC VS snSN38
 ```{r, fig.height=6, fig.width=6}
-x.table <- venn(x[c("pa(PAC-DMSO)","sn(SN38-DMSO)")], show.plot = FALSE)
+x.table <- venn(x[c("PDMSOvsDMSO", "SNDMSOvsDMSO")], show.plot = FALSE)
 x_attributes <- attributes(x.table)
 
-ggvenn(x, columns = c('pa(PAC-DMSO)','sn(SN38-DMSO)'), 
+ggvenn(x, columns = c("PDMSOvsDMSO", "SNDMSOvsDMSO"), 
        show_percentage = FALSE,
        text_size = 8)
-
-common_genes <- x_attributes$intersections$`pa(PAC-DMSO):sn(SN38-DMSO)`
 ```
 
-`r length(common_genes)` genes were found to be shared between pa(PAC-DMSO) and sn(SN38-DMSO) : 
+0 genes were found to be shared between (paDMSO vs ncDMSO) and (snDMSO vs ncDMSO)
 
-  • `r common_genes`
+
 
 ##### all comparisons
 ```{r}
@@ -1664,10 +2046,7 @@ ggvenn(x,
        show_percentage = FALSE,
        text_size = 8)
 
-common_genes <- x_attributes$intersections$`nc(PAC-DMSO):nc(SN38-DMSO):pa(PAC-DMSO):sn(SN38-DMSO)`
 ```
-
-`r length(common_genes)` genes were shared between all treatments
 
 ### Comparing ORG lines {.tabset}
 
@@ -1717,35 +2096,12 @@ common_genes <- x_attributes$intersections$`org38:org49:org66`
 
   • `r common_genes`
   
-#### pa(PAC - DMSO)
+#### paDMSO-ncDMSO
 ```{r}
 ### Venn Diagram df
-x <- list(org38=rownames(org38_paPAC_DEgenes),
-          org49=rownames(org49_paPAC_DEgenes),
-          org66=rownames(org66_paPAC_DEgenes))
-
-x.table <- venn(x, show.plot = FALSE)
-x_attributes <- attributes(x.table)
-
-ggvenn(x, 
-       show_percentage = FALSE,
-       text_size = 8)
-
-common_genes <- x_attributes$intersections$`org38:org66`
-```
-
-0 genes were shared across all ORGs. 
-
-`r length(common_genes)` were found to be common between org38 and org66:
-
-  • `r common_genes`
-  
-#### sn(SN38 - DMSO)
-```{r}
-### Venn Diagram df
-x <- list(org38=rownames(org38_snSN38_DEgenes),
-          org49=rownames(org49_snSN38_DEgenes),
-          org66=rownames(org66_snSN38_DEgenes))
+x <- list(org38=rownames(org38_PDMSOvsDMSO_DEgenes),
+          org49=rownames(org49_PDMSOvsDMSO_DEgenes),
+          org66=rownames(org66_PDMSOvsDMSO_DEgenes))
 
 x.table <- venn(x, show.plot = FALSE)
 x_attributes <- attributes(x.table)
@@ -1755,16 +2111,33 @@ ggvenn(x,
        text_size = 8)
 
 common_genes <- x_attributes$intersections$`org38:org49:org66`
-common_49_66 <- x_attributes$intersections$`org49:org66`
 ```
 
-`r length(common_genes)` genes were shared across all ORGs. 
+`r length(common_genes)` were found to be common between all orgs:
 
   • `r common_genes`
   
-An additional `r length(common_49_66)` genes were found to be shared between ORG49 and ORG66:
+#### snSN38-ncDMSO
+```{r}
+### Venn Diagram df
+x <- list(org38=rownames(org38_SNDMSOvsDMSO_DEgenes),
+          org49=rownames(org49_SNDMSOvsDMSO_DEgenes),
+          org66=rownames(org66_SNDMSOvsDMSO_DEgenes))
 
-  • `r common_49_66`
+x.table <- venn(x, show.plot = FALSE)
+x_attributes <- attributes(x.table)
+
+ggvenn(x, 
+       show_percentage = FALSE,
+       text_size = 8)
+
+common_genes <- x_attributes$intersections$`org38:org49`
+```
+
+`r length(common_genes)` genes were shared across org38/org49 
+
+  • `r common_genes`
+  
 
 ### Barcode Plots - P2 {.tabset}
 
@@ -1774,12 +2147,12 @@ An additional `r length(common_49_66)` genes were found to be shared between ORG
 statistic <- org38_ncPAC_fit$t[,1]
 
 ### second (comparison set)
-set2_upregulated <- rownames(org38_paPAC_DEgenes[org38_paPAC_DEgenes$logFC > 0,])
-set2_downregulated <- rownames(org38_paPAC_DEgenes[org38_paPAC_DEgenes$logFC < 0,])
+set2_upregulated <- rownames(org38_PDMSOvsDMSO_DEgenes[org38_PDMSOvsDMSO_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org38_PDMSOvsDMSO_DEgenes[org38_PDMSOvsDMSO_DEgenes$logFC < 0,])
 
 ### upregulated barcode plot
 limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in ncPAC-ncDMSO") 
-legend("top",legend=c("upregulated in paPAC - paDMSO","downregulated in paPAC - paDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+legend("top",legend=c("upregulated in paPAC - ncDMSO","downregulated in paPAC - ncDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
 
 ### competitive gene set testing (pre-ranked)
 limma::cameraPR(statistic = statistic,
@@ -1794,12 +2167,12 @@ limma::cameraPR(statistic = statistic,
 statistic <- org38_ncSN38_fit$t[,1]
 
 ### second (comparison set)
-set2_upregulated <- rownames(org38_snSN38_DEgenes[org38_snSN38_DEgenes$logFC > 0,])
-set2_downregulated <- rownames(org38_snSN38_DEgenes[org38_snSN38_DEgenes$logFC < 0,])
+set2_upregulated <- rownames(org38_SNDMSOvsDMSO_DEgenes[org38_SNDMSOvsDMSO_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org38_SNDMSOvsDMSO_DEgenes[org38_SNDMSOvsDMSO_DEgenes$logFC < 0,])
 
 ### upregulated barcode plot
 limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in ncSN38-ncDMSO") 
-legend("top",legend=c("upregulated in snSN38 - snDMSO","downregulated in snSN38 - snDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+legend("top",legend=c("upregulated in snSN38 - ncDMSO","downregulated in snSN38 - ncDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
 
 ### competitive gene set testing (pre-ranked)
 limma::cameraPR(statistic = statistic,
@@ -1813,12 +2186,12 @@ limma::cameraPR(statistic = statistic,
 statistic <- org49_ncSN38_fit$t[,1]
 
 ### second (comparison set)
-set2_upregulated <- rownames(org49_snSN38_DEgenes[org49_snSN38_DEgenes$logFC > 0,])
-set2_downregulated <- rownames(org49_snSN38_DEgenes[org49_snSN38_DEgenes$logFC < 0,])
+set2_upregulated <- rownames(org49_SNDMSOvsDMSO_DEgenes[org49_SNDMSOvsDMSO_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org49_SNDMSOvsDMSO_DEgenes[org49_SNDMSOvsDMSO_DEgenes$logFC < 0,])
 
 ### upregulated barcode plot
 limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in ncSN38-ncDMSO") 
-legend("top",legend=c("upregulated in snSN38 - snDMSO","downregulated in snSN38 - snDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+legend("top",legend=c("upregulated in snSN38 - ncDMSO","downregulated in snSN38 - ncDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
 
 ### competitive gene set testing (pre-ranked)
 limma::cameraPR(statistic = statistic,
@@ -1832,12 +2205,12 @@ limma::cameraPR(statistic = statistic,
 statistic <- org66_ncPAC_fit$t[,1]
 
 ### second (comparison set)
-set2_upregulated <- rownames(org66_paPAC_DEgenes[org66_paPAC_DEgenes$logFC > 0,])
-set2_downregulated <- rownames(org66_paPAC_DEgenes[org66_paPAC_DEgenes$logFC < 0,])
+set2_upregulated <- rownames(org66_PDMSOvsDMSO_DEgenes[org66_PDMSOvsDMSO_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org66_PDMSOvsDMSO_DEgenes[org66_PDMSOvsDMSO_DEgenes$logFC < 0,])
 
 ### upregulated barcode plot
 limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in ncPAC-ncDMSO") 
-legend("top",legend=c("upregulated in paPAC - paDMSO","downregulated in paPAC - paDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+legend("top",legend=c("upregulated in paPAC - ncDMSO","downregulated in paPAC - ncDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
 
 ### competitive gene set testing (pre-ranked)
 limma::cameraPR(statistic = statistic,
@@ -1852,12 +2225,12 @@ limma::cameraPR(statistic = statistic,
 statistic <- org66_ncSN38_fit$t[,1]
 
 ### second (comparison set)
-set2_upregulated <- rownames(org66_snSN38_DEgenes[org66_snSN38_DEgenes$logFC > 0,])
-set2_downregulated <- rownames(org66_snSN38_DEgenes[org66_snSN38_DEgenes$logFC < 0,])
+set2_upregulated <- rownames(org66_SNDMSOvsDMSO_DEgenes[org66_SNDMSOvsDMSO_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org66_SNDMSOvsDMSO_DEgenes[org66_SNDMSOvsDMSO_DEgenes$logFC < 0,])
 
 ### upregulated barcode plot
 limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in ncSN38-ncDMSO") 
-legend("top",legend=c("upregulated in snSN38 - snDMSO","downregulated in snSN38 - snDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+legend("top",legend=c("upregulated in snSN38 - ncDMSO","downregulated in snSN38 - ncDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
 
 ### competitive gene set testing (pre-ranked)
 limma::cameraPR(statistic = statistic,
@@ -1898,8 +2271,6 @@ limma::cameraPR(statistic = statistic,
        use.ranks = TRUE)
 ```
 
-
-
 ORG66:
 
 ```{r, fig.height=5, fig.width=6}
@@ -1938,13 +2309,13 @@ ORG38:
 
 ```{r, fig.height=5, fig.width=6}
 ### first set 
-statistic <- org38_paPAC_fit$t[,1]
+statistic <- org38_PDMSOvsDMSO_fit$t[,1]
 ### second (comparison set)
-set2_upregulated <- rownames(org38_snSN38_DEgenes[org38_snSN38_DEgenes$logFC > 0,])
-set2_downregulated <- rownames(org38_snSN38_DEgenes[org38_snSN38_DEgenes$logFC < 0,])
+set2_upregulated <- rownames(org38_SNDMSOvsDMSO_DEgenes[org38_SNDMSOvsDMSO_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org38_SNDMSOvsDMSO_DEgenes[org38_SNDMSOvsDMSO_DEgenes$logFC < 0,])
 ### upregulated barcode plot
-limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in paPAC-paDMSO") 
-legend("top",legend=c("upregulated in snSN38 - snDMSO","downregulated in snSN38 - snDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in paPAC-ncDMSO") 
+legend("top",legend=c("upregulated in snSN38 - ncDMSO","downregulated in snSN38 - ncDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
 
 ### competitive gene set testing (pre-ranked)
 limma::cameraPR(statistic = statistic,
@@ -1952,13 +2323,13 @@ limma::cameraPR(statistic = statistic,
        use.ranks = TRUE)
 
 ### first set 
-statistic <- org38_snSN38_fit$t[,1]
+statistic <- org38_SNDMSOvsDMSO_fit$t[,1]
 ### second (comparison set)
-set2_upregulated <- rownames(org38_paPAC_DEgenes[org38_paPAC_DEgenes$logFC > 0,])
-set2_downregulated <- rownames(org38_paPAC_DEgenes[org38_paPAC_DEgenes$logFC < 0,])
+set2_upregulated <- rownames(org38_PDMSOvsDMSO_DEgenes[org38_PDMSOvsDMSO_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org38_PDMSOvsDMSO_DEgenes[org38_PDMSOvsDMSO_DEgenes$logFC < 0,])
 ### upregulated barcode plot
-limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in snSN38-snDMSO") 
-legend("top",legend=c("upregulated in paPAC - paDMSO","downregulated in paPAC - paDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in snSN38-ncDMSO") 
+legend("top",legend=c("upregulated in paPAC - ncDMSO","downregulated in paPAC - ncDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
 
 ### competitive gene set testing (pre-ranked)
 limma::cameraPR(statistic = statistic,
@@ -1971,13 +2342,13 @@ ORG66:
 
 ```{r, fig.height=5, fig.width=6}
 ### first set 
-statistic <- org66_paPAC_fit$t[,1]
+statistic <- org66_PDMSOvsDMSO_fit$t[,1]
 ### second (comparison set)
-set2_upregulated <- rownames(org66_snSN38_DEgenes[org66_snSN38_DEgenes$logFC > 0,])
-set2_downregulated <- rownames(org66_snSN38_DEgenes[org66_snSN38_DEgenes$logFC < 0,])
+set2_upregulated <- rownames(org66_SNDMSOvsDMSO_DEgenes[org66_SNDMSOvsDMSO_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org66_SNDMSOvsDMSO_DEgenes[org66_SNDMSOvsDMSO_DEgenes$logFC < 0,])
 ### upregulated barcode plot
-limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in paPAC-paDMSO") 
-legend("top",legend=c("upregulated in snSN38 - snDMSO","downregulated in snSN38 - snDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in paPAC-ncDMSO") 
+legend("top",legend=c("upregulated in snSN38 - ncDMSO","downregulated in snSN38 - ncDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
 
 ### competitive gene set testing (pre-ranked)
 limma::cameraPR(statistic = statistic,
@@ -1985,13 +2356,13 @@ limma::cameraPR(statistic = statistic,
        use.ranks = TRUE)
 
 ### first set 
-statistic <- org66_snSN38_fit$t[,1]
+statistic <- org66_SNDMSOvsDMSO_fit$t[,1]
 ### second (comparison set)
-set2_upregulated <- rownames(org66_paPAC_DEgenes[org66_paPAC_DEgenes$logFC > 0,])
-set2_downregulated <- rownames(org66_paPAC_DEgenes[org66_paPAC_DEgenes$logFC < 0,])
+set2_upregulated <- rownames(org66_PDMSOvsDMSO_DEgenes[org66_PDMSOvsDMSO_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org66_PDMSOvsDMSO_DEgenes[org66_PDMSOvsDMSO_DEgenes$logFC < 0,])
 ### upregulated barcode plot
-limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in snSN38-snDMSO") 
-legend("top",legend=c("upregulated in paPAC - paDMSO","downregulated in paPAC - paDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in snSN38-ncDMSO") 
+legend("top",legend=c("upregulated in paPAC - ncDMSO","downregulated in paPAC - ncDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
 
 ### competitive gene set testing (pre-ranked)
 limma::cameraPR(statistic = statistic,
@@ -2137,17 +2508,17 @@ limma::cameraPR(statistic = statistic,
 
 #### ORG38 vs ORG66 (pre-treated)
 
-paPAC - paDMSO: 
+paPAC - ncDMSO: 
 
 ```{r, fig.height=5, fig.width=6}
 ### first set 
-statistic <- org38_paPAC_fit$t[,1]
+statistic <- org38_PDMSOvsDMSO_fit$t[,1]
 ### second (comparison set)
-set2_upregulated <- rownames(org66_paPAC_DEgenes[org66_paPAC_DEgenes$logFC > 0,])
-set2_downregulated <- rownames(org66_paPAC_DEgenes[org66_paPAC_DEgenes$logFC < 0,])
+set2_upregulated <- rownames(org66_PDMSOvsDMSO_DEgenes[org66_PDMSOvsDMSO_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org66_PDMSOvsDMSO_DEgenes[org66_PDMSOvsDMSO_DEgenes$logFC < 0,])
 ### upregulated barcode plot
-limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in ORG38 paPAC-paDMSO") 
-legend("top",legend=c("upregulated in ORG66 paPAC-paDMSO","downregulated in ORG66 paPAC-paDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to ORG38 paPAC-ncDMSO tstat") 
+legend("top",legend=c("upregulated in ORG66 paPAC-ncDMSO","downregulated in ORG66 paPAC-ncDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
 
 ### competitive gene set testing (pre-ranked)
 limma::cameraPR(statistic = statistic,
@@ -2155,13 +2526,13 @@ limma::cameraPR(statistic = statistic,
        use.ranks = TRUE)
 
 ### first set 
-statistic <- org66_paPAC_fit$t[,1]
+statistic <- org66_PDMSOvsDMSO_fit$t[,1]
 ### second (comparison set)
-set2_upregulated <- rownames(org38_paPAC_DEgenes[org38_paPAC_DEgenes$logFC > 0,])
-set2_downregulated <- rownames(org38_paPAC_DEgenes[org38_paPAC_DEgenes$logFC < 0,])
+set2_upregulated <- rownames(org38_PDMSOvsDMSO_DEgenes[org38_PDMSOvsDMSO_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org38_PDMSOvsDMSO_DEgenes[org38_PDMSOvsDMSO_DEgenes$logFC < 0,])
 ### upregulated barcode plot
-limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in ORG66 paPAC-paDMSO") 
-legend("top",legend=c("upregulated in ORG38 paPAC-paDMSO","downregulated in ORG38 paPAC-paDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to ORG66 paPAC-ncDMSO tstat") 
+legend("top",legend=c("upregulated in ORG38 paPAC-ncDMSO","downregulated in ORG38 paPAC-ncDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
 
 ### competitive gene set testing (pre-ranked)
 limma::cameraPR(statistic = statistic,
@@ -2174,13 +2545,13 @@ snSN38 - snDMSO:
 
 ```{r, fig.height=5, fig.width=6}
 ### first set 
-statistic <- org38_snSN38_fit$t[,1]
+statistic <- org38_SNDMSOvsDMSO_fit$t[,1]
 ### second (comparison set)
-set2_upregulated <- rownames(org66_snSN38_DEgenes[org66_snSN38_DEgenes$logFC > 0,])
-set2_downregulated <- rownames(org66_snSN38_DEgenes[org66_snSN38_DEgenes$logFC < 0,])
+set2_upregulated <- rownames(org66_SNDMSOvsDMSO_DEgenes[org66_SNDMSOvsDMSO_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org66_SNDMSOvsDMSO_DEgenes[org66_SNDMSOvsDMSO_DEgenes$logFC < 0,])
 ### upregulated barcode plot
-limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in ORG38 snSN38-snDMSO") 
-legend("top",legend=c("upregulated in ORG66 snSN38-snDMSO","downregulated in ORG66 snSN38-snDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to ORG38 snSN38-ncDMSO tstat") 
+legend("top",legend=c("upregulated in ORG66 snSN38-ncDMSO","downregulated in ORG66 snSN38-ncDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
 
 ### competitive gene set testing (pre-ranked)
 limma::cameraPR(statistic = statistic,
@@ -2188,13 +2559,13 @@ limma::cameraPR(statistic = statistic,
        use.ranks = TRUE)
 
 ### first set 
-statistic <- org66_snSN38_fit$t[,1]
+statistic <- org66_SNDMSOvsDMSO_fit$t[,1]
 ### second (comparison set)
-set2_upregulated <- rownames(org38_snSN38_DEgenes[org38_snSN38_DEgenes$logFC > 0,])
-set2_downregulated <- rownames(org38_snSN38_DEgenes[org38_snSN38_DEgenes$logFC < 0,])
+set2_upregulated <- rownames(org38_SNDMSOvsDMSO_DEgenes[org38_SNDMSOvsDMSO_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org38_SNDMSOvsDMSO_DEgenes[org38_SNDMSOvsDMSO_DEgenes$logFC < 0,])
 ### upregulated barcode plot
-limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in ORG66 snSN38-snDMSO") 
-legend("top",legend=c("upregulated in ORG38 snSN38-snDMSO","downregulated in ORG38 snSN38-snDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to ORG66 snSN38-ncDMSO tstat") 
+legend("top",legend=c("upregulated in ORG38 snSN38-ncDMSO","downregulated in ORG38 snSN38-ncDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
 
 ### competitive gene set testing (pre-ranked)
 limma::cameraPR(statistic = statistic,
@@ -2204,17 +2575,17 @@ limma::cameraPR(statistic = statistic,
 
 #### ORG38 vs ORG49 (pre-treated)
 
-snSN38 - snDMSO: 
+paPAC - ncDMSO: 
 
 ```{r, fig.height=5, fig.width=6}
 ### first set 
-statistic <- org38_snSN38_fit$t[,1]
+statistic <- org38_PDMSOvsDMSO_fit$t[,1]
 ### second (comparison set)
-set2_upregulated <- rownames(org49_snSN38_DEgenes[org49_snSN38_DEgenes$logFC > 0,])
-set2_downregulated <- rownames(org49_snSN38_DEgenes[org49_snSN38_DEgenes$logFC < 0,])
+set2_upregulated <- rownames(org49_PDMSOvsDMSO_DEgenes[org49_PDMSOvsDMSO_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org49_PDMSOvsDMSO_DEgenes[org49_PDMSOvsDMSO_DEgenes$logFC < 0,])
 ### upregulated barcode plot
-limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in ORG38 snSN38-snDMSO") 
-legend("top",legend=c("upregulated in ORG49 snSN38-snDMSO","downregulated in ORG49 snSN38-snDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to ORG38 paPAC-ncDMSO tstat") 
+legend("top",legend=c("upregulated in ORG49 paPAC-ncDMSO","downregulated in ORG49 paPAC-ncDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
 
 ### competitive gene set testing (pre-ranked)
 limma::cameraPR(statistic = statistic,
@@ -2222,13 +2593,45 @@ limma::cameraPR(statistic = statistic,
        use.ranks = TRUE)
 
 ### first set 
-statistic <- org49_snSN38_fit$t[,1]
+statistic <- org49_PDMSOvsDMSO_fit$t[,1]
 ### second (comparison set)
-set2_upregulated <- rownames(org38_snSN38_DEgenes[org38_snSN38_DEgenes$logFC > 0,])
-set2_downregulated <- rownames(org38_snSN38_DEgenes[org38_snSN38_DEgenes$logFC < 0,])
+set2_upregulated <- rownames(org38_PDMSOvsDMSO_DEgenes[org38_PDMSOvsDMSO_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org38_PDMSOvsDMSO_DEgenes[org38_PDMSOvsDMSO_DEgenes$logFC < 0,])
 ### upregulated barcode plot
-limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in ORG49 snSN38-snDMSO") 
-legend("top",legend=c("upregulated in ORG38 snSN38-snDMSO","downregulated in ORG38 snSN38-snDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to ORG49 paPAC-ncDMSO tstat") 
+legend("top",legend=c("upregulated in ORG38 paPAC-ncDMSO","downregulated in ORG38 paPAC-ncDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+```
+
+snSN38 - ncDMSO: 
+
+```{r, fig.height=5, fig.width=6}
+### first set 
+statistic <- org38_SNDMSOvsDMSO_fit$t[,1]
+### second (comparison set)
+set2_upregulated <- rownames(org49_SNDMSOvsDMSO_DEgenes[org49_SNDMSOvsDMSO_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org49_SNDMSOvsDMSO_DEgenes[org49_SNDMSOvsDMSO_DEgenes$logFC < 0,])
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in ORG38 snSN38-ncDMSO") 
+legend("top",legend=c("upregulated in ORG49 snSN38-ncDMSO","downregulated in ORG49 snSN38-ncDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+
+### first set 
+statistic <- org49_SNDMSOvsDMSO_fit$t[,1]
+### second (comparison set)
+set2_upregulated <- rownames(org38_SNDMSOvsDMSO_DEgenes[org38_SNDMSOvsDMSO_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org38_SNDMSOvsDMSO_DEgenes[org38_SNDMSOvsDMSO_DEgenes$logFC < 0,])
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in ORG49 snSN38-ncDMSO") 
+legend("top",legend=c("upregulated in ORG38 snSN38-ncDMSO","downregulated in ORG38 snSN38-ncDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
 
 ### competitive gene set testing (pre-ranked)
 limma::cameraPR(statistic = statistic,
@@ -2237,6 +2640,38 @@ limma::cameraPR(statistic = statistic,
 ```
 
 #### ORG49 vs ORG66 (pre-treated)
+
+paPAC - ncDMSO: 
+
+```{r, fig.height=5, fig.width=6}
+### first set 
+statistic <- org66_PDMSOvsDMSO_fit$t[,1]
+### second (comparison set)
+set2_upregulated <- rownames(org49_PDMSOvsDMSO_DEgenes[org49_PDMSOvsDMSO_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org49_PDMSOvsDMSO_DEgenes[org49_PDMSOvsDMSO_DEgenes$logFC < 0,])
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in ORG66 paPAC-ncDMSO") 
+legend("top",legend=c("upregulated in ORG49 paPAC-ncDMSO","downregulated in ORG49 paPAC-ncDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+
+### first set 
+statistic <- org49_PDMSOvsDMSO_fit$t[,1]
+### second (comparison set)
+set2_upregulated <- rownames(org66_PDMSOvsDMSO_DEgenes[org66_PDMSOvsDMSO_DEgenes$logFC > 0,])
+set2_downregulated <- rownames(org66_PDMSOvsDMSO_DEgenes[org66_PDMSOvsDMSO_DEgenes$logFC < 0,])
+### upregulated barcode plot
+limma::barcodeplot(statistic = statistic,index=set2_upregulated,index2=set2_downregulated,xlab='t-statistic',labels=c("downregulated", "upregulated"), main= "Genes ranked according to t-statistic in ORG49 paPAC-ncDMSO") 
+legend("top",legend=c("upregulated in ORG66 paPAC-ncDMSO","downregulated in ORG66 paPAC-ncDMSO"),lwd=2,box.lty=0,col=c("red","blue"), cex=0.8, border=NULL, inset=c(0.3,-0.1), xpd=NA)
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = statistic,
+       index = list(upregulated=set2_upregulated, downregulated=set2_downregulated),
+       use.ranks = TRUE)
+```
 
 snSN38 - snDMSO: 
 
@@ -2497,26 +2932,26 @@ limma::cameraPR(statistic = t_stat,
 ### Hallmark Genesets {.tabset}
 ```{r, warning=FALSE}
 ### predefined gene sets 
-msigdb_hallmark_dnarepair <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_DNA_REPAIR.v2025.1.Hs.gmt')
-msigdb_hallmark_apoptosis <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_APOPTOSIS.v2025.1.Hs.gmt')
-msigdb_hallmark_EMT <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION.v2025.1.Hs.gmt')
-msigdb_hallmark_p53 <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_P53_PATHWAY.v2025.1.Hs.gmt')
-msigdb_hallmark_G2M <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_G2M_CHECKPOINT.v2025.1.Hs.gmt')
-msigdb_hallmark_Inflammatory_response <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_INFLAMMATORY_RESPONSE.v2025.1.Hs.gmt')
-msigdb_hallmark_Mitotic_Spindle <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_MITOTIC_SPINDLE.v2025.1.Hs.gmt')
-msigdb_hallmark_Notch_signalling <-read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_NOTCH_SIGNALING.v2025.1.Hs.gmt')
-msigdb_hallmark_Oxidative <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_OXIDATIVE_PHOSPHORYLATION.v2025.1.Hs.gmt')
-msigdb_hallmark_WNT_BETA_CATENIN <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_WNT_BETA_CATENIN_SIGNALING.v2025.1.Hs.gmt')
-msigdb_hallmark_E2F <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_E2F_TARGETS.v2025.1.Hs.gmt')
-msigdb_hallmark_COMPLEMENT <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_COMPLEMENT.v2025.1.Hs.gmt')
-msigdb_hallmark_KRAS_UP <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_KRAS_SIGNALING_UP.v2025.1.Hs.gmt')
-msigdb_hallmark_KRAS_DN <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_KRAS_SIGNALING_DN.v2025.1.Hs.gmt')
-msigdb_hallmark_INTERFERON_GAMMA <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_INTERFERON_GAMMA_RESPONSE.v2025.1.Hs.gmt')
-msigdb_hallmark_INTERFERON_ALPHA <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_INTERFERON_ALPHA_RESPONSE.v2025.1.Hs.gmt')
-msigdb_hallmark_IL6_JAKSTAT3 <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_IL6_JAK_STAT3_SIGNALING.v2025.1.Hs.gmt')
-msigdb_hallmark_IL2_STAT5 <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_IL2_STAT5_SIGNALING.v2025.1.Hs.gmt')
-msigdb_hallmark_ROS <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_REACTIVE_OXYGEN_SPECIES_PATHWAY.v2025.1.Hs.gmt')
-msigdb_hallmark_MTORC1 <- read.gmt('data/MSigDB_Hallmark_Genesets/HALLMARK_MTORC1_SIGNALING.v2025.1.Hs.gmt')
+msigdb_hallmark_dnarepair <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_DNA_REPAIR.v2025.1.Hs.gmt')
+msigdb_hallmark_apoptosis <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_APOPTOSIS.v2025.1.Hs.gmt')
+msigdb_hallmark_EMT <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION.v2025.1.Hs.gmt')
+msigdb_hallmark_p53 <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_P53_PATHWAY.v2025.1.Hs.gmt')
+msigdb_hallmark_G2M <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_G2M_CHECKPOINT.v2025.1.Hs.gmt')
+msigdb_hallmark_Inflammatory_response <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_INFLAMMATORY_RESPONSE.v2025.1.Hs.gmt')
+msigdb_hallmark_Mitotic_Spindle <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_MITOTIC_SPINDLE.v2025.1.Hs.gmt')
+msigdb_hallmark_Notch_signalling <-read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_NOTCH_SIGNALING.v2025.1.Hs.gmt')
+msigdb_hallmark_Oxidative <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_OXIDATIVE_PHOSPHORYLATION.v2025.1.Hs.gmt')
+msigdb_hallmark_WNT_BETA_CATENIN <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_WNT_BETA_CATENIN_SIGNALING.v2025.1.Hs.gmt')
+msigdb_hallmark_E2F <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_E2F_TARGETS.v2025.1.Hs.gmt')
+msigdb_hallmark_COMPLEMENT <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_COMPLEMENT.v2025.1.Hs.gmt')
+msigdb_hallmark_KRAS_UP <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_KRAS_SIGNALING_UP.v2025.1.Hs.gmt')
+msigdb_hallmark_KRAS_DN <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_KRAS_SIGNALING_DN.v2025.1.Hs.gmt')
+msigdb_hallmark_INTERFERON_GAMMA <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_INTERFERON_GAMMA_RESPONSE.v2025.1.Hs.gmt')
+msigdb_hallmark_INTERFERON_ALPHA <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_INTERFERON_ALPHA_RESPONSE.v2025.1.Hs.gmt')
+msigdb_hallmark_IL6_JAKSTAT3 <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_IL6_JAK_STAT3_SIGNALING.v2025.1.Hs.gmt')
+msigdb_hallmark_IL2_STAT5 <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_IL2_STAT5_SIGNALING.v2025.1.Hs.gmt')
+msigdb_hallmark_ROS <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_REACTIVE_OXYGEN_SPECIES_PATHWAY.v2025.1.Hs.gmt')
+msigdb_hallmark_MTORC1 <- read.gmt('../data/MSigDB_Hallmark_Genesets/HALLMARK_MTORC1_SIGNALING.v2025.1.Hs.gmt')
 
 msigdb_hallmark_geneset_list <- list(DNA_repair = msigdb_hallmark_dnarepair$gene, 
                     APOPTOSIS = msigdb_hallmark_apoptosis$gene,
@@ -2608,83 +3043,268 @@ limma::cameraPR(statistic = org66_snSN38_fit$t[,1],
        index = msigdb_hallmark_geneset_list,
        use.ranks = TRUE)
 ```
-### Cisplatin resistance {.tabset}
+
+### Paclitaxel Resistance {.tabset}
+
+Papers used for comparison:
+
+[Sherman-Baust et al., 2011](https://pmc.ncbi.nlm.nih.gov/articles/PMC3259089/#sec20)
+
+• Generated drug resistant OvCa cell lines (cisplatin, paclitaxel, or doxorubicin)
+
+• Identified DEGs between resistant and sensitive phenotypes 
+
+[McCorkle et al., 2021](https://pmc.ncbi.nlm.nih.gov/articles/PMC8336885/)
+
+• Established in vitro paclitaxel-resistant ovarian cancer cell line and organoid models
+
+• DEGs identified between resistant and sensitive lines and organoids 
+
+[Yang et al., 2024](https://pmc.ncbi.nlm.nih.gov/articles/PMC10996034/#SD2-ol-27-5-14365)
+
+• A2780 cell line and the A2780-Taxol-resistant cell line were purchased and cultured 
+
+• RNAseq between resistant and parental cell lines to identify DEGs
 
 ```{r}
-### predefined gene sets 
-msigdb_LI_cisplatin_UP <- read.gmt('data/MSigDB_Curated_Genesets/LI_CISPLATIN_RESISTANCE_UP.v2025.1.Hs.gmt')
-msigdb_LI_cisplatin_DN <- read.gmt('data/MSigDB_Curated_Genesets/LI_CISPLATIN_RESISTANCE_DN.v2025.1.Hs.gmt')
-msigdb_TSUNODA_cisplatin_UP <- read.gmt('data/MSigDB_Curated_Genesets/TSUNODA_CISPLATIN_RESISTANCE_UP.v2025.1.Hs.gmt')
-msigdb_TSUNODA_cisplatin_DN <- read.gmt('data/MSigDB_Curated_Genesets/TSUNODA_CISPLATIN_RESISTANCE_DN.v2025.1.Hs.gmt')
-msigdb_WHITESIDE_cisplatin_UP <- read.gmt('data/MSigDB_Curated_Genesets/WHITESIDE_CISPLATIN_RESISTANCE_UP.v2025.1.Hs.gmt')
-msigdb_WHITESIDE_cisplatin_DN <- read.gmt('data/MSigDB_Curated_Genesets/WHITESIDE_CISPLATIN_RESISTANCE_DN.v2025.1.Hs.gmt')
+### loading in genesets
 
-msigdb_curated_list <- list(LI_UP = msigdb_LI_cisplatin_UP$gene, 
-                    LI_DN = msigdb_LI_cisplatin_DN$gene,
-                    TSUNODA_UP = msigdb_TSUNODA_cisplatin_UP$gene,
-                    TSUNODA_DN = msigdb_TSUNODA_cisplatin_DN$gene,
-                    WHITESIDE_UP = msigdb_WHITESIDE_cisplatin_UP$gene,
-                    WHITESIDE_DN = msigdb_WHITESIDE_cisplatin_DN$gene )
+### Sherman-Baust, 2011
+sherman_baust <- read_excel('../data/Literature_genesets/SHERMAN_BAUST_2011.XLSX', sheet='geneset_testing')
+sherman_baust_up <- as.data.frame(sherman_baust[sherman_baust$OV90P > 1,c('Symbol')])
+sherman_baust_dn <- as.data.frame(sherman_baust[sherman_baust$OV90P < -1,c('Symbol')])
+
+### McCorkle, 2021
+mccorkle <- read_excel('../data/Literature_genesets/MCCORKLE_2021.xlsx', sheet='geneset_testing')
+mccorkle_up <- as.data.frame(mccorkle[mccorkle$log2FoldChange > 1, c('hgnc_symbol')])
+mccorkle_dn <- as.data.frame(mccorkle[mccorkle$log2FoldChange < -1, c('hgnc_symbol')])
+
+### Yang, 2024
+yang <- read_excel('../data/Literature_genesets/YANGetal2024.xlsx', sheet='geneset_testing')
+yang_up <- as.data.frame(yang[yang$A.128PTX_logFC > 1, c('Gene_name')])
+yang_dn <- as.data.frame(yang[yang$A.128PTX_logFC < -1, c('Gene_name')])
+
+### creating geneset list 
+paclitaxel_resistance_genesets <- list(sherman_baust_up = sherman_baust_up$Symbol,
+                                       sherman_baust_dn = sherman_baust_dn$Symbol,
+                                       mccorkle_up = mccorkle_up$hgnc_symbol,
+                                       mccorkle_dn = mccorkle_dn$hgnc_symbol,
+                                       yang_up = yang_up$Gene_name,
+                                       yang_dn = yang_dn$Gene_name)
 ```
 
-#### ORG38 
+#### ORG38
 
 ```{r}
 ### competitive gene set testing (pre-ranked)
 limma::cameraPR(statistic = org38_ncPAC_fit$t[,1],
-       index = msigdb_curated_list,
+       index = paclitaxel_resistance_genesets,
        use.ranks = TRUE)
 
 limma::cameraPR(statistic = org38_paPAC_fit$t[,1],
-       index = msigdb_curated_list,
+       index = paclitaxel_resistance_genesets,
        use.ranks = TRUE)
 
-limma::cameraPR(statistic = org38_ncSN38_fit$t[,1],
-       index = msigdb_curated_list,
-       use.ranks = TRUE)
-
-limma::cameraPR(statistic = org38_snSN38_fit$t[,1],
-       index = msigdb_curated_list,
-       use.ranks = TRUE)
 ```
-#### ORG49 
+
+#### ORG49
 
 ```{r}
 ### competitive gene set testing (pre-ranked)
-# limma::cameraPR(statistic = org49_ncPAC_fit$t[,1],
-#        index = msigdb_curated_list,
-#        use.ranks = TRUE)
-
-# limma::cameraPR(statistic = org49_paPAC_fit$t[,1],
-#        index = msigdb_curated_list,
-#        use.ranks = TRUE)
-
-limma::cameraPR(statistic = org49_ncSN38_fit$t[,1],
-       index = msigdb_curated_list,
+limma::cameraPR(statistic = org49_ncPAC_fit$t[,1],
+       index = paclitaxel_resistance_genesets,
        use.ranks = TRUE)
 
-limma::cameraPR(statistic = org49_snSN38_fit$t[,1],
-       index = msigdb_curated_list,
+limma::cameraPR(statistic = org49_paPAC_fit$t[,1],
+       index = paclitaxel_resistance_genesets,
        use.ranks = TRUE)
+
 ```
 
-#### ORG66 
+#### ORG66
 
 ```{r}
 ### competitive gene set testing (pre-ranked)
 limma::cameraPR(statistic = org66_ncPAC_fit$t[,1],
-        index = msigdb_curated_list,
-        use.ranks = TRUE)
+       index = paclitaxel_resistance_genesets,
+       use.ranks = TRUE)
 
 limma::cameraPR(statistic = org66_paPAC_fit$t[,1],
-        index = msigdb_curated_list,
-        use.ranks = TRUE)
-
-limma::cameraPR(statistic = org66_ncSN38_fit$t[,1],
-       index = msigdb_curated_list,
+       index = paclitaxel_resistance_genesets,
        use.ranks = TRUE)
 
-a <- limma::cameraPR(statistic = org66_snSN38_fit$t[,1],
-       index = msigdb_curated_list,
-       use.ranks = TRUE)
 ```
+
+### SN38 Resistance {.tabset}
+
+```{r}
+### Jensen, 2015 - HCT116 cell line
+jensen_HCT116 <- read_excel('../data/Literature_genesets/JENSEN_2015.xlsx', sheet='HCT116-SN38')
+jensen_HCT116_up <- as.data.frame(jensen_HCT116[jensen_HCT116$`Fold-change` > 1,c('GeneSymbol')])
+jensen_HCT116_dn <- as.data.frame(jensen_HCT116[jensen_HCT116$`Fold-change` < -1,c('GeneSymbol')])
+
+### Jensen, 2015 - HT29 cell line
+jensen_HT29 <- read_excel('../data/Literature_genesets/JENSEN_2015.xlsx', sheet='HT29-SN38')
+jensen_HT29_up <- as.data.frame(jensen_HT29[jensen_HT29$`Fold-change` > 1,c('GeneSymbol')])
+jensen_HT29_dn <- as.data.frame(jensen_HT29[jensen_HT29$`Fold-change` < -1,c('GeneSymbol')])
+
+### Jensen, 2015 - LoVo cell line
+jensen_LoVo <- read_excel('../data/Literature_genesets/JENSEN_2015.xlsx', sheet='LoVo-SN38')
+jensen_LoVo_up <- as.data.frame(jensen_LoVo[jensen_LoVo$`Fold-change` > 1,c('GeneSymbol')])
+jensen_LoVo_dn <- as.data.frame(jensen_LoVo[jensen_LoVo$`Fold-change` < -1,c('GeneSymbol')])
+
+### creating SN38 resistance gene lists
+sn38_resistance_genesets <- list(jensen_HCT116_up = jensen_HCT116_up$GeneSymbol,
+                                       jensen_HCT116_dn = jensen_HCT116_dn$GeneSymbol,
+                                       jensen_HT29_up = jensen_HT29_up$GeneSymbol,
+                                       jensen_HT29_dn = jensen_HT29_dn$GeneSymbol,
+                                       jensen_LoVo_up = jensen_LoVo_up$GeneSymbol,
+                                       jensen_LoVo_dn = jensen_LoVo_dn$GeneSymbol)
+```
+
+#### ORG38
+
+```{r}
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = org38_ncSN38_fit$t[,1],
+       index = sn38_resistance_genesets,
+       use.ranks = TRUE)
+
+limma::cameraPR(statistic = org38_snSN38_fit$t[,1],
+       index = sn38_resistance_genesets,
+       use.ranks = TRUE)
+
+```
+
+#### ORG49
+
+```{r}
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = org49_ncSN38_fit$t[,1],
+       index = sn38_resistance_genesets,
+       use.ranks = TRUE)
+
+limma::cameraPR(statistic = org49_snSN38_fit$t[,1],
+       index = sn38_resistance_genesets,
+       use.ranks = TRUE)
+
+```
+
+#### ORG66
+
+```{r}
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = org66_ncSN38_fit$t[,1],
+       index = sn38_resistance_genesets,
+       use.ranks = TRUE)
+
+limma::cameraPR(statistic = org66_snSN38_fit$t[,1],
+       index = sn38_resistance_genesets,
+       use.ranks = TRUE)
+
+```
+
+### Alicia. meeting 
+
+```{r, fig.height=3.5, fig.width=6}
+data <- org38_voom_mat
+
+### subset genes of interest 
+genes <- c('MUCL3','SDCBP2','PLAUR','TPI1')
+data <- data[genes,]
+
+
+sampleinfo <- sampleinfo %>%
+  mutate(pretreatment = str_sub(Treatment_Combination,1,2)) 
+### identify samples of interest by treatment group
+samples <- sampleinfo[sampleinfo$Treatment_Combination == 'NC_DMSO'|
+                        sampleinfo$Treatment_Combination == 'NC_Pacl'|
+                        sampleinfo$Treatment_Combination == 'Pa_Pacl'|
+                        sampleinfo$Treatment_Combination == 'Pa_DMSO',]
+samples <- samples$label
+
+### subset data to include only samples of interest
+data <- data[, samples]
+expr_data <- as.data.frame(t(data$E))
+
+### get treatment information
+samples <- rownames(expr_data)
+pretreatment_data <- sampleinfo[samples, c('pretreatment')]
+platetreatment_data <- sampleinfo[samples, c('Treatment_1')]
+treatment_combination <- sampleinfo[samples, c('Treatment_Combination')]
+
+expr_data <- expr_data %>%
+  mutate(pretreatment = pretreatment_data) %>%
+  mutate(platetreatment = platetreatment_data) %>%
+  mutate(treatment_combination = treatment_combination) %>%
+  mutate(plate= "Plate 2")
+
+### calculate means of each group 
+mean_MUCL3 <- expr_data %>%
+  group_by(treatment_combination) %>%
+  summarise(mean_val = mean(MUCL3))
+
+mean_SDCBP2 <- expr_data %>%
+  group_by(treatment_combination) %>%
+  summarise(mean_val = mean(SDCBP2))
+
+mean_TPI1 <- expr_data %>%
+  group_by(treatment_combination) %>%
+  summarise(mean_val = mean(TPI1))
+
+mean_PLAUR <- expr_data %>%
+  group_by(treatment_combination) %>%
+  summarise(mean_val = mean(PLAUR))
+
+
+### add mean to expr_data for each treatment group
+expr_data <- expr_data %>%
+  mutate(MUCL3_mean = case_when(
+    treatment_combination == 'NC_DMSO' ~ '8.69',
+    treatment_combination == 'NC_Pacl' ~ '10.8',
+    treatment_combination == 'Pa_DMSO' ~ '8.11',
+    treatment_combination == 'Pa_Pacl' ~ '9.89',
+  )) %>%
+  mutate(SDCBP2_mean = case_when(
+    treatment_combination == 'NC_DMSO' ~ '7.31',
+    treatment_combination == 'NC_Pacl' ~ '8.96',
+    treatment_combination == 'Pa_DMSO' ~ '6.93',
+    treatment_combination == 'Pa_Pacl' ~ '8.60',
+  ))%>%
+  mutate(TPI1_mean = case_when(
+    treatment_combination == 'NC_DMSO' ~ '11.0',
+    treatment_combination == 'NC_Pacl' ~ '9.76',
+    treatment_combination == 'Pa_DMSO' ~ '10.5',
+    treatment_combination == 'Pa_Pacl' ~ '9.65',
+  ))%>%
+  mutate(PLAUR_mean = case_when(
+    treatment_combination == 'NC_DMSO' ~ '8.02',
+    treatment_combination == 'NC_Pacl' ~ '8.83',
+    treatment_combination == 'Pa_DMSO' ~ '7.07',
+    treatment_combination == 'Pa_Pacl' ~ '8.32',
+  ))
+
+### plotting
+ggplot(data=expr_data, aes(y=MUCL3, x=plate, colour = treatment_combination)) +
+  geom_point() +
+  facet_grid(~pretreatment) +
+  geom_hline(data = expr_data, aes(yintercept = as.numeric(MUCL3_mean), col=treatment_combination))
+
+ggplot(data=expr_data, aes(y=SDCBP2, x=plate, colour = treatment_combination)) +
+  geom_point() +
+  facet_grid(~pretreatment) +
+  geom_hline(data = expr_data, aes(yintercept = as.numeric(SDCBP2_mean), col=treatment_combination))
+
+ggplot(data=expr_data, aes(y=TPI1, x=plate, colour = treatment_combination)) +
+  geom_point() +
+  facet_grid(~pretreatment) +
+  geom_hline(data = expr_data, aes(yintercept = as.numeric(TPI1_mean), col=treatment_combination))
+
+ggplot(data=expr_data, aes(y=PLAUR, x=plate, colour = treatment_combination)) +
+  geom_point() +
+  facet_grid(~pretreatment) +
+  geom_hline(data = expr_data, aes(yintercept = as.numeric(PLAUR_mean), col=treatment_combination))
+
+
+```
+

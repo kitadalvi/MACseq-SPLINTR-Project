@@ -81,12 +81,10 @@ Thresholds used for DE analysis:
 
 • pvalue threshold = 0.05
 
-• log FC threshold = |lfc| > 0.58, which is equivalent to an absolute FC of |fc| > 1.5
+• log FC threshold = log2(1.2) = 20% change in expression compared to control
 
 ```{r, echo=TRUE}
 ### Threshold Constants
-
-absolute_fold_change <- 1.0
 
 p_value_threshold <- 0.05
 ```
@@ -278,7 +276,7 @@ Differentially expressed genes between NC Pac and NC DMSO in ORG38 at high conc:
 ### difference between PAC and DMSO across concentrations
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_pacvsdmso_high)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org38_ncPAC_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org38_ncPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -302,7 +300,7 @@ Differentially expressed genes between NC Pac and NC DMSO in ORG38 at low conc:
 ### difference between PAC and DMSO 
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_pacvsdmso_low)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org38_ncPAC_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org38_ncPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -329,7 +327,7 @@ Differentially expressed genes between NC SN38 and NC DMSO in ORG38 at high conc
 ### difference between SN38 and DMSO 
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_sn38vsdmso_high)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org38_ncSN38_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org38_ncSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -352,7 +350,7 @@ Differentially expressed genes between NC SN38 and NC DMSO in ORG38 at low conc:
 ### difference between SN38 and DMSO 
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_sn38vsdmso_low)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org38_ncSN38_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org38_ncSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -379,7 +377,7 @@ Differentially expressed genes between PAC_PAC and PAC_DMSO in ORG38 at high con
 ### difference between PAC and DMSO 
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, PAC_pacvsdmso_high)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org38_paPAC_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org38_paPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -403,7 +401,7 @@ Differentially expressed genes between PAC_PAC and PAC_DMSO in ORG38 at low conc
 ### difference between PAC and DMSO 
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, PAC_pacvsdmso_low)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org38_paPAC_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org38_paPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -429,7 +427,7 @@ Differentially expressed genes between SN38_SN38 and SN38_DMSO in ORG38 at high 
 ### difference between SN38 and DMSO 
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, SN38_sn38vsdmso_high)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org38_snSN38_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org38_snSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -453,7 +451,7 @@ Differentially expressed genes between SN38_SN38 and SN38_DMSO in ORG38 at low c
 ### difference between SN38 and DMSO 
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, SN38_sn38vsdmso_low)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org38_snSN38_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org38_snSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -548,7 +546,7 @@ Differentially expressed genes between NC Pac and NC DMSO in ORG49 at high conc:
 ### difference between PAC and DMSO 
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_pacvsdmso_high)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org49_ncPAC_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org49_ncPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -570,7 +568,7 @@ Differentially expressed genes between NC Pac and NC DMSO in ORG49 at low conc:
 ### difference between PAC and DMSO 
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_pacvsdmso_low)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org49_ncPAC_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org49_ncPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -594,7 +592,7 @@ Differentially expressed genes between NC SN38 and NC DMSO in ORG49 at high conc
 ### difference between SN38 and DMSO 
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_sn38vsdmso_high)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org49_ncSN38_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org49_ncSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -618,7 +616,7 @@ Differentially expressed genes between NC SN38 and NC DMSO in ORG49 at low conc:
 ### difference between SN38 and DMSO 
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_sn38vsdmso_low)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org49_ncSN38_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org49_ncSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -644,7 +642,7 @@ Differentially expressed genes between PAC_PAC and PAC_DMSO in ORG49 at high con
 ### difference between PAC and DMSO
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, PAC_pacvsdmso_high)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 all_genes <- topTreat(fit, number=Inf)
 org49_paPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -665,7 +663,7 @@ Differentially expressed genes between PAC_PAC and PAC_DMSO in ORG49 at low conc
 ### difference between PAC and DMSO
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, PAC_pacvsdmso_low)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 all_genes <- topTreat(fit, number=Inf)
 org49_paPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
@@ -677,7 +675,7 @@ summary=paste (total, up, down, sep="\n")
 cat(summary[1])
 ```
 
-##### SN38_SN38 - SN38_DMSO) {.tabset}
+##### SN38_SN38 - SN38_DMSO {.tabset}
 
 ###### High
 
@@ -688,7 +686,7 @@ Differentially expressed genes between SN38_SN38 and SN38_DMSO in ORG49 at high 
 ### difference between SN38 and DMSO
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, SN38_sn38vsdmso_high)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org49_snSN38_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org49_snSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -712,7 +710,7 @@ Differentially expressed genes between SN38_SN38 and SN38_DMSO in ORG49 at low c
 ### difference between SN38 and DMSO
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, SN38_sn38vsdmso_low)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org49_snSN38_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org49_snSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -788,7 +786,7 @@ v <- voom(counts, design, plot = T, save.plot = TRUE)
 org66_voom_mat <- v
 ```
 
-RLE of all ORG38 wells before and after normalisation:
+RLE of all ORG66 wells before and after normalisation:
 
 ```{r, fig.width=16}
 par(mfrow=c(1,2))
@@ -807,7 +805,7 @@ Differentially expressed genes between NC Pac and NC DMSO in ORG66 at high conc:
 ### difference between PAC and DMSO  
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_pacvsdmso_high)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org66_ncPAC_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org66_ncPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -831,7 +829,7 @@ Differentially expressed genes between NC Pac and NC DMSO in ORG66 at low conc:
 ### difference between PAC and DMSO  
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_pacvsdmso_low)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org66_ncPAC_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org66_ncPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -857,7 +855,7 @@ Differentially expressed genes between NC SN38 and NC DMSO in ORG66 at high conc
 ### difference between SN38 and DMSO  
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_sn38vsdmso_high)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org66_ncSN38_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org66_ncSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -881,7 +879,7 @@ Differentially expressed genes between NC SN38 and NC DMSO in ORG66 at low conc:
 ### difference between SN38 and DMSO  
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_sn38vsdmso_low)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org66_ncSN38_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org66_ncSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -907,7 +905,7 @@ Differentially expressed genes between PAC_PAC and PAC_DMSO in ORG66 at high con
 ### difference between PAC and DMSO  
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, PAC_pacvsdmso_high)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org66_paPAC_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org66_paPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -931,7 +929,7 @@ Differentially expressed genes between PAC_PAC and PAC_DMSO in ORG66 at low conc
 ### difference between PAC and DMSO  
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, PAC_pacvsdmso_low)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org66_paPAC_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org66_paPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -946,7 +944,7 @@ summary=paste (total, up, down, sep="\n")
 cat(summary[1])
 ```
 
-##### SN38_SN38 - SN38_DMSO) {.tabset}
+##### SN38_SN38 - SN38_DMSO {.tabset}
 
 ###### High
 
@@ -957,7 +955,7 @@ Differentially expressed genes between SN38_SN38 and SN38_DMSO in ORG66 at high 
 ### difference between SN38 and DMSO  
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, SN38_sn38vsdmso_high)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org66_snSN38_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org66_snSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
@@ -980,7 +978,7 @@ Differentially expressed genes between SN38_SN38 and SN38_DMSO in ORG66 at low c
 ### difference between SN38 and DMSO  
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, SN38_sn38vsdmso_low)
-fit <- treat(fit, fc=absolute_fold_change)
+fit <- treat(fit, lfc=log2(1.2))
 org66_snSN38_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org66_snSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')

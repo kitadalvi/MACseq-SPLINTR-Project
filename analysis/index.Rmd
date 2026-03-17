@@ -9,13 +9,14 @@ editor_options:
 ---
 
 ## Analysis
-| |Plate 1|Plate 2| | 
+| |Plate 1|Plate 2|Plate 3| 
 |:---|:---|:---|:-|
 |QC |[MAC-seq PMC228 QC (VCFG)](QC_VCFG.html)|| |
 | |[MAC-seq PMC228 QC (Nenad)](QC_Analysis.html) | |
-|Differential Expression (CONC together)|[Differential Gene Expression (AUG2025)](DE_P1_AUG2025.html)|[Differential Expression (NOV 2025)](DE_P2_APR2025.html) | 
+|Differential Expression (CONC together)|[Differential Gene Expression (AUG2025)](DE_P1_AUG2025.html)|[Differential Expression (NOV 2025)](DE_P2_APR2025.html) |[Differential Expression (Feb 2026)](DE_P3_FEB2026.html) 
 |Differential Expression (CONC separate)| |[Differential Expression v2](DE_P2_v2.html) | 
 |SPLINTR Analysis |[Labelled VS Unlabelled samples](DM_approach.html)| | |
+|GSEA || |[All plates here](GSEA_MAR2026.html) |
 
 
 
