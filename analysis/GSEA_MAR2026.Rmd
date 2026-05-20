@@ -28,7 +28,7 @@ create_dt <-  function(x){
 }
 ```
 
-## Genesets
+# Genesets
 
 ```{r}
 #gene_sets_df <- msigdbr(species = 'Homo sapiens', category = 'C2')
@@ -41,45 +41,720 @@ gene_sets <- gene_sets_df %>%
 cat(paste("Loaded", length(gene_sets), "gene sets\n"))
 ```
 
+# FGSEA Analysis
+
 ## Plate 2 {.tabset}
 
 ### ORG38 {.tabset}
 
+#### PAC_PAC - PAC_DMSO
 
 ```{r}
-# ### 1. Read in data -----------------------------------------------------------
-# df <- read.csv('data/DEgenes/P2/ORG38_PACPAC.csv')
-# df <- df %>%
-#   rename(gene_symbol = X)
-# head(df)
-# 
-# ### 2. Prepare ranked list of genes -----------------------------------------------
-# rankings <- sign(df$logFC)*(-log10(df$P.Value)) # we will use the signed p values from spatial DGE as ranking
-# names(rankings) <- df$gene_symbol # genes as names#
-# 
-# ### plot rankings
-# rankings <- sort(rankings, decreasing = TRUE) # sort genes by ranking
-# plot(rankings)
-# 
-# ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), aes(gene_symbol, ranks)) + 
-# 	geom_point() +
-# 	theme_classic() + 
-# 	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-# 
-# ### 3. Run GSEA ---------------------------------------------------------------
-# 
-# org38_p2_paPAC_GSEAres <- fgsea(pathways = gene_sets, # List of gene sets to check
-#                  stats = rankings,
-#                  scoreType = 'std', 
-#                  minSize = 10,
-#                  maxSize = 500,
-#                  nproc = 1)
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('../data/DEgenes/P2/ORG38_PACPAC.csv')
+df <- df %>%
+  rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org38_p2_pacpac_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org38_p2_pacpac_rankings) <- df$gene_symbol 
+
+### plot rankings
+org38_p2_pacpac_rankings <- sort(org38_p2_pacpac_rankings, decreasing = TRUE) 
+plot(org38_p2_pacpac_rankings)
+
+ggplot(data.frame(gene_symbol = names(org38_p2_pacpac_rankings[1:50]), ranks = org38_p2_pacpac_rankings[1:50]), aes(gene_symbol, ranks)) +
+	geom_point() +
+	theme_classic() +
+	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+### 3. Run GSEA ---------------------------------------------------------------
+
+org38_p2_pacpac_GSEAres <- fgsea(pathways = gene_sets, 
+                 stats = org38_p2_pacpac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+```
+
+GSEA Results:
+
+```{r}
+create_dt(org38_p2_pacpac_GSEAres)
+```
+
+```{r, fig.height = 9, fig.width=12}
+top10 <- org38_p2_pacpac_GSEAres[order(org38_p2_pacpac_GSEAres$padj), ][1:10, ]
+
+plots <- lapply(top10$pathway, function(pw) {
+  plotEnrichment(gene_sets[[pw]], org38_p2_pacpac_rankings) +
+    labs(title = pw)
+})
+
+ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]], plots[[7]], plots[[8]], plots[[9]],nrow=3, ncol=3)
+```
+
+#### SN38_SN38 - SN38_DMSO 
+
+```{r}
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('../data/DEgenes/P2/ORG38_SNSN38.csv')
+df <- df %>%
+  rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org38_p2_snsn38_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org38_p2_snsn38_rankings) <- df$gene_symbol 
+
+### plot rankings
+org38_p2_snsn38_rankings <- sort(org38_p2_snsn38_rankings, decreasing = TRUE) 
+plot(org38_p2_snsn38_rankings)
+
+ggplot(data.frame(gene_symbol = names(org38_p2_snsn38_rankings[1:50]), ranks = org38_p2_snsn38_rankings[1:50]), aes(gene_symbol, ranks)) +
+	geom_point() +
+	theme_classic() +
+	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+### 3. Run GSEA ---------------------------------------------------------------
+
+org38_p2_snsn38_GSEAres <- fgsea(pathways = gene_sets, 
+                 stats = org38_p2_snsn38_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+```
+
+GSEA Results:
+
+```{r}
+create_dt(org38_p2_snsn38_GSEAres)
+```
+
+```{r, fig.height = 9, fig.width=12}
+top10 <- org38_p2_snsn38_GSEAres[order(org38_p2_snsn38_GSEAres$padj), ][1:10, ]
+
+plots <- lapply(top10$pathway, function(pw) {
+  plotEnrichment(gene_sets[[pw]], org38_p2_snsn38_rankings) +
+    labs(title = pw)
+})
+
+ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]], plots[[7]], plots[[8]], plots[[9]],nrow=3, ncol=3)
+```
+
+#### PAC_DMSO - NC_DMSO 
+
+```{r}
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('../data/DEgenes/P2/ORG38_PDMSOvsDMSO.csv')
+df <- df %>%
+  rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org38_p2_pdmso_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org38_p2_pdmso_rankings) <- df$gene_symbol 
+
+### plot rankings
+org38_p2_pdmso_rankings <- sort(org38_p2_pdmso_rankings, decreasing = TRUE) 
+plot(org38_p2_pdmso_rankings)
+
+ggplot(data.frame(gene_symbol = names(org38_p2_pdmso_rankings[1:50]), ranks = org38_p2_pdmso_rankings[1:50]), aes(gene_symbol, ranks)) +
+	geom_point() +
+	theme_classic() +
+	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+### 3. Run GSEA ---------------------------------------------------------------
+
+org38_p2_pdmso_GSEAres <- fgsea(pathways = gene_sets, 
+                 stats = org38_p2_pdmso_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+```
+
+GSEA Results:
+
+```{r}
+create_dt(org38_p2_pdmso_GSEAres)
+```
+
+```{r, fig.height = 9, fig.width=12}
+top10 <- org38_p2_pdmso_GSEAres[order(org38_p2_pdmso_GSEAres$padj), ][1:10, ]
+
+plots <- lapply(top10$pathway, function(pw) {
+  plotEnrichment(gene_sets[[pw]], org38_p2_pdmso_rankings) +
+    labs(title = pw)
+})
+
+ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]], plots[[7]], plots[[8]], plots[[9]],nrow=3, ncol=3)
+```
+
+#### SN38_DMSO - NC_DMSO 
+
+```{r}
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('../data/DEgenes/P2/ORG38_SNDMSOvsDMSO.csv')
+df <- df %>%
+  rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org38_p2_sndmso_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org38_p2_sndmso_rankings) <- df$gene_symbol 
+
+### plot rankings
+org38_p2_sndmso_rankings <- sort(org38_p2_sndmso_rankings, decreasing = TRUE) 
+plot(org38_p2_sndmso_rankings)
+
+ggplot(data.frame(gene_symbol = names(org38_p2_sndmso_rankings[1:50]), ranks = org38_p2_sndmso_rankings[1:50]), aes(gene_symbol, ranks)) +
+	geom_point() +
+	theme_classic() +
+	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+### 3. Run GSEA ---------------------------------------------------------------
+
+org38_p2_sndmso_GSEAres <- fgsea(pathways = gene_sets, 
+                 stats = org38_p2_sndmso_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+```
+
+GSEA Results:
+
+```{r}
+create_dt(org38_p2_sndmso_GSEAres)
+```
+
+```{r, fig.height = 9, fig.width=12}
+top10 <- org38_p2_sndmso_GSEAres[order(org38_p2_sndmso_GSEAres$padj), ][1:10, ]
+
+plots <- lapply(top10$pathway, function(pw) {
+  plotEnrichment(gene_sets[[pw]], org38_p2_sndmso_rankings) +
+    labs(title = pw)
+})
+
+ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]], plots[[7]], plots[[8]], plots[[9]],nrow=3, ncol=3)
 ```
 
 ### ORG49 {.tabset}
 
+#### PAC_PAC - PAC_DMSO
+
+```{r}
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('../data/DEgenes/P2/ORG49_PACPAC.csv')
+df <- df %>%
+  rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org49_p2_pacpac_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org49_p2_pacpac_rankings) <- df$gene_symbol 
+
+### plot rankings
+org49_p2_pacpac_rankings <- sort(org49_p2_pacpac_rankings, decreasing = TRUE) 
+plot(org49_p2_pacpac_rankings)
+
+ggplot(data.frame(gene_symbol = names(org49_p2_pacpac_rankings[1:50]), ranks = org49_p2_pacpac_rankings[1:50]), aes(gene_symbol, ranks)) +
+	geom_point() +
+	theme_classic() +
+	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+### 3. Run GSEA ---------------------------------------------------------------
+
+org49_p2_pacpac_GSEAres <- fgsea(pathways = gene_sets, 
+                 stats = rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+```
+
+GSEA Results:
+
+```{r}
+create_dt(org49_p2_pacpac_GSEAres)
+```
+
+```{r, fig.height = 9, fig.width=12}
+top10 <- org49_p2_pacpac_GSEAres[order(org49_p2_pacpac_GSEAres$padj), ][1:10, ]
+
+plots <- lapply(top10$pathway, function(pw) {
+  plotEnrichment(gene_sets[[pw]], org49_p2_pacpac_rankings) +
+    labs(title = pw)
+})
+
+ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]], plots[[7]], plots[[8]], plots[[9]],nrow=3, ncol=3)
+```
+
+#### SN38_SN38 - SN38_DMSO 
+
+```{r}
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('../data/DEgenes/P2/ORG49_SNSN38.csv')
+df <- df %>%
+  rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org49_p2_snsn38_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org49_p2_snsn38_rankings) <- df$gene_symbol 
+
+### plot rankings
+org49_p2_snsn38_rankings <- sort(org49_p2_snsn38_rankings, decreasing = TRUE) 
+plot(org49_p2_snsn38_rankings)
+
+ggplot(data.frame(gene_symbol = names(org49_p2_snsn38_rankings[1:50]), ranks = org49_p2_snsn38_rankings[1:50]), aes(gene_symbol, ranks)) +
+	geom_point() +
+	theme_classic() +
+	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+### 3. Run GSEA ---------------------------------------------------------------
+
+org49_p2_snsn38_GSEAres <- fgsea(pathways = gene_sets, 
+                 stats = org49_p2_snsn38_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+```
+
+GSEA Results:
+
+```{r}
+create_dt(org49_p2_snsn38_GSEAres)
+```
+
+```{r, fig.height = 9, fig.width=12}
+top10 <- org49_p2_snsn38_GSEAres[order(org49_p2_snsn38_GSEAres$padj), ][1:10, ]
+
+plots <- lapply(top10$pathway, function(pw) {
+  plotEnrichment(gene_sets[[pw]], org49_p2_snsn38_rankings) +
+    labs(title = pw)
+})
+
+ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]], plots[[7]], plots[[8]], plots[[9]],nrow=3, ncol=3)
+```
+
+#### PAC_DMSO - NC_DMSO 
+
+```{r}
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('../data/DEgenes/P2/ORG49_PDMSOvsDMSO.csv')
+df <- df %>%
+  rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org49_p2_pdmso_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org49_p2_pdmso_rankings) <- df$gene_symbol 
+
+### plot rankings
+org49_p2_pdmso_rankings <- sort(org49_p2_pdmso_rankings, decreasing = TRUE) 
+plot(org49_p2_pdmso_rankings)
+
+ggplot(data.frame(gene_symbol = names(org49_p2_pdmso_rankings[1:50]), ranks = org49_p2_pdmso_rankings[1:50]), aes(gene_symbol, ranks)) +
+	geom_point() +
+	theme_classic() +
+	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+### 3. Run GSEA ---------------------------------------------------------------
+
+org49_p2_pdmso_GSEAres <- fgsea(pathways = gene_sets, 
+                 stats = org49_p2_pdmso_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+```
+
+GSEA Results:
+
+```{r}
+create_dt(org49_p2_pdmso_GSEAres)
+```
+
+```{r, fig.height = 9, fig.width=12}
+top10 <- org49_p2_pdmso_GSEAres[order(org49_p2_pdmso_GSEAres$padj), ][1:10, ]
+
+plots <- lapply(top10$pathway, function(pw) {
+  plotEnrichment(gene_sets[[pw]], org49_p2_pdmso_rankings) +
+    labs(title = pw)
+})
+
+ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]], plots[[7]], plots[[8]], plots[[9]],nrow=3, ncol=3)
+```
+
+#### SN38_DMSO - NC_DMSO 
+
+```{r}
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('../data/DEgenes/P2/ORG49_SNDMSOvsDMSO.csv')
+df <- df %>%
+  rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org49_p2_sndmso_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org49_p2_sndmso_rankings) <- df$gene_symbol 
+
+### plot rankings
+org49_p2_sndmso_rankings <- sort(org49_p2_sndmso_rankings, decreasing = TRUE) 
+plot(org49_p2_sndmso_rankings)
+
+ggplot(data.frame(gene_symbol = names(org49_p2_sndmso_rankings[1:50]), ranks = org49_p2_sndmso_rankings[1:50]), aes(gene_symbol, ranks)) +
+	geom_point() +
+	theme_classic() +
+	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+### 3. Run GSEA ---------------------------------------------------------------
+
+org49_p2_sndmso_GSEAres <- fgsea(pathways = gene_sets, 
+                 stats = org49_p2_sndmso_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+```
+
+GSEA Results:
+
+```{r}
+create_dt(org49_p2_sndmso_GSEAres)
+```
+
+```{r, fig.height = 9, fig.width=12}
+top10 <- org49_p2_sndmso_GSEAres[order(org49_p2_sndmso_GSEAres$padj), ][1:10, ]
+
+plots <- lapply(top10$pathway, function(pw) {
+  plotEnrichment(gene_sets[[pw]], org49_p2_sndmso_rankings) +
+    labs(title = pw)
+})
+
+ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]], plots[[7]], plots[[8]], plots[[9]],nrow=3, ncol=3)
+```
+
 ### ORG66 {.tabset}
 
+#### PAC_PAC - PAC_DMSO
+
+```{r}
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('../data/DEgenes/P2/ORG66_PACPAC.csv')
+df <- df %>%
+  rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org66_p2_pacpac_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org66_p2_pacpac_rankings) <- df$gene_symbol 
+
+### plot rankings
+org66_p2_pacpac_rankings <- sort(org66_p2_pacpac_rankings, decreasing = TRUE) 
+plot(org66_p2_pacpac_rankings)
+
+ggplot(data.frame(gene_symbol = names(org66_p2_pacpac_rankings[1:50]), ranks = org66_p2_pacpac_rankings[1:50]), aes(gene_symbol, ranks)) +
+	geom_point() +
+	theme_classic() +
+	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+### 3. Run GSEA ---------------------------------------------------------------
+
+org66_p2_pacpac_GSEAres <- fgsea(pathways = gene_sets, 
+                 stats = org66_p2_pacpac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+```
+
+GSEA Results:
+
+```{r}
+create_dt(org66_p2_pacpac_GSEAres)
+```
+
+```{r, fig.height = 9, fig.width=12}
+top10 <- org66_p2_pacpac_GSEAres[order(org66_p2_pacpac_GSEAres$padj), ][1:10, ]
+
+plots <- lapply(top10$pathway, function(pw) {
+  plotEnrichment(gene_sets[[pw]], org66_p2_pacpac_rankings) +
+    labs(title = pw)
+})
+
+ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]], plots[[7]], plots[[8]], plots[[9]],nrow=3, ncol=3)
+```
+
+#### SN38_SN38 - SN38_DMSO 
+
+```{r}
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('../data/DEgenes/P2/ORG66_SNSN38.csv')
+df <- df %>%
+  rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org66_p2_snsn38_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org66_p2_snsn38_rankings) <- df$gene_symbol 
+
+### plot rankings
+org66_p2_snsn38_rankings <- sort(org66_p2_snsn38_rankings, decreasing = TRUE) 
+plot(org66_p2_snsn38_rankings)
+
+ggplot(data.frame(gene_symbol = names(org66_p2_snsn38_rankings[1:50]), ranks = org66_p2_snsn38_rankings[1:50]), aes(gene_symbol, ranks)) +
+	geom_point() +
+	theme_classic() +
+	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+### 3. Run GSEA ---------------------------------------------------------------
+
+org66_p2_snsn38_GSEAres <- fgsea(pathways = gene_sets, 
+                 stats = org66_p2_snsn38_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+```
+
+GSEA Results:
+
+```{r}
+create_dt(org66_p2_snsn38_GSEAres)
+```
+
+```{r, fig.height = 9, fig.width=12}
+top10 <- org66_p2_snsn38_GSEAres[order(org66_p2_snsn38_GSEAres$padj), ][1:10, ]
+
+plots <- lapply(top10$pathway, function(pw) {
+  plotEnrichment(gene_sets[[pw]], org66_p2_snsn38_rankings) +
+    labs(title = pw)
+})
+
+ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]], plots[[7]], plots[[8]], plots[[9]],nrow=3, ncol=3)
+```
+
+#### PAC_DMSO - NC_DMSO 
+
+```{r}
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('../data/DEgenes/P2/ORG66_PDMSOvsDMSO.csv')
+df <- df %>%
+  rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org66_p2_pdmso_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org66_p2_pdmso_rankings) <- df$gene_symbol 
+
+### plot rankings
+org66_p2_pdmso_rankings <- sort(org66_p2_pdmso_rankings, decreasing = TRUE) 
+plot(org66_p2_pdmso_rankings)
+
+ggplot(data.frame(gene_symbol = names(org66_p2_pdmso_rankings[1:50]), ranks = org66_p2_pdmso_rankings[1:50]), aes(gene_symbol, ranks)) +
+	geom_point() +
+	theme_classic() +
+	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+### 3. Run GSEA ---------------------------------------------------------------
+
+org66_p2_pdmso_GSEAres <- fgsea(pathways = gene_sets, 
+                 stats = org66_p2_pdmso_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+```
+
+GSEA Results:
+
+```{r}
+create_dt(org66_p2_pdmso_GSEAres)
+```
+
+```{r, fig.height = 9, fig.width=12}
+top10 <- org66_p2_pdmso_GSEAres[order(org66_p2_pdmso_GSEAres$padj), ][1:10, ]
+
+plots <- lapply(top10$pathway, function(pw) {
+  plotEnrichment(gene_sets[[pw]], org66_p2_pdmso_rankings) +
+    labs(title = pw)
+})
+
+ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]], plots[[7]], plots[[8]], plots[[9]],nrow=3, ncol=3)
+```
+
+#### SN38_DMSO - NC_DMSO 
+
+```{r}
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('../data/DEgenes/P2/ORG66_SNDMSOvsDMSO.csv')
+df <- df %>%
+  rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org66_p2_sndmso_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org66_p2_sndmso_rankings) <- df$gene_symbol 
+
+### plot rankings
+org66_p2_sndmso_rankings <- sort(org66_p2_sndmso_rankings, decreasing = TRUE) 
+plot(org66_p2_sndmso_rankings)
+
+ggplot(data.frame(gene_symbol = names(org66_p2_sndmso_rankings[1:50]), ranks = org66_p2_sndmso_rankings[1:50]), aes(gene_symbol, ranks)) +
+	geom_point() +
+	theme_classic() +
+	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+### 3. Run GSEA ---------------------------------------------------------------
+
+org66_p2_sndmso_GSEAres <- fgsea(pathways = gene_sets, 
+                 stats = org66_p2_sndmso_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+```
+
+GSEA Results:
+
+```{r}
+create_dt(org66_p2_sndmso_GSEAres)
+```
+
+```{r, fig.height = 9, fig.width=12}
+top10 <- org66_p2_sndmso_GSEAres[order(org66_p2_sndmso_GSEAres$padj), ][1:10, ]
+
+plots <- lapply(top10$pathway, function(pw) {
+  plotEnrichment(gene_sets[[pw]], org66_p2_sndmso_rankings) +
+    labs(title = pw)
+})
+
+ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]], plots[[7]], plots[[8]], plots[[9]],nrow=3, ncol=3)
+```
+
+### All organoids {.tabset}
+
+#### PAC_PAC - PAC_DMSO 
+
+*Common pathways between ORG38 & ORG49:*
+
+```{r}
+list1 <- org38_p2_pacpac_GSEAres[org38_p2_pacpac_GSEAres$padj<0.05,c('pathway')]
+list2 <- org49_p2_pacpac_GSEAres[org49_p2_pacpac_GSEAres$padj<0.05,c('pathway')]
+list3 <- org66_p2_pacpac_GSEAres[org66_p2_pacpac_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway, list2$pathway)
+common_strings
+```
+
+#### SN38_SN38 - SN38_DMSO 
+
+*Common pathways between ORG38 & ORG49:*
+
+```{r}
+list1 <- org38_p2_snsn38_GSEAres[org38_p2_snsn38_GSEAres$padj<0.05,c('pathway')]
+list2 <- org49_p2_snsn38_GSEAres[org49_p2_snsn38_GSEAres$padj<0.05,c('pathway')]
+list3 <- org66_p2_snsn38_GSEAres[org66_p2_snsn38_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list2$pathway, list1$pathway)
+common_strings
+```
+
+#### PAC_DMSO - NC_DMSO 
+
+*Common pathways between ORG38 & ORG49:*
+
+```{r}
+list1 <- org38_p2_pdmso_GSEAres[org38_p2_pdmso_GSEAres$padj<0.05,c('pathway')]
+list2 <- org49_p2_pdmso_GSEAres[org49_p2_pdmso_GSEAres$padj<0.05,c('pathway')]
+list3 <- org66_p2_pdmso_GSEAres[org66_p2_pdmso_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway, list2$pathway)
+common_strings
+```
+
+#### SN38_DMSO - NC_DMSO 
+
+*Common pathways between ORG38 & ORG66:*
+
+```{r}
+list1 <- org38_p2_sndmso_GSEAres[org38_p2_sndmso_GSEAres$padj<0.05,c('pathway')]
+list2 <- org49_p2_sndmso_GSEAres[org49_p2_sndmso_GSEAres$padj<0.05,c('pathway')]
+list3 <- org66_p2_sndmso_GSEAres[org66_p2_sndmso_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway, list3$pathway)
+common_strings
+```
+
+### Between Treatments {.tabset}
+
+#### ORG38 Short term response 
+
+```{r}
+list1 <- org38_p2_pacpac_GSEAres[org38_p2_pacpac_GSEAres$padj<0.05,c('pathway')]
+list2 <- org38_p2_snsn38_GSEAres[org38_p2_snsn38_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway,list2$pathway)
+common_strings
+```
+
+#### ORG38 Long term changes 
+
+```{r}
+list1 <- org38_p2_pdmso_GSEAres[org38_p2_pdmso_GSEAres$padj<0.05,c('pathway')]
+list2 <- org38_p2_sndmso_GSEAres[org38_p2_sndmso_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway,list2$pathway)
+common_strings
+```
+
+#### ORG49 Short term response 
+
+```{r}
+list1 <- org49_p2_pacpac_GSEAres[org49_p2_pacpac_GSEAres$padj<0.05,c('pathway')]
+list2 <- org49_p2_snsn38_GSEAres[org49_p2_snsn38_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway,list2$pathway)
+common_strings
+```
+
+
+#### ORG49 Long term changes 
+
+```{r}
+list1 <- org49_p2_pdmso_GSEAres[org49_p2_pdmso_GSEAres$padj<0.05,c('pathway')]
+list2 <- org49_p2_sndmso_GSEAres[org49_p2_sndmso_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway,list2$pathway)
+common_strings
+```
+
+#### ORG66 Short term response 
+
+```{r}
+list1 <- org66_p2_pacpac_GSEAres[org66_p2_pacpac_GSEAres$padj<0.05,c('pathway')]
+list2 <- org66_p2_snsn38_GSEAres[org66_p2_snsn38_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway,list2$pathway)
+common_strings
+```
+
+#### ORG66 Long term changes 
+
+```{r}
+list1 <- org66_p2_pdmso_GSEAres[org66_p2_pdmso_GSEAres$padj<0.05,c('pathway')]
+list2 <- org66_p2_sndmso_GSEAres[org66_p2_sndmso_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway,list2$pathway)
+common_strings
+```
 
 
 ## Plate 3 {.tabset}
@@ -90,7 +765,7 @@ cat(paste("Loaded", length(gene_sets), "gene sets\n"))
 
 ```{r}
 ### 1. Read in data -----------------------------------------------------------
-df <- read.csv('data/DEgenes/P3/ORG38_paPAC.csv')
+df <- read.csv('../data/DEgenes/P3/ORG38_paPAC.csv')
 df <- df %>%
   rename(gene_symbol = X)
 head(df)
@@ -101,12 +776,12 @@ head(df)
 # Note that you can also just use the log2FC only - but it will not take into account 
 # genes with a large FC but non-significant
 
-rankings <- sign(df$logFC)*(-log10(df$P.Value)) # we will use the signed p values from spatial DGE as ranking
-names(rankings) <- df$gene_symbol # genes as names#
+org38_p3_paPAC_rankings <- sign(df$logFC)*(-log10(df$P.Value)) # we will use the signed p values from spatial DGE as ranking
+names(org38_p3_paPAC_rankings) <- df$gene_symbol # genes as names#
 
 ### plot rankings
-rankings <- sort(rankings, decreasing = TRUE) # sort genes by ranking
-plot(rankings)
+org38_p3_paPAC_rankings <- sort(org38_p3_paPAC_rankings, decreasing = TRUE) # sort genes by ranking
+plot(org38_p3_paPAC_rankings)
 
 # # Some genes have such low p values that the signed pval is +- inf, we need to change it to the maximum * constant to avoid problems with fgsea
 # max_ranking <- max(rankings[is.finite(rankings)])
@@ -115,7 +790,7 @@ plot(rankings)
 # rankings <- replace(rankings, rankings < min_ranking, min_ranking * 10)
 # rankings <- sort(rankings, decreasing = TRUE) # sort genes by ranking
 
-ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), aes(gene_symbol, ranks)) + 
+ggplot(data.frame(gene_symbol = names(org38_p3_paPAC_rankings[1:50]), ranks = org38_p3_paPAC_rankings[1:50]), aes(gene_symbol, ranks)) + 
 	geom_point() +
 	theme_classic() + 
 	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
@@ -124,7 +799,7 @@ ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), 
 # Easy peasy! Run fgsea with the pathways 
 org38_paPAC_GSEAres <- suppressMessages(
   fgsea(pathways = gene_sets, # List of gene sets to check
-                 stats = rankings,
+                 stats = org38_p3_paPAC_rankings,
                  scoreType = 'std', # in this case we have both pos and neg rankings. if only pos or neg, set to 'pos', 'neg'
                  minSize = 10,
                  maxSize = 500,
@@ -142,7 +817,7 @@ create_dt(org38_paPAC_GSEAres)
 top10 <- org38_paPAC_GSEAres[order(org38_paPAC_GSEAres$padj), ][1:10, ]
 
 plots <- lapply(top10$pathway, function(pw) {
-  plotEnrichment(gene_sets[[pw]], rankings) +
+  plotEnrichment(gene_sets[[pw]], org38_p3_paPAC_rankings) +
     labs(title = pw)
 })
 
@@ -153,7 +828,7 @@ ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]]
 
 ```{r}
 ### 1. Read in data -----------------------------------------------------------
-df <- read.csv('data/DEgenes/P3/org38_snSN38.csv')
+df <- read.csv('../data/DEgenes/P3/org38_snSN38.csv')
 df <- df %>%
   rename(gene_symbol = X)
 head(df)
@@ -164,12 +839,12 @@ head(df)
 # Note that you can also just use the log2FC only - but it will not take into account 
 # genes with a large FC but non-significant
 
-rankings <- sign(df$logFC)*(-log10(df$P.Value)) # we will use the signed p values from spatial DGE as ranking
-names(rankings) <- df$gene_symbol # genes as names#
+org38_p3_snSN38_rankings <- sign(df$logFC)*(-log10(df$P.Value)) # we will use the signed p values from spatial DGE as ranking
+names(org38_p3_snSN38_rankings) <- df$gene_symbol # genes as names#
 
 ### plot rankings
-rankings <- sort(rankings, decreasing = TRUE) # sort genes by ranking
-plot(rankings)
+org38_p3_snSN38_rankings <- sort(org38_p3_snSN38_rankings, decreasing = TRUE) # sort genes by ranking
+plot(org38_p3_snSN38_rankings)
 
 # # Some genes have such low p values that the signed pval is +- inf, we need to change it to the maximum * constant to avoid problems with fgsea
 # max_ranking <- max(rankings[is.finite(rankings)])
@@ -178,7 +853,7 @@ plot(rankings)
 # rankings <- replace(rankings, rankings < min_ranking, min_ranking * 10)
 # rankings <- sort(rankings, decreasing = TRUE) # sort genes by ranking
 
-ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), aes(gene_symbol, ranks)) + 
+ggplot(data.frame(gene_symbol = names(org38_p3_snSN38_rankings[1:50]), ranks = org38_p3_snSN38_rankings[1:50]), aes(gene_symbol, ranks)) + 
 	geom_point() +
 	theme_classic() + 
 	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
@@ -187,7 +862,7 @@ ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), 
 # Easy peasy! Run fgsea with the pathways 
 org38_snSN38_GSEAres <- suppressMessages(
   fgsea(pathways = gene_sets,
-                 stats = rankings,
+                 stats = org38_p3_snSN38_rankings,
                  scoreType = 'std', 
                  minSize = 10,
                  maxSize = 500,
@@ -205,7 +880,7 @@ create_dt(org38_snSN38_GSEAres)
 top10 <- org38_snSN38_GSEAres[order(org38_snSN38_GSEAres$padj), ][1:10, ]
 
 plots <- lapply(top10$pathway, function(pw) {
-  plotEnrichment(gene_sets[[pw]], rankings) +
+  plotEnrichment(gene_sets[[pw]], org38_p3_snSN38_rankings) +
     labs(title = pw)
 })
 
@@ -216,7 +891,7 @@ ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]]
 
 ```{r}
 ### 1. Read in data -----------------------------------------------------------
-df <- read.csv('data/DEgenes/P3/ORG38_PDMSOvsDMSO.csv')
+df <- read.csv('../data/DEgenes/P3/ORG38_PDMSOvsDMSO.csv')
 df <- df %>%
   rename(gene_symbol = X)
 head(df)
@@ -227,12 +902,12 @@ head(df)
 # Note that you can also just use the log2FC only - but it will not take into account 
 # genes with a large FC but non-significant
 
-rankings <- sign(df$logFC)*(-log10(df$P.Value)) # we will use the signed p values from spatial DGE as ranking
-names(rankings) <- df$gene_symbol # genes as names#
+org38_p3_pdmso_rankings <- sign(df$logFC)*(-log10(df$P.Value)) # we will use the signed p values from spatial DGE as ranking
+names(org38_p3_pdmso_rankings) <- df$gene_symbol # genes as names#
 
 ### plot rankings
-rankings <- sort(rankings, decreasing = TRUE) # sort genes by ranking
-plot(rankings)
+org38_p3_pdmso_rankings <- sort(org38_p3_pdmso_rankings, decreasing = TRUE) # sort genes by ranking
+plot(org38_p3_pdmso_rankings)
 
 # # Some genes have such low p values that the signed pval is +- inf, we need to change it to the maximum * constant to avoid problems with fgsea
 # max_ranking <- max(rankings[is.finite(rankings)])
@@ -241,7 +916,7 @@ plot(rankings)
 # rankings <- replace(rankings, rankings < min_ranking, min_ranking * 10)
 # rankings <- sort(rankings, decreasing = TRUE) # sort genes by ranking
 
-ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), aes(gene_symbol, ranks)) + 
+ggplot(data.frame(gene_symbol = names(org38_p3_pdmso_rankings[1:50]), ranks = org38_p3_pdmso_rankings[1:50]), aes(gene_symbol, ranks)) + 
 	geom_point() +
 	theme_classic() + 
 	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
@@ -250,7 +925,7 @@ ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), 
 # Easy peasy! Run fgsea with the pathways 
 org38_PDMSO_GSEAres <- suppressMessages(
   fgsea(pathways = gene_sets,
-                 stats = rankings,
+                 stats = org38_p3_pdmso_rankings,
                  scoreType = 'std', 
                  minSize = 10,
                  maxSize = 500,
@@ -268,7 +943,7 @@ create_dt(org38_PDMSO_GSEAres)
 top10 <- org38_PDMSO_GSEAres[order(org38_PDMSO_GSEAres$padj), ][1:10, ]
 
 plots <- lapply(top10$pathway, function(pw) {
-  plotEnrichment(gene_sets[[pw]], rankings) +
+  plotEnrichment(gene_sets[[pw]], org38_p3_pdmso_rankings) +
     labs(title = pw)
 })
 
@@ -279,20 +954,20 @@ ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]]
 
 ```{r}
 ### 1. Read in data -----------------------------------------------------------
-df <- read.csv('data/DEgenes/P3/ORG38_SNDMSOvsDMSO.csv')
+df <- read.csv('../data/DEgenes/P3/ORG38_SNDMSOvsDMSO.csv')
 df <- df %>%
   rename(gene_symbol = X)
 head(df)
 
 ### 2. Prepare ranked list of genes -----------------------------------------------
-rankings <- sign(df$logFC)*(-log10(df$P.Value)) # we will use the signed p values from spatial DGE as ranking
-names(rankings) <- df$gene_symbol # genes as names#
+org38_p3_sndmso_rankings <- sign(df$logFC)*(-log10(df$P.Value)) # we will use the signed p values from spatial DGE as ranking
+names(org38_p3_sndmso_rankings) <- df$gene_symbol # genes as names#
 
 ### plot rankings
-rankings <- sort(rankings, decreasing = TRUE) # sort genes by ranking
-plot(rankings)
+org38_p3_sndmso_rankings <- sort(org38_p3_sndmso_rankings, decreasing = TRUE) # sort genes by ranking
+plot(org38_p3_sndmso_rankings)
 
-ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), aes(gene_symbol, ranks)) + 
+ggplot(data.frame(gene_symbol = names(org38_p3_sndmso_rankings[1:50]), ranks = org38_p3_sndmso_rankings[1:50]), aes(gene_symbol, ranks)) + 
 	geom_point() +
 	theme_classic() + 
 	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
@@ -300,7 +975,7 @@ ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), 
 ### 3. Run GSEA ---------------------------------------------------------------
 org38_SNDMSO_GSEAres <- suppressMessages(
   fgsea(pathways = gene_sets,
-                 stats = rankings,
+                 stats = org38_p3_sndmso_rankings,
                  scoreType = 'std', 
                  minSize = 10,
                  maxSize = 500,
@@ -318,7 +993,7 @@ create_dt(org38_SNDMSO_GSEAres)
 top10 <- org38_SNDMSO_GSEAres[order(org38_SNDMSO_GSEAres$padj), ][1:10, ]
 
 plots <- lapply(top10$pathway, function(pw) {
-  plotEnrichment(gene_sets[[pw]], rankings) +
+  plotEnrichment(gene_sets[[pw]], org38_p3_sndmso_rankings) +
     labs(title = pw)
 })
 
@@ -331,20 +1006,20 @@ ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]]
 
 ```{r}
 ### 1. Read in data -----------------------------------------------------------
-df <- read.csv('data/DEgenes/P3/ORG49_paPAC.csv')
+df <- read.csv('../data/DEgenes/P3/ORG49_paPAC.csv')
 df <- df %>%
   rename(gene_symbol = X)
 head(df)
 
 ### 2. Prepare ranked list of genes -----------------------------------------------
-rankings <- sign(df$logFC)*(-log10(df$P.Value))
-names(rankings) <- df$gene_symbol
+org49_p3_paPAC_rankings <- sign(df$logFC)*(-log10(df$P.Value))
+names(org49_p3_paPAC_rankings) <- df$gene_symbol
 
 ### plot rankings
-rankings <- sort(rankings, decreasing = TRUE) # sort genes by ranking
-plot(rankings)
+org49_p3_paPAC_rankings <- sort(org49_p3_paPAC_rankings, decreasing = TRUE) # sort genes by ranking
+plot(org49_p3_paPAC_rankings)
 
-ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), aes(gene_symbol, ranks)) + 
+ggplot(data.frame(gene_symbol = names(org49_p3_paPAC_rankings[1:50]), ranks = org49_p3_paPAC_rankings[1:50]), aes(gene_symbol, ranks)) + 
 	geom_point() +
 	theme_classic() + 
 	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
@@ -352,7 +1027,7 @@ ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), 
 ### 3. Run GSEA ---------------------------------------------------------------
 org49_paPAC_GSEAres <- suppressMessages(
   fgsea(pathways = gene_sets,
-                 stats = rankings,
+                 stats = org49_p3_paPAC_rankings,
                  scoreType = 'std', 
                  minSize = 10,
                  maxSize = 500,
@@ -370,20 +1045,20 @@ create_dt(org49_paPAC_GSEAres)
 
 ```{r}
 ### 1. Read in data -----------------------------------------------------------
-df <- read.csv('data/DEgenes/P3/org49_snSN38.csv')
+df <- read.csv('../data/DEgenes/P3/org49_snSN38.csv')
 df <- df %>%
   rename(gene_symbol = X)
 head(df)
 
 ### 2. Prepare ranked list of genes -----------------------------------------------
-rankings <- sign(df$logFC)*(-log10(df$P.Value))
-names(rankings) <- df$gene_symbol
+org49_p3_snSN38_rankings <- sign(df$logFC)*(-log10(df$P.Value))
+names(org49_p3_snSN38_rankings) <- df$gene_symbol
 
 ### plot rankings
-rankings <- sort(rankings, decreasing = TRUE) # sort genes by ranking
-plot(rankings)
+org49_p3_snSN38_rankings <- sort(org49_p3_snSN38_rankings, decreasing = TRUE) # sort genes by ranking
+plot(org49_p3_snSN38_rankings)
 
-ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), aes(gene_symbol, ranks)) + 
+ggplot(data.frame(gene_symbol = names(org49_p3_snSN38_rankings[1:50]), ranks = org49_p3_snSN38_rankings[1:50]), aes(gene_symbol, ranks)) + 
 	geom_point() +
 	theme_classic() + 
 	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
@@ -391,7 +1066,7 @@ ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), 
 ### 3. Run GSEA ---------------------------------------------------------------
 org49_snSN38_GSEAres <- suppressMessages(
   fgsea(pathways = gene_sets,
-                 stats = rankings,
+                 stats = org49_p3_snSN38_rankings,
                  scoreType = 'std', 
                  minSize = 10,
                  maxSize = 500,
@@ -409,7 +1084,7 @@ create_dt(org49_snSN38_GSEAres)
 top10 <- org49_snSN38_GSEAres[order(org49_snSN38_GSEAres$padj), ][1:10, ]
 
 plots <- lapply(top10$pathway, function(pw) {
-  plotEnrichment(gene_sets[[pw]], rankings) +
+  plotEnrichment(gene_sets[[pw]], org49_p3_snSN38_rankings) +
     labs(title = pw)
 })
 
@@ -420,21 +1095,21 @@ ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]]
 
 ```{r}
 ### 1. Read in data -----------------------------------------------------------
-df <- read.csv('data/DEgenes/P3/ORG49_PDMSOvsDMSO.csv')
+df <- read.csv('../data/DEgenes/P3/ORG49_PDMSOvsDMSO.csv')
 df <- df %>%
   rename(gene_symbol = X)
 head(df)
 
 
 ### 2. Prepare ranked list of genes -----------------------------------------------
-rankings <- sign(df$logFC)*(-log10(df$P.Value))
-names(rankings) <- df$gene_symbol
+org49_p3_pdmso_rankings <- sign(df$logFC)*(-log10(df$P.Value))
+names(org49_p3_pdmso_rankings) <- df$gene_symbol
 
 ### plot rankings
-rankings <- sort(rankings, decreasing = TRUE) # sort genes by ranking
-plot(rankings)
+org49_p3_pdmso_rankings <- sort(org49_p3_pdmso_rankings, decreasing = TRUE) # sort genes by ranking
+plot(org49_p3_pdmso_rankings)
 
-ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), aes(gene_symbol, ranks)) + 
+ggplot(data.frame(gene_symbol = names(ranorg49_p3_pdmso_rankingskings[1:50]), ranks = org49_p3_pdmso_rankings[1:50]), aes(gene_symbol, ranks)) + 
 	geom_point() +
 	theme_classic() + 
 	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
@@ -442,7 +1117,7 @@ ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), 
 ### 3. Run GSEA ---------------------------------------------------------------
 org49_PDMSO_GSEAres <- suppressMessages(
   fgsea(pathways = gene_sets,
-                 stats = rankings,
+                 stats = org49_p3_pdmso_rankings,
                  scoreType = 'std', 
                  minSize = 10,
                  maxSize = 500,
@@ -460,7 +1135,7 @@ create_dt(org49_PDMSO_GSEAres)
 top10 <- org49_PDMSO_GSEAres[order(org49_PDMSO_GSEAres$padj), ][1:10, ]
 
 plots <- lapply(top10$pathway, function(pw) {
-  plotEnrichment(gene_sets[[pw]], rankings) +
+  plotEnrichment(gene_sets[[pw]], org49_p3_pdmso_rankings) +
     labs(title = pw)
 })
 
@@ -469,22 +1144,23 @@ ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]]
 ```
 
 #### SN38_DMSO - NC_DMSO
+
 ```{r}
 ### 1. Read in data -----------------------------------------------------------
-df <- read.csv('data/DEgenes/P3/ORG49_SNDMSOvsDMSO.csv')
+df <- read.csv('../data/DEgenes/P3/ORG49_SNDMSOvsDMSO.csv')
 df <- df %>%
   rename(gene_symbol = X)
 head(df)
 
 ### 2. Prepare ranked list of genes -----------------------------------------------
-rankings <- sign(df$logFC)*(-log10(df$P.Value))
-names(rankings) <- df$gene_symbol
+org49_p3_sndmso_rankings <- sign(df$logFC)*(-log10(df$P.Value))
+names(org49_p3_sndmso_rankings) <- df$gene_symbol
 
 ### plot rankings
-rankings <- sort(rankings, decreasing = TRUE) # sort genes by ranking
-plot(rankings)
+org49_p3_sndmso_rankings <- sort(org49_p3_sndmso_rankings, decreasing = TRUE) # sort genes by ranking
+plot(org49_p3_sndmso_rankings)
 
-ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), aes(gene_symbol, ranks)) + 
+ggplot(data.frame(gene_symbol = names(org49_p3_sndmso_rankings[1:50]), ranks = org49_p3_sndmso_rankings[1:50]), aes(gene_symbol, ranks)) + 
 	geom_point() +
 	theme_classic() + 
 	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
@@ -492,7 +1168,7 @@ ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), 
 ### 3. Run GSEA ---------------------------------------------------------------
 org49_SNDMSO_GSEAres <- suppressMessages(
   fgsea(pathways = gene_sets,
-                 stats = rankings,
+                 stats = org49_p3_sndmso_rankings,
                  scoreType = 'std', 
                  minSize = 10,
                  maxSize = 500,
@@ -510,7 +1186,7 @@ create_dt(org49_SNDMSO_GSEAres)
 top10 <- org49_SNDMSO_GSEAres[order(org49_SNDMSO_GSEAres$padj), ][1:10, ]
 
 plots <- lapply(top10$pathway, function(pw) {
-  plotEnrichment(gene_sets[[pw]], rankings) +
+  plotEnrichment(gene_sets[[pw]], org49_p3_sndmso_rankings) +
     labs(title = pw)
 })
 
@@ -523,20 +1199,20 @@ ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]]
 
 ```{r}
 ### 1. Read in data -----------------------------------------------------------
-df <- read.csv('data/DEgenes/P3/ORG66_paPAC.csv')
+df <- read.csv('../data/DEgenes/P3/ORG66_paPAC.csv')
 df <- df %>%
   rename(gene_symbol = X)
 head(df)
 
 ### 2. Prepare ranked list of genes -----------------------------------------------
-rankings <- sign(df$logFC)*(-log10(df$P.Value))
-names(rankings) <- df$gene_symbol
+org66_p3_paPAC_rankings <- sign(df$logFC)*(-log10(df$P.Value))
+names(org66_p3_paPAC_rankings) <- df$gene_symbol
 
 ### plot rankings
-rankings <- sort(rankings, decreasing = TRUE) # sort genes by ranking
-plot(rankings)
+org66_p3_paPAC_rankings <- sort(org66_p3_paPAC_rankings, decreasing = TRUE) # sort genes by ranking
+plot(org66_p3_paPAC_rankings)
 
-ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), aes(gene_symbol, ranks)) + 
+ggplot(data.frame(gene_symbol = names(org66_p3_paPAC_rankings[1:50]), ranks = org66_p3_paPAC_rankings[1:50]), aes(gene_symbol, ranks)) + 
 	geom_point() +
 	theme_classic() + 
 	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
@@ -544,7 +1220,7 @@ ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), 
 ### 3. Run GSEA ---------------------------------------------------------------
 org66_paPAC_GSEAres <- suppressMessages(
   fgsea(pathways = gene_sets,
-                 stats = rankings,
+                 stats = org66_p3_paPAC_rankings,
                  scoreType = 'std', 
                  minSize = 10,
                  maxSize = 500,
@@ -562,7 +1238,7 @@ create_dt(org66_paPAC_GSEAres)
 top10 <- org66_paPAC_GSEAres[order(org66_paPAC_GSEAres$padj), ][1:10, ]
 
 plots <- lapply(top10$pathway, function(pw) {
-  plotEnrichment(gene_sets[[pw]], rankings) +
+  plotEnrichment(gene_sets[[pw]], org66_p3_paPAC_rankings) +
     labs(title = pw)
 })
 
@@ -573,20 +1249,20 @@ ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]]
 
 ```{r}
 ### 1. Read in data -----------------------------------------------------------
-df <- read.csv('data/DEgenes/P3/org66_snSN38.csv')
+df <- read.csv('../data/DEgenes/P3/org66_snSN38.csv')
 df <- df %>%
   rename(gene_symbol = X)
 head(df)
 
 ### 2. Prepare ranked list of genes -----------------------------------------------
-rankings <- sign(df$logFC)*(-log10(df$P.Value))
-names(rankings) <- df$gene_symbol
+org66_p3_snSN38_rankings <- sign(df$logFC)*(-log10(df$P.Value))
+names(org66_p3_snSN38_rankings) <- df$gene_symbol
 
 ### plot rankings
-rankings <- sort(rankings, decreasing = TRUE) # sort genes by ranking
-plot(rankings)
+org66_p3_snSN38_rankings <- sort(org66_p3_snSN38_rankings, decreasing = TRUE) # sort genes by ranking
+plot(org66_p3_snSN38_rankings)
 
-ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), aes(gene_symbol, ranks)) + 
+ggplot(data.frame(gene_symbol = names(org66_p3_snSN38_rankings[1:50]), ranks = org66_p3_snSN38_rankings[1:50]), aes(gene_symbol, ranks)) + 
 	geom_point() +
 	theme_classic() + 
 	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
@@ -594,7 +1270,7 @@ ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), 
 ### 3. Run GSEA ---------------------------------------------------------------
 org66_snSN38_GSEAres <- suppressMessages(
   fgsea(pathways = gene_sets,
-                 stats = rankings,
+                 stats = org66_p3_snSN38_rankings,
                  scoreType = 'std', 
                  minSize = 10,
                  maxSize = 500,
@@ -612,7 +1288,7 @@ create_dt(org66_snSN38_GSEAres)
 top10 <- org66_snSN38_GSEAres[order(org66_snSN38_GSEAres$padj), ][1:10, ]
 
 plots <- lapply(top10$pathway, function(pw) {
-  plotEnrichment(gene_sets[[pw]], rankings) +
+  plotEnrichment(gene_sets[[pw]], org66_p3_snSN38_rankings) +
     labs(title = pw)
 })
 
@@ -623,21 +1299,21 @@ ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]]
 
 ```{r}
 ### 1. Read in data -----------------------------------------------------------
-df <- read.csv('data/DEgenes/P3/ORG66_PDMSOvsDMSO.csv')
+df <- read.csv('../data/DEgenes/P3/ORG66_PDMSOvsDMSO.csv')
 df <- df %>%
   rename(gene_symbol = X)
 head(df)
 
 
 ### 2. Prepare ranked list of genes -----------------------------------------------
-rankings <- sign(df$logFC)*(-log10(df$P.Value))
-names(rankings) <- df$gene_symbol
+org66_p3_pdmso_rankings <- sign(df$logFC)*(-log10(df$P.Value))
+names(org66_p3_pdmso_rankings) <- df$gene_symbol
 
 ### plot rankings
-rankings <- sort(rankings, decreasing = TRUE) # sort genes by ranking
-plot(rankings)
+org66_p3_pdmso_rankings <- sort(org66_p3_pdmso_rankings, decreasing = TRUE) # sort genes by ranking
+plot(org66_p3_pdmso_rankings)
 
-ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), aes(gene_symbol, ranks)) + 
+ggplot(data.frame(gene_symbol = names(org66_p3_pdmso_rankings[1:50]), ranks = org66_p3_pdmso_rankings[1:50]), aes(gene_symbol, ranks)) + 
 	geom_point() +
 	theme_classic() + 
 	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
@@ -645,7 +1321,7 @@ ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), 
 ### 3. Run GSEA ---------------------------------------------------------------
 org66_PDMSO_GSEAres <- suppressMessages(
   fgsea(pathways = gene_sets,
-                 stats = rankings,
+                 stats = org66_p3_pdmso_rankings,
                  scoreType = 'std', 
                  minSize = 10,
                  maxSize = 500,
@@ -663,7 +1339,7 @@ create_dt(org66_PDMSO_GSEAres)
 top10 <- org66_PDMSO_GSEAres[order(org66_PDMSO_GSEAres$padj), ][1:10, ]
 
 plots <- lapply(top10$pathway, function(pw) {
-  plotEnrichment(gene_sets[[pw]], rankings) +
+  plotEnrichment(gene_sets[[pw]], org66_p3_pdmso_rankings) +
     labs(title = pw)
 })
 
@@ -671,22 +1347,23 @@ ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]]
 ```
 
 #### SN38_DMSO - NC_DMSO
+
 ```{r}
 ### 1. Read in data -----------------------------------------------------------
-df <- read.csv('data/DEgenes/P3/ORG66_SNDMSOvsDMSO.csv')
+df <- read.csv('../data/DEgenes/P3/ORG66_SNDMSOvsDMSO.csv')
 df <- df %>%
   rename(gene_symbol = X)
 head(df)
 
 ### 2. Prepare ranked list of genes -----------------------------------------------
-rankings <- sign(df$logFC)*(-log10(df$P.Value))
-names(rankings) <- df$gene_symbol
+org66_p3_sndmso_rankings <- sign(df$logFC)*(-log10(df$P.Value))
+names(org66_p3_sndmso_rankings) <- df$gene_symbol
 
 ### plot rankings
-rankings <- sort(rankings, decreasing = TRUE) # sort genes by ranking
-plot(rankings)
+org66_p3_sndmso_rankings <- sort(org66_p3_sndmso_rankings, decreasing = TRUE) # sort genes by ranking
+plot(org66_p3_sndmso_rankings)
 
-ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), aes(gene_symbol, ranks)) + 
+ggplot(data.frame(gene_symbol = names(org66_p3_sndmso_rankings[1:50]), ranks = org66_p3_sndmso_rankings[1:50]), aes(gene_symbol, ranks)) + 
 	geom_point() +
 	theme_classic() + 
 	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
@@ -694,7 +1371,7 @@ ggplot(data.frame(gene_symbol = names(rankings[1:50]), ranks = rankings[1:50]), 
 ### 3. Run GSEA ---------------------------------------------------------------
 org66_SNDMSO_GSEAres <- suppressMessages(
   fgsea(pathways = gene_sets,
-                 stats = rankings,
+                 stats = org66_p3_sndmso_rankings,
                  scoreType = 'std', 
                  minSize = 10,
                  maxSize = 500,
@@ -712,7 +1389,7 @@ create_dt(org66_SNDMSO_GSEAres)
 top10 <- org66_SNDMSO_GSEAres[order(org66_SNDMSO_GSEAres$padj), ][1:10, ]
 
 plots <- lapply(top10$pathway, function(pw) {
-  plotEnrichment(gene_sets[[pw]], rankings) +
+  plotEnrichment(gene_sets[[pw]], org66_p3_sndmso_rankings) +
     labs(title = substr(pw, 10,10000000))
 })
 
@@ -722,42 +1399,59 @@ ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], plots[[6]]
 ### All organoids {.tabset}
 
 #### PAC_PAC - PAC_DMSO 
+
+*Common pathways between ORG38 & ORG66:*
+
 ```{r}
 list1 <- org38_paPAC_GSEAres[org38_paPAC_GSEAres$padj<0.05,c('pathway')]
 list2 <- org49_paPAC_GSEAres[org49_paPAC_GSEAres$padj<0.05,c('pathway')]
 list3 <- org66_paPAC_GSEAres[org66_paPAC_GSEAres$padj<0.05,c('pathway')]
 
-common_strings <- Reduce(intersect, list(list1, list3))
+common_strings <- Reduce(intersect, list(list1$pathway, list3$pathway))
 common_strings
 ```
 
 #### SN38_SN38 - SN38_DMSO 
+
 ```{r}
 list1 <- org38_snSN38_GSEAres[org38_snSN38_GSEAres$padj<0.05,c('pathway')]
 list2 <- org49_snSN38_GSEAres[org49_snSN38_GSEAres$padj<0.05,c('pathway')]
 list3 <- org66_snSN38_GSEAres[org66_snSN38_GSEAres$padj<0.05,c('pathway')]
 
-common_strings <- Reduce(intersect, list(list1, list2, list3))
+common_strings <- Reduce(intersect, list(list1$pathway, list2$pathway, list3$pathway))
 common_strings
 ```
 
 #### PAC_DMSO - NC_DMSO 
+
 ```{r}
 list1 <- org38_PDMSO_GSEAres[org38_PDMSO_GSEAres$padj<0.05,c('pathway')]
 list2 <- org49_PDMSO_GSEAres[org49_PDMSO_GSEAres$padj<0.05,c('pathway')]
 list3 <- org66_PDMSO_GSEAres[org66_PDMSO_GSEAres$padj<0.05,c('pathway')]
+```
 
-common_strings <- Reduce(intersect, list(list1, list2, list3))
+*Common pathways between ORG38 & ORG66:*
+
+```{r}
+common_strings <- Reduce(intersect, list(list1$pathway, list3$pathway))
+common_strings
+```
+
+*Common pathways between ORG38 & ORG49:*
+
+```{r}
+common_strings <- Reduce(intersect, list(list1$pathway, list2$pathway))
 common_strings
 ```
 
 #### SN38_DMSO - NC_DMSO 
+
 ```{r}
 list1 <- org38_SNDMSO_GSEAres[org38_SNDMSO_GSEAres$padj<0.05,c('pathway')]
 list2 <- org49_SNDMSO_GSEAres[org49_SNDMSO_GSEAres$padj<0.05,c('pathway')]
 list3 <- org66_SNDMSO_GSEAres[org66_SNDMSO_GSEAres$padj<0.05,c('pathway')]
 
-common_strings <- Reduce(intersect, list(list1,list2, list3))
+common_strings <- Reduce(intersect, list(list1$pathway,list2$pathway, list3$pathway))
 common_strings
 ```
 
@@ -769,7 +1463,7 @@ common_strings
 list1 <- org38_paPAC_GSEAres[org38_paPAC_GSEAres$padj<0.05,c('pathway')]
 list2 <- org38_snSN38_GSEAres[org38_snSN38_GSEAres$padj<0.05,c('pathway')]
 
-common_strings <- intersect(list1,list2)
+common_strings <- intersect(list1$pathway,list2$pathway)
 common_strings
 ```
 
@@ -779,7 +1473,7 @@ common_strings
 list1 <- org38_PDMSO_GSEAres[org38_PDMSO_GSEAres$padj<0.05,c('pathway')]
 list2 <- org38_SNDMSO_GSEAres[org38_SNDMSO_GSEAres$padj<0.05,c('pathway')]
 
-common_strings <- intersect(list1,list2)
+common_strings <- intersect(list1$pathway,list2$pathway)
 common_strings
 ```
 
@@ -789,7 +1483,7 @@ common_strings
 list1 <- org49_paPAC_GSEAres[org49_paPAC_GSEAres$padj<0.05,c('pathway')]
 list2 <- org49_snSN38_GSEAres[org49_snSN38_GSEAres$padj<0.05,c('pathway')]
 
-common_strings <- intersect(list1,list2)
+common_strings <- intersect(list1$pathway,list2$pathway)
 common_strings
 ```
 
@@ -800,7 +1494,7 @@ common_strings
 list1 <- org49_PDMSO_GSEAres[org49_PDMSO_GSEAres$padj<0.05,c('pathway')]
 list2 <- org49_SNDMSO_GSEAres[org49_SNDMSO_GSEAres$padj<0.05,c('pathway')]
 
-common_strings <- intersect(list1,list2)
+common_strings <- intersect(list1$pathway,list2$pathway)
 common_strings
 ```
 
@@ -810,7 +1504,7 @@ common_strings
 list1 <- org66_paPAC_GSEAres[org66_paPAC_GSEAres$padj<0.05,c('pathway')]
 list2 <- org66_snSN38_GSEAres[org66_snSN38_GSEAres$padj<0.05,c('pathway')]
 
-common_strings <- intersect(list1,list2)
+common_strings <- intersect(list1$pathway,list2$pathway)
 common_strings
 ```
 
@@ -820,8 +1514,1662 @@ common_strings
 list1 <- org66_PDMSO_GSEAres[org66_PDMSO_GSEAres$padj<0.05,c('pathway')]
 list2 <- org66_SNDMSO_GSEAres[org66_SNDMSO_GSEAres$padj<0.05,c('pathway')]
 
-common_strings <- intersect(list1,list2)
+common_strings <- intersect(list1$pathway,list2$pathway)
 common_strings
 ```
 
 
+## Comparing between T2 and T3 {.tabset}
+
+### ORG38 {.tabset}
+
+#### short-term PAC
+
+```{r}
+list1 <- org38_p2_pacpac_GSEAres[org38_p2_pacpac_GSEAres$padj<0.05,c('pathway')]
+list2 <- org38_paPAC_GSEAres[org38_paPAC_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway,list2$pathway)
+common_strings
+```
+
+
+#### short-term SN38
+
+```{r}
+list1 <- org38_p2_snsn38_GSEAres[org38_p2_snsn38_GSEAres$padj<0.05,c('pathway')]
+list2 <- org38_snSN38_GSEAres[org38_snSN38_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway,list2$pathway)
+common_strings
+```
+
+#### long-term PAC
+
+```{r}
+list1 <- org38_p2_pdmso_GSEAres[org38_p2_pdmso_GSEAres$padj<0.05,c('pathway')]
+list2 <- org38_PDMSO_GSEAres[org38_PDMSO_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway,list2$pathway)
+common_strings
+```
+
+#### long-term SN38
+
+```{r}
+list1 <- org38_p2_sndmso_GSEAres[org38_p2_sndmso_GSEAres$padj<0.05,c('pathway')]
+list2 <- org38_SNDMSO_GSEAres[org38_SNDMSO_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway,list2$pathway)
+common_strings
+```
+
+### ORG49 {.tabset}
+
+#### short-term PAC
+
+```{r}
+list1 <- org49_p2_pacpac_GSEAres[org49_p2_pacpac_GSEAres$padj<0.05,c('pathway')]
+list2 <- org49_paPAC_GSEAres[org49_paPAC_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway,list2$pathway)
+common_strings
+```
+
+
+#### short-term SN38
+
+```{r}
+list1 <- org49_p2_snsn38_GSEAres[org49_p2_snsn38_GSEAres$padj<0.05,c('pathway')]
+list2 <- org49_snSN38_GSEAres[org49_snSN38_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway,list2$pathway)
+common_strings
+```
+
+#### long-term PAC
+
+```{r}
+list1 <- org49_p2_pdmso_GSEAres[org49_p2_pdmso_GSEAres$padj<0.05,c('pathway')]
+list2 <- org49_PDMSO_GSEAres[org49_PDMSO_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway,list2$pathway)
+common_strings
+```
+
+#### long-term SN38
+
+```{r}
+list1 <- org49_p2_sndmso_GSEAres[org49_p2_sndmso_GSEAres$padj<0.05,c('pathway')]
+list2 <- org49_SNDMSO_GSEAres[org49_SNDMSO_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway,list2$pathway)
+common_strings
+```
+
+### ORG66 {.tabset}
+
+#### short-term PAC
+
+```{r}
+list1 <- org66_p2_pacpac_GSEAres[org66_p2_pacpac_GSEAres$padj<0.05,c('pathway')]
+list2 <- org66_paPAC_GSEAres[org66_paPAC_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway,list2$pathway)
+common_strings
+```
+
+
+#### short-term SN38
+
+```{r}
+list1 <- org66_p2_snsn38_GSEAres[org66_p2_snsn38_GSEAres$padj<0.05,c('pathway')]
+list2 <- org66_snSN38_GSEAres[org66_snSN38_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway,list2$pathway)
+common_strings
+```
+
+#### long-term PAC
+
+```{r}
+list1 <- org66_p2_pdmso_GSEAres[org66_p2_pdmso_GSEAres$padj<0.05,c('pathway')]
+list2 <- org66_PDMSO_GSEAres[org66_PDMSO_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway,list2$pathway)
+common_strings
+```
+
+#### long-term SN38
+
+```{r}
+list1 <- org66_p2_sndmso_GSEAres[org66_p2_sndmso_GSEAres$padj<0.05,c('pathway')]
+list2 <- org66_SNDMSO_GSEAres[org66_SNDMSO_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- intersect(list1$pathway,list2$pathway)
+common_strings
+```
+
+### All organoids {.tabset}
+
+#### short-term pac
+
+```{r}
+list1 <- org38_p2_pacpac_GSEAres[org38_p2_pacpac_GSEAres$padj<0.05,c('pathway')]
+list2 <- org38_paPAC_GSEAres[org38_paPAC_GSEAres$padj<0.05,c('pathway')]
+list3 <- org49_p2_pacpac_GSEAres[org49_p2_pacpac_GSEAres$padj<0.05,c('pathway')]
+list4 <- org49_paPAC_GSEAres[org49_paPAC_GSEAres$padj<0.05,c('pathway')]
+list5 <- org66_p2_pacpac_GSEAres[org66_p2_pacpac_GSEAres$padj<0.05,c('pathway')]
+list6 <- org66_paPAC_GSEAres[org66_paPAC_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- Reduce(intersect, list(list1$pathway,list2$pathway, list3$pathway, list4$pathway, list5$pathway, list6$pathway))
+common_strings
+```
+
+#### short-term SN38
+
+```{r}
+list1 <- org38_p2_snsn38_GSEAres[org38_p2_snsn38_GSEAres$padj<0.05,c('pathway')]
+list2 <- org38_snSN38_GSEAres[org38_snSN38_GSEAres$padj<0.05,c('pathway')]
+list3 <- org49_p2_snsn38_GSEAres[org49_p2_snsn38_GSEAres$padj<0.05,c('pathway')]
+list4 <- org49_snSN38_GSEAres[org49_snSN38_GSEAres$padj<0.05,c('pathway')]
+list5 <- org66_p2_snsn38_GSEAres[org66_p2_snsn38_GSEAres$padj<0.05,c('pathway')]
+list6 <- org66_snSN38_GSEAres[org66_snSN38_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- Reduce(intersect, list(list1$pathway,list2$pathway, list3$pathway, list4$pathway, list5$pathway, list6$pathway))
+common_strings
+```
+
+#### long-term pac
+
+```{r}
+list1 <- org38_p2_pdmso_GSEAres[org38_p2_pdmso_GSEAres$padj<0.05,c('pathway')]
+list2 <- org38_PDMSO_GSEAres[org38_PDMSO_GSEAres$padj<0.05,c('pathway')]
+list3 <- org49_p2_pdmso_GSEAres[org49_p2_pdmso_GSEAres$padj<0.05,c('pathway')]
+list4 <- org49_PDMSO_GSEAres[org49_PDMSO_GSEAres$padj<0.05,c('pathway')]
+list5 <- org66_p2_pdmso_GSEAres[org66_p2_pdmso_GSEAres$padj<0.05,c('pathway')]
+list6 <- org66_PDMSO_GSEAres[org66_PDMSO_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- Reduce(intersect, list(list1$pathway,list2$pathway, list3$pathway, list4$pathway, list5$pathway, list6$pathway))
+common_strings
+```
+
+#### long-term SN38
+
+```{r}
+list1 <- org38_p2_sndmso_GSEAres[org38_p2_sndmso_GSEAres$padj<0.05,c('pathway')]
+list2 <- org38_SNDMSO_GSEAres[org38_SNDMSO_GSEAres$padj<0.05,c('pathway')]
+list3 <- org49_p2_sndmso_GSEAres[org49_p2_sndmso_GSEAres$padj<0.05,c('pathway')]
+list4 <- org49_SNDMSO_GSEAres[org49_SNDMSO_GSEAres$padj<0.05,c('pathway')]
+list5 <- org66_p2_sndmso_GSEAres[org66_p2_sndmso_GSEAres$padj<0.05,c('pathway')]
+list6 <- org66_SNDMSO_GSEAres[org66_SNDMSO_GSEAres$padj<0.05,c('pathway')]
+
+common_strings <- Reduce(intersect, list(list1$pathway,list2$pathway, list3$pathway, list4$pathway, list5$pathway, list6$pathway))
+common_strings
+```
+
+## Plotting
+
+### SN38_DMSO - NC_DMSO (T2 vs T3) {.tabset}
+
+For pathways associated with long-term SN38 treatement (SN38_DMSO - NC_DMSO) that are enriched in all organoids across both T2 and T3: 
+
+#### ORG38
+
+Activation of gene expression by SREBF/SREBP:
+
+```{r}
+p1 <- plotEnrichment(gene_sets[['REACTOME_ACTIVATION_OF_GENE_EXPRESSION_BY_SREBF_SREBP']],
+               org38_p2_snsn38_rankings)
+
+p2 <- plotEnrichment(gene_sets[['REACTOME_ACTIVATION_OF_GENE_EXPRESSION_BY_SREBF_SREBP']],
+               org38_p3_snSN38_rankings) 
+
+p3 <- ggarrange(p1, p2, nrow=1, ncol=2)
+
+annotate_figure(p3, top = text_grob("ACTIVATION OF GENE EXPRESSION \nBY SREBF/SREBP (T2 VS T3)", 
+               color = "black", face = "bold", size = 16))
+```
+
+Metabolism of steroids:
+
+```{r}
+p1 <- plotEnrichment(gene_sets[['REACTOME_METABOLISM_OF_STEROIDS']],
+               org38_p2_snsn38_rankings) 
+
+p2 <- plotEnrichment(gene_sets[['REACTOME_METABOLISM_OF_STEROIDS']],
+               org38_p3_snSN38_rankings) 
+
+p3 <- ggarrange(p1, p2, nrow=1, ncol=2)
+
+annotate_figure(p3, top = text_grob("METABOLISM OF STEROIDS (T2 VS T3)", 
+               color = "black", face = "bold", size = 16))
+```
+
+Regulation of cholesterol biosynthesis by SREBP/SREBF:
+
+```{r}
+p1 <- plotEnrichment(gene_sets[['REACTOME_REGULATION_OF_CHOLESTEROL_BIOSYNTHESIS_BY_SREBP_SREBF']],
+               org38_p2_snsn38_rankings) 
+
+p2 <- plotEnrichment(gene_sets[['REACTOME_REGULATION_OF_CHOLESTEROL_BIOSYNTHESIS_BY_SREBP_SREBF']],
+               org38_p3_snSN38_rankings) 
+
+p3 <- ggarrange(p1, p2, nrow=1, ncol=2)
+
+annotate_figure(p3, top = text_grob("REGULATION OF CHOLESTEROL BIOSYNTHESIS \nBY SREBP/SREBF (T2 VS T3)", 
+               color = "black", face = "bold", size = 16))
+```
+
+#### ORG49
+
+Activation of gene expression by SREBF/SREBP:
+
+```{r}
+p1 <- plotEnrichment(gene_sets[['REACTOME_ACTIVATION_OF_GENE_EXPRESSION_BY_SREBF_SREBP']],
+               org49_p2_snsn38_rankings)
+
+p2 <- plotEnrichment(gene_sets[['REACTOME_ACTIVATION_OF_GENE_EXPRESSION_BY_SREBF_SREBP']],
+               org49_p3_snSN38_rankings)
+
+p3 <- ggarrange(p1, p2, nrow=1, ncol=2)
+
+annotate_figure(p3, top = text_grob("ACTIVATION OF GENE EXPRESSION \nBY SREBF/SREBP (T2 VS T3)", 
+               color = "black", face = "bold", size = 16))
+```
+
+Metabolism of steroids:
+
+```{r}
+p1 <- plotEnrichment(gene_sets[['REACTOME_METABOLISM_OF_STEROIDS']],
+               org49_p2_snsn38_rankings) 
+
+p2 <- plotEnrichment(gene_sets[['REACTOME_METABOLISM_OF_STEROIDS']],
+               org49_p3_snSN38_rankings)
+
+p3 <- ggarrange(p1, p2, nrow=1, ncol=2)
+
+annotate_figure(p3, top = text_grob("METABOLISM OF STEROIDS (T2 VS T3)", 
+               color = "black", face = "bold", size = 16))
+```
+
+Regulation of cholesterol biosynthesis by SREBP/SREBF:
+
+```{r}
+p1 <- plotEnrichment(gene_sets[['REACTOME_REGULATION_OF_CHOLESTEROL_BIOSYNTHESIS_BY_SREBP_SREBF']],
+               org49_p2_snsn38_rankings) 
+
+p2 <- plotEnrichment(gene_sets[['REACTOME_REGULATION_OF_CHOLESTEROL_BIOSYNTHESIS_BY_SREBP_SREBF']],
+               org49_p3_snSN38_rankings) 
+
+p3 <- ggarrange(p1, p2, nrow=1, ncol=2)
+
+annotate_figure(p3, top = text_grob("REGULATION OF CHOLESTEROL BIOSYNTHESIS \nBY SREBP/SREBF (T2 VS T3)", 
+               color = "black", face = "bold", size = 16))
+```
+
+
+#### ORG66
+
+Activation of gene expression by SREBF/SREBP:
+
+```{r}
+p1 <- plotEnrichment(gene_sets[['REACTOME_ACTIVATION_OF_GENE_EXPRESSION_BY_SREBF_SREBP']],
+               org66_p2_snsn38_rankings) 
+
+p2 <- plotEnrichment(gene_sets[['REACTOME_ACTIVATION_OF_GENE_EXPRESSION_BY_SREBF_SREBP']],
+               org66_p3_snSN38_rankings) 
+
+p3 <- ggarrange(p1, p2, nrow=1, ncol=2)
+
+annotate_figure(p3, top = text_grob("ACTIVATION OF GENE EXPRESSION \nBY SREBF/SREBP (T2 VS T3)", 
+               color = "black", face = "bold", size = 16))
+```
+
+Metabolism of steroids:
+
+```{r}
+p1 <- plotEnrichment(gene_sets[['REACTOME_METABOLISM_OF_STEROIDS']],
+               org66_p2_snsn38_rankings) 
+
+p2 <- plotEnrichment(gene_sets[['REACTOME_METABOLISM_OF_STEROIDS']],
+               org66_p3_snSN38_rankings) 
+
+p3 <- ggarrange(p1, p2, nrow=1, ncol=2)
+
+annotate_figure(p3, top = text_grob("METABOLISM OF STEROIDS (T2 VS T3)", 
+               color = "black", face = "bold", size = 16))
+```
+
+Regulation of cholesterol biosynthesis by SREBP/SREBF:
+
+```{r}
+p1 <- plotEnrichment(gene_sets[['REACTOME_REGULATION_OF_CHOLESTEROL_BIOSYNTHESIS_BY_SREBP_SREBF']],
+               org66_p2_snsn38_rankings) 
+
+p2 <- plotEnrichment(gene_sets[['REACTOME_REGULATION_OF_CHOLESTEROL_BIOSYNTHESIS_BY_SREBP_SREBF']],
+               org66_p3_snSN38_rankings)
+
+p3 <- ggarrange(p1, p2, nrow=1, ncol=2)
+
+annotate_figure(p3, top = text_grob("REGULATION OF CHOLESTEROL BIOSYNTHESIS \nBY SREBP/SREBF (T2 VS T3)", 
+               color = "black", face = "bold", size = 16))
+```
+
+```{r}
+### Code for counting elading edge genes
+library(purrr)
+
+
+leading_edges <- lapply(org38_SNDMSO_GSEAres[org38_SNDMSO_GSEAres$padj< 0.01, ]$leadingEdge, unlist)
+
+# count how often genes appear
+gene_counts <- table(unlist(leading_edges))
+
+# top recurring genes
+head(sort(gene_counts, decreasing = TRUE), 20)
+
+```
+
+# Filtering apthways 
+
+## P2
+
+### ORG38 {.tabset}
+
+#### PAC_PAC 
+
+```{r}
+collapsed <- fgsea::collapsePathways(org38_p2_pacpac_GSEAres[order(pval)][padj < 0.1], gene_sets, org38_p2_pacpac_rankings)
+org38_p2_pacpac_GSEAres_main <- org38_p2_pacpac_GSEAres[org38_p2_pacpac_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org38_p2_pacpac_GSEAres_main)
+```
+
+#### SN38_SN38
+
+```{r}
+collapsed <- fgsea::collapsePathways(org38_p2_snsn38_GSEAres[order(pval)][padj < 0.1], gene_sets, org38_p2_snsn38_rankings)
+org38_p2_snsn38_GSEAres_main <- org38_p2_snsn38_GSEAres[org38_p2_snsn38_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org38_p2_snsn38_GSEAres_main)
+```
+
+#### PAC_DMSO - NC_DMSO
+
+```{r}
+collapsed <- fgsea::collapsePathways(org38_p2_pdmso_GSEAres[order(pval)][padj < 0.1], gene_sets, org38_p2_pdmso_rankings)
+org38_p2_pdmso_GSEAres_main <- org38_p2_pdmso_GSEAres[org38_p2_pdmso_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org38_p2_pdmso_GSEAres_main)
+```
+
+#### SN38_DMSO - NC_DMSO
+
+```{r}
+collapsed <- fgsea::collapsePathways(org38_p2_sndmso_GSEAres[order(pval)][padj < 0.1], gene_sets, org38_p2_sndmso_rankings)
+org38_p2_sndmso_GSEAres_main <- org38_p2_sndmso_GSEAres[org38_p2_sndmso_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org38_p2_sndmso_GSEAres)
+```
+
+### ORG49 {.tabset}
+
+#### PAC_PAC 
+
+```{r}
+collapsed <- fgsea::collapsePathways(org49_p2_pacpac_GSEAres[order(pval)][padj < 0.1], gene_sets, org49_p2_pacpac_rankings)
+org49_p2_pacpac_GSEAres_main <- org49_p2_pacpac_GSEAres[org49_p2_pacpac_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org49_p2_pacpac_GSEAres_main)
+```
+
+#### SN38_SN38
+
+```{r}
+collapsed <- fgsea::collapsePathways(org49_p2_snsn38_GSEAres[order(pval)][padj < 0.1], gene_sets, org49_p2_snsn38_rankings)
+org49_p2_snsn38_GSEAres_main <- org49_p2_snsn38_GSEAres[org49_p2_snsn38_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org49_p2_snsn38_GSEAres_main)
+```
+
+#### PAC_DMSO - NC_DMSO
+
+```{r}
+collapsed <- fgsea::collapsePathways(org49_p2_pdmso_GSEAres[order(pval)][padj < 0.1], gene_sets, org49_p2_pdmso_rankings)
+org49_p2_pdmso_GSEAres_main <- org49_p2_pdmso_GSEAres[org49_p2_pdmso_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org49_p2_pdmso_GSEAres_main)
+```
+
+#### SN38_DMSO - NC_DMSO
+
+```{r}
+collapsed <- fgsea::collapsePathways(org49_p2_sndmso_GSEAres[order(pval)][padj < 0.1], gene_sets, org49_p2_sndmso_rankings)
+org49_p2_sndmso_GSEAres_main <- org49_p2_sndmso_GSEAres[org49_p2_sndmso_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org49_p2_sndmso_GSEAres)
+```
+
+
+### ORG66 {.tabset}
+
+#### PAC_PAC 
+
+```{r}
+collapsed <- fgsea::collapsePathways(org66_p2_pacpac_GSEAres[order(pval)][padj < 0.1], gene_sets, org66_p2_pacpac_rankings)
+org66_p2_pacpac_GSEAres_main <- org66_p2_pacpac_GSEAres[org66_p2_pacpac_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org66_p2_pacpac_GSEAres_main)
+```
+
+#### SN38_SN38
+
+```{r}
+collapsed <- fgsea::collapsePathways(org66_p2_snsn38_GSEAres[order(pval)][padj < 0.1], gene_sets, org66_p2_snsn38_rankings)
+org66_p2_snsn38_GSEAres_main <- org66_p2_snsn38_GSEAres[org66_p2_snsn38_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org66_p2_snsn38_GSEAres_main)
+```
+
+#### PAC_DMSO - NC_DMSO
+
+```{r}
+collapsed <- fgsea::collapsePathways(org66_p2_pdmso_GSEAres[order(pval)][padj < 0.1], gene_sets, org66_p2_pdmso_rankings)
+org66_p2_pdmso_GSEAres_main <- org66_p2_pdmso_GSEAres[org66_p2_pdmso_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org66_p2_pdmso_GSEAres_main)
+```
+
+#### SN38_DMSO - NC_DMSO
+
+```{r}
+collapsed <- fgsea::collapsePathways(org66_p2_sndmso_GSEAres[order(pval)][padj < 0.1], gene_sets, org66_p2_sndmso_rankings)
+org66_p2_sndmso_GSEAres_main <- org66_p2_sndmso_GSEAres[org66_p2_sndmso_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org66_p2_sndmso_GSEAres)
+```
+
+
+## P3
+
+### ORG38 {.tabset}
+
+#### PAC_PAC 
+
+```{r}
+collapsed <- fgsea::collapsePathways(org38_paPAC_GSEAres[order(pval)][padj < 0.1], gene_sets, org38_p3_paPAC_rankings)
+org38_paPAC_GSEAres_main <- org38_paPAC_GSEAres[org38_paPAC_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org38_paPAC_GSEAres_main)
+```
+
+#### SN38_SN38
+
+```{r}
+collapsed <- fgsea::collapsePathways(org38_snSN38_GSEAres[order(pval)][padj < 0.1], gene_sets, org38_p3_snSN38_rankings)
+org38_snSN38_GSEAres_main <- org38_snSN38_GSEAres[org38_snSN38_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org38_snSN38_GSEAres_main)
+```
+
+#### PAC_DMSO - NC_DMSO
+
+```{r}
+collapsed <- fgsea::collapsePathways(org38_PDMSO_GSEAres[order(pval)][padj < 0.1], gene_sets, org38_p3_pdmso_rankings)
+org38_PDMSO_GSEAres_main <- org38_PDMSO_GSEAres[org38_PDMSO_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org38_PDMSO_GSEAres_main)
+```
+
+#### SN38_DMSO - NC_DMSO
+
+```{r}
+collapsed <- fgsea::collapsePathways(org38_SNDMSO_GSEAres[order(pval)][padj < 0.1], gene_sets, org38_p3_sndmso_rankings)
+org38_SNDMSO_GSEAres_main <- org38_SNDMSO_GSEAres[org38_SNDMSO_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org38_SNDMSO_GSEAres_main)
+```
+
+### ORG49 {.tabset}
+
+#### PAC_PAC 
+
+```{r}
+collapsed <- fgsea::collapsePathways(org49_paPAC_GSEAres[order(pval)][padj < 0.1], gene_sets, org49_p3_paPAC_rankings)
+org49_paPAC_GSEAres_main <- org49_paPAC_GSEAres[org49_paPAC_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org49_paPAC_GSEAres_main)
+```
+
+#### SN38_SN38
+
+```{r}
+collapsed <- fgsea::collapsePathways(org49_snSN38_GSEAres[order(pval)][padj < 0.1], gene_sets, org49_p3_snSN38_rankings)
+org49_snSN38_GSEAres_main <- org49_snSN38_GSEAres[org49_snSN38_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org49_snSN38_GSEAres_main)
+```
+
+#### PAC_DMSO - NC_DMSO
+
+```{r}
+collapsed <- fgsea::collapsePathways(org49_PDMSO_GSEAres[order(pval)][padj < 0.1], gene_sets, org49_p3_pdmso_rankings)
+org49_PDMSO_GSEAres_main <- org49_PDMSO_GSEAres[org49_PDMSO_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org49_PDMSO_GSEAres_main)
+```
+
+#### SN38_DMSO - NC_DMSO
+
+```{r}
+collapsed <- fgsea::collapsePathways(org49_SNDMSO_GSEAres[order(pval)][padj < 0.1], gene_sets, org49_p3_sndmso_rankings)
+org49_SNDMSO_GSEAres_main <- org49_SNDMSO_GSEAres[org49_SNDMSO_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org49_SNDMSO_GSEAres_main)
+```
+
+### ORG66 {.tabset}
+
+#### PAC_PAC 
+
+```{r}
+collapsed <- fgsea::collapsePathways(org66_paPAC_GSEAres[order(pval)][padj < 0.1], gene_sets, org66_p3_paPAC_rankings)
+org66_paPAC_GSEAres_main <- org66_paPAC_GSEAres[org66_paPAC_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org66_paPAC_GSEAres_main)
+```
+
+#### SN38_SN38
+
+```{r}
+collapsed <- fgsea::collapsePathways(org66_snSN38_GSEAres[order(pval)][padj < 0.1], gene_sets, org66_p3_snSN38_rankings)
+org66_snSN38_GSEAres_main <- org66_snSN38_GSEAres[org66_snSN38_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org66_snSN38_GSEAres_main)
+```
+
+#### PAC_DMSO - NC_DMSO
+
+```{r}
+collapsed <- fgsea::collapsePathways(org66_PDMSO_GSEAres[order(pval)][padj < 0.1], gene_sets, org66_p3_pdmso_rankings)
+org66_PDMSO_GSEAres_main <- org66_PDMSO_GSEAres[org66_PDMSO_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org66_PDMSO_GSEAres_main)
+```
+
+#### SN38_DMSO - NC_DMSO
+
+```{r}
+collapsed <- fgsea::collapsePathways(org66_SNDMSO_GSEAres[order(pval)][padj < 0.1], gene_sets, org66_p3_sndmso_rankings)
+org66_SNDMSO_GSEAres_main <- org66_SNDMSO_GSEAres[org66_SNDMSO_GSEAres$pathway %in% collapsed$mainPathways, ]
+
+create_dt(org66_SNDMSO_GSEAres_main)
+```
+
+## Building pathway/NES matrix {.tabset}
+
+```{r}
+### Extract NES - fill missing with 0
+get_NES <- function(res, pathways) {
+  out <- setNames(rep(0, length(pathways)), pathways)
+  match_idx <- match(res$pathway, pathways)
+  out[match_idx[!is.na(match_idx)]] <- res$NES[!is.na(match_idx)]
+  return(out)
+}
+
+col_palette <- colorRampPalette(brewer.pal(11, "RdBu"))(100)
+```
+
+### PAC-PAC - PAC_DMSO {.tabset}
+
+#### T2
+
+```{r, fig.height = 10, fig.width = 10}
+### select top pathways from collapsed dataframes
+top38 <- org38_p2_pacpac_GSEAres_main[order(org38_p2_pacpac_GSEAres_main$padj)][1:10, ]
+top49 <- org49_p2_pacpac_GSEAres_main[order(org49_p2_pacpac_GSEAres_main$padj)][1:10, ]
+top66 <- org66_p2_pacpac_GSEAres_main[order(org66_p2_pacpac_GSEAres_main$padj)][1:10, ]
+
+### get union of pathways
+all_pathways <- unique(c(
+  top38$pathway,
+  top49$pathway,
+  top66$pathway
+))
+
+NES_matrix <- cbind(
+  org38 = get_NES(org38_p2_pacpac_GSEAres_main, all_pathways),
+  org49 = get_NES(org49_p2_pacpac_GSEAres_main, all_pathways),
+  org66 = get_NES(org66_p2_pacpac_GSEAres_main, all_pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1.5
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette)
+)
+```
+
+#### T3
+
+```{r, fig.height = 10, fig.width = 10}
+### select top pathways from collapsed dataframes
+top38 <- org38_paPAC_GSEAres_main[order(org38_paPAC_GSEAres_main$padj)][1:10, ]
+top49 <- org49_paPAC_GSEAres_main[order(org49_paPAC_GSEAres_main$padj)][1:10, ]
+top66 <- org66_paPAC_GSEAres_main[order(org66_paPAC_GSEAres_main$padj)][1:10, ]
+
+### get union of pathways
+all_pathways <- unique(c(
+  top38$pathway,
+  top49$pathway,
+  top66$pathway
+))
+
+NES_matrix <- cbind(
+  org38 = get_NES(org38_paPAC_GSEAres_main, all_pathways),
+  org49 = get_NES(org49_paPAC_GSEAres_main, all_pathways),
+  org66 = get_NES(org66_paPAC_GSEAres_main, all_pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1.5
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette)
+)
+```
+
+### SN38_SN38 - SN38_DMSO {.tabset}
+
+#### T2
+
+```{r, fig.height = 10, fig.width = 15}
+### select top pathways from collapsed dataframes
+top38 <- org38_p2_snsn38_GSEAres_main[order(org38_p2_snsn38_GSEAres_main$padj)][1:20, ]
+top49 <- org49_p2_snsn38_GSEAres_main[order(org49_p2_snsn38_GSEAres_main$padj)][1:20, ]
+top66 <- org66_p2_snsn38_GSEAres_main[order(org66_p2_snsn38_GSEAres_main$padj)][1:20, ]
+
+### get union of pathways
+all_pathways <- unique(c(
+  top38$pathway,
+  top49$pathway,
+  top66$pathway
+))
+
+NES_matrix <- cbind(
+  org38 = get_NES(org38_p2_snsn38_GSEAres_main, all_pathways),
+  org49 = get_NES(org49_p2_snsn38_GSEAres_main, all_pathways),
+  org66 = get_NES(org66_p2_snsn38_GSEAres_main, all_pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1.5
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette)
+)
+```
+```{r, fig.height = 10, fig.width = 15}
+### select top pathways from collapsed dataframes
+top38 <- org38_p2_snsn38_GSEAres[order(org38_p2_snsn38_GSEAres$padj)][1:15, ]
+top49 <- org49_p2_snsn38_GSEAres[order(org49_p2_snsn38_GSEAres$padj)][1:15, ]
+top66 <- org66_p2_snsn38_GSEAres[order(org66_p2_snsn38_GSEAres$padj)][1:15, ]
+
+### get union of pathways
+all_pathways <- unique(c(
+  top38$pathway,
+  top49$pathway,
+  top66$pathway
+))
+
+NES_matrix <- cbind(
+  org38 = get_NES(org38_p2_snsn38_GSEAres, all_pathways),
+  org49 = get_NES(org49_p2_snsn38_GSEAres, all_pathways),
+  org66 = get_NES(org66_p2_snsn38_GSEAres, all_pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1.5
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette),
+  border_color = 'NA'
+)
+```
+
+#### T3
+
+```{r, fig.height = 10, fig.width = 15}
+### select top pathways from collapsed dataframes
+top38 <- org38_snSN38_GSEAres_main[order(org38_snSN38_GSEAres_main$padj)][1:20, ]
+top49 <- org49_snSN38_GSEAres_main[order(org49_snSN38_GSEAres_main$padj)][1:20, ]
+top66 <- org66_snSN38_GSEAres_main[order(org66_snSN38_GSEAres_main$padj)][1:20, ]
+
+### get union of pathways
+all_pathways <- unique(c(
+  top38$pathway,
+  top49$pathway,
+  top66$pathway
+))
+
+NES_matrix <- cbind(
+  org38 = get_NES(org38_snSN38_GSEAres_main, all_pathways),
+  org49 = get_NES(org49_snSN38_GSEAres_main, all_pathways),
+  org66 = get_NES(org66_snSN38_GSEAres_main, all_pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1.5
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette)
+)
+```
+
+```{r, fig.height = 10, fig.width = 15}
+### select top pathways from collapsed dataframes
+top38 <- org38_snSN38_GSEAres[order(org38_snSN38_GSEAres$padj)][1:15, ]
+top49 <- org49_snSN38_GSEAres[order(org49_snSN38_GSEAres$padj)][1:15, ]
+top66 <- org66_snSN38_GSEAres[order(org66_snSN38_GSEAres$padj)][1:15, ]
+
+### get union of pathways
+all_pathways <- unique(c(
+  top38$pathway,
+  top49$pathway,
+  top66$pathway
+))
+
+NES_matrix <- cbind(
+  org38 = get_NES(org38_snSN38_GSEAres, all_pathways),
+  org49 = get_NES(org49_snSN38_GSEAres, all_pathways),
+  org66 = get_NES(org66_snSN38_GSEAres, all_pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1.5
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette),
+  border_color = 'NA'
+)
+```
+
+### PAC_DMSO - NC_DMSO {.tabset}
+
+#### T2
+
+```{r, fig.height = 10, fig.width = 15}
+### select top pathways from collapsed dataframes
+top38 <- org38_p2_pdmso_GSEAres_main[order(org38_p2_pdmso_GSEAres_main$padj)][1:10, ]
+top49 <- org49_p2_pdmso_GSEAres_main[order(org49_p2_pdmso_GSEAres_main$padj)][1:10, ]
+top66 <- org66_p2_pdmso_GSEAres_main[order(org66_p2_pdmso_GSEAres_main$padj)][1:10, ]
+
+### get union of pathways
+all_pathways <- unique(c(
+  top38$pathway,
+  top49$pathway,
+  top66$pathway
+))
+
+NES_matrix <- cbind(
+  org38 = get_NES(org38_p2_pdmso_GSEAres_main, all_pathways),
+  org49 = get_NES(org49_p2_pdmso_GSEAres_main, all_pathways),
+  org66 = get_NES(org66_p2_pdmso_GSEAres_main, all_pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1.5
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette)
+)
+```
+
+#### T3
+
+```{r, fig.height = 10, fig.width = 15}
+### select top pathways from collapsed dataframes
+top38 <- org38_PDMSO_GSEAres_main[order(org38_PDMSO_GSEAres_main$padj)][1:10, ]
+top49 <- org49_PDMSO_GSEAres_main[order(org49_PDMSO_GSEAres_main$padj)][1:10, ]
+top66 <- org66_PDMSO_GSEAres_main[order(org66_PDMSO_GSEAres_main$padj)][1:10, ]
+
+### get union of pathways
+all_pathways <- unique(c(
+  top38$pathway,
+  top49$pathway,
+  top66$pathway
+))
+
+NES_matrix <- cbind(
+  org38 = get_NES(org38_PDMSO_GSEAres_main, all_pathways),
+  org49 = get_NES(org49_PDMSO_GSEAres_main, all_pathways),
+  org66 = get_NES(org66_PDMSO_GSEAres_main, all_pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1.5
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette)
+)
+```
+
+### SN38_DMSO - NC_DMSO {.tabset}
+
+#### T2
+
+```{r, fig.height = 10, fig.width = 15}
+### select top pathways from collapsed dataframes
+top38 <- org38_p2_sndmso_GSEAres_main[order(org38_p2_sndmso_GSEAres_main$padj)][1:20, ]
+top49 <- org49_p2_sndmso_GSEAres_main[order(org49_p2_sndmso_GSEAres_main$padj)][1:20, ]
+top66 <- org66_p2_sndmso_GSEAres_main[order(org66_p2_sndmso_GSEAres_main$padj)][1:20, ]
+
+### get union of pathways
+all_pathways <- unique(c(
+  top38$pathway,
+  top49$pathway,
+  top66$pathway
+))
+
+NES_matrix <- cbind(
+  org38 = get_NES(org38_p2_sndmso_GSEAres_main, all_pathways),
+  org49 = get_NES(org49_p2_sndmso_GSEAres_main, all_pathways),
+  org66 = get_NES(org66_p2_sndmso_GSEAres_main, all_pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1.5
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette)
+)
+```
+```{r, fig.height = 10, fig.width = 15}
+### select top pathways from collapsed dataframes
+top38 <- org38_p2_sndmso_GSEAres[order(org38_p2_sndmso_GSEAres$padj)][1:10, ]
+top49 <- org49_p2_sndmso_GSEAres[order(org49_p2_sndmso_GSEAres$padj)][1:10, ]
+top66 <- org66_p2_sndmso_GSEAres[order(org66_p2_sndmso_GSEAres$padj)][1:10, ]
+
+### get union of pathways
+all_pathways <- unique(c(
+  top38$pathway,
+  top49$pathway,
+  top66$pathway
+))
+
+NES_matrix <- cbind(
+  org38 = get_NES(org38_p2_sndmso_GSEAres, all_pathways),
+  org49 = get_NES(org49_p2_sndmso_GSEAres, all_pathways),
+  org66 = get_NES(org66_p2_sndmso_GSEAres, all_pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1.5
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette),
+  border_color = 'NA'
+)
+```
+
+#### T3
+
+```{r, fig.height = 10, fig.width = 15}
+### select top pathways from collapsed dataframes
+top38 <- org38_SNDMSO_GSEAres_main[order(org38_SNDMSO_GSEAres_main$padj)][1:10, ]
+top49 <- org49_SNDMSO_GSEAres_main[order(org49_SNDMSO_GSEAres_main$padj)][1:10, ]
+top66 <- org66_SNDMSO_GSEAres_main[order(org66_SNDMSO_GSEAres_main$padj)][1:10, ]
+
+### get union of pathways
+all_pathways <- unique(c(
+  top38$pathway,
+  top49$pathway,
+  top66$pathway
+))
+
+NES_matrix <- cbind(
+  org38 = get_NES(org38_SNDMSO_GSEAres_main, all_pathways),
+  org49 = get_NES(org49_SNDMSO_GSEAres_main, all_pathways),
+  org66 = get_NES(org66_SNDMSO_GSEAres_main, all_pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1.5
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette)
+)
+```
+```{r, fig.height = 10, fig.width = 15}
+### select top pathways from collapsed dataframes
+top38 <- org38_SNDMSO_GSEAres[order(org38_SNDMSO_GSEAres$padj)][1:10, ]
+top49 <- org49_SNDMSO_GSEAres[order(org49_SNDMSO_GSEAres$padj)][1:10, ]
+top66 <- org66_SNDMSO_GSEAres[order(org66_SNDMSO_GSEAres$padj)][1:10, ]
+
+### get union of pathways
+all_pathways <- unique(c(
+  top38$pathway,
+  top49$pathway,
+  top66$pathway
+))
+
+NES_matrix <- cbind(
+  org38 = get_NES(org38_SNDMSO_GSEAres, all_pathways),
+  org49 = get_NES(org49_SNDMSO_GSEAres, all_pathways),
+  org66 = get_NES(org66_SNDMSO_GSEAres, all_pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1.5
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette),
+  border_color = 'NA'
+)
+```
+
+## {-}
+
+```{r, fig.height = 10, fig.width = 15}
+### select top pathways from collapsed dataframes
+
+org38_p2_short <- org38_p2_snsn38_GSEAres_main[order(org38_p2_snsn38_GSEAres_main$padj)][1:20, ]
+org38_p3_short <- org38_snSN38_GSEAres_main[order(org38_snSN38_GSEAres_main$padj)][1:20, ]
+org38_p2_long <- org38_p2_sndmso_GSEAres_main[order(org38_p2_snsn38_GSEAres_main$padj)][1:20, ]
+org38_p3_long <- org38_SNDMSO_GSEAres_main[order(org38_SNDMSO_GSEAres_main$padj)][1:20, ]
+
+
+
+### get union of pathways
+all_pathways <- unique(c(
+  org38_p2_short$pathway,
+  org38_p3_short$pathway,
+  org38_p2_long$pathway, 
+  org38_p3_long$pathway
+))
+
+NES_matrix <- cbind(
+  `ORG38 short-term response (P2)` = get_NES(org38_p2_snsn38_GSEAres_main, all_pathways),
+  `ORG38 short-term response (P3)` = get_NES(org38_snSN38_GSEAres_main, all_pathways),
+  `ORG38 long-term response (P2)` = get_NES(org38_p2_sndmso_GSEAres_main, all_pathways),
+  `ORG38 long-term response (P3)`= get_NES(org38_SNDMSO_GSEAres_main, all_pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1.5
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette),
+  border_color = 'NA'
+)
+```
+
+
+
+```{r, fig.height = 10, fig.width = 15}
+### select top pathways from collapsed dataframes
+
+org49_p2_short <- org49_p2_snsn38_GSEAres_main[order(org49_p2_snsn38_GSEAres_main$padj)][1:10, ]
+org49_p3_short <- org49_snSN38_GSEAres_main[order(org49_snSN38_GSEAres_main$padj)][1:10, ]
+org49_p2_long <- org49_p2_sndmso_GSEAres_main[order(org49_p2_snsn38_GSEAres_main$padj)][1:10, ]
+org49_p3_long <- org49_SNDMSO_GSEAres_main[order(org49_SNDMSO_GSEAres_main$padj)][1:10, ]
+
+
+
+### get union of pathways
+all_pathways <- unique(c(
+  org49_p2_short$pathway,
+  org49_p3_short$pathway,
+  org49_p2_long$pathway, 
+  org49_p3_long$pathway
+))
+
+NES_matrix <- cbind(
+  `ORG49 short-term response (P2)` = get_NES(org49_p2_snsn38_GSEAres_main, all_pathways),
+  `ORG49 short-term response (P3)` = get_NES(org49_snSN38_GSEAres_main, all_pathways),
+  `ORG49 long-term response (P2)` = get_NES(org49_p2_sndmso_GSEAres_main, all_pathways),
+  `ORG49 long-term response (P3)`= get_NES(org49_SNDMSO_GSEAres_main, all_pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1.5
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette),
+  border_color = 'NA'
+)
+```
+```{r, fig.height = 10, fig.width = 15}
+### select top pathways from collapsed dataframes
+
+org49_p2_short <- org49_p2_snsn38_GSEAres[order(org49_p2_snsn38_GSEAres$padj)][1:10, ]
+org49_p3_short <- org49_snSN38_GSEAres[order(org49_snSN38_GSEAres$padj)][1:10, ]
+org49_p2_long <- org49_p2_sndmso_GSEAres[order(org49_p2_sndmso_GSEAres$padj)][1:10, ]
+org49_p3_long <- org49_SNDMSO_GSEAres[order(org49_SNDMSO_GSEAres$padj)][1:10, ]
+
+
+
+### get union of pathways
+all_pathways <- unique(c(
+  org49_p2_short$pathway,
+  org49_p3_short$pathway,
+  org49_p2_long$pathway, 
+  org49_p3_long$pathway
+))
+
+NES_matrix <- cbind(
+  `ORG49 short-term response (P2)` = get_NES(org49_p2_snsn38_GSEAres, all_pathways),
+  `ORG49 short-term response (P3)` = get_NES(org49_snSN38_GSEAres, all_pathways),
+  `ORG49 long-term response (P2)` = get_NES(org49_p2_sndmso_GSEAres, all_pathways),
+  `ORG49 long-term response (P3)`= get_NES(org49_SNDMSO_GSEAres, all_pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1.5
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette),
+  border_color = 'NA'
+)
+```
+
+```{r, fig.height = 10, fig.width = 10}
+### select top pathways from collapsed dataframes
+
+org66_p2_short <- org66_p2_snsn38_GSEAres_main[order(org66_p2_snsn38_GSEAres_main$padj)][1:5, ]
+org66_p3_short <- org66_snSN38_GSEAres_main[order(org66_snSN38_GSEAres_main$padj)][1:5, ]
+org66_p2_long <- org66_p2_sndmso_GSEAres_main[order(org66_p2_snsn38_GSEAres_main$padj)][1:5, ]
+org66_p3_long <- org66_SNDMSO_GSEAres_main[order(org66_SNDMSO_GSEAres_main$padj)][1:5, ]
+
+
+
+### get union of pathways
+all_pathways <- unique(c(
+  org66_p2_short$pathway,
+  org66_p3_short$pathway,
+  org66_p2_long$pathway, 
+  org66_p3_long$pathway
+))
+
+NES_matrix <- cbind(
+  `ORG66 short-term response (P2)` = get_NES(org66_p2_snsn38_GSEAres_main, all_pathways),
+  `ORG66 short-term response (P3)` = get_NES(org66_snSN38_GSEAres_main, all_pathways),
+  `ORG66 long-term response (P2)` = get_NES(org66_p2_sndmso_GSEAres_main, all_pathways),
+  `ORG66 long-term response (P3)`= get_NES(org66_SNDMSO_GSEAres_main, all_pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1.5
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette),
+  border_color = 'NA'
+)
+```
+
+```{r, fig.height = 6, fig.width = 10}
+### select top pathways from collapsed dataframes
+
+org66_p2_short <- org66_p2_snsn38_GSEAres[order(org66_p2_snsn38_GSEAres$padj)][1:5, ]
+org66_p3_short <- org66_snSN38_GSEAres[order(org66_snSN38_GSEAres$padj)][1:5, ]
+org66_p2_long <- org66_p2_sndmso_GSEAres[order(org66_p2_sndmso_GSEAres$padj)][1:5, ]
+org66_p3_long <- org66_SNDMSO_GSEAres[order(org66_SNDMSO_GSEAres$padj)][1:5, ]
+
+
+
+### get union of pathways
+all_pathways <- unique(c(
+  org66_p2_short$pathway,
+  org66_p3_short$pathway,
+  org66_p2_long$pathway, 
+  org66_p3_long$pathway
+))
+
+NES_matrix <- cbind(
+  `ORG66 short-term response (P2)` = get_NES(org66_p2_snsn38_GSEAres, all_pathways),
+  `ORG66 short-term response (P3)` = get_NES(org66_snSN38_GSEAres, all_pathways),
+  `ORG66 long-term response (P2)` = get_NES(org66_p2_sndmso_GSEAres, all_pathways),
+  `ORG66 long-term response (P3)`= get_NES(org66_SNDMSO_GSEAres, all_pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1.5
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette),
+  border_color = 'NA'
+)
+```
+# DSigDB
+
+```{r}
+dsigdb_sets <- gmtPathways('../data/DSigDB_All.gmt')
+```
+
+#### SN38_SN38 - SN38_DMSO
+
+```{r}
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('../data/DEgenes/P3/org38_snSN38.csv')
+df <- df %>%
+  rename(gene_symbol = X)
+df <- df[df$logFC < 0, ]
+head(df)
+
+
+org38_p3_snSN38_rankings <- sign(df$logFC)*(-log10(df$P.Value)) # we will use the signed p values from spatial DGE as ranking
+names(org38_p3_snSN38_rankings) <- df$gene_symbol # genes as names#
+
+### plot rankings
+org38_p3_snSN38_rankings <- sort(org38_p3_snSN38_rankings, decreasing = TRUE) # sort genes by ranking
+plot(org38_p3_snSN38_rankings)
+
+ggplot(data.frame(gene_symbol = names(org38_p3_snSN38_rankings[1:50]), ranks = org38_p3_snSN38_rankings[1:50]), aes(gene_symbol, ranks)) + 
+	geom_point() +
+	theme_classic() + 
+	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+### 3. Run GSEA ---------------------------------------------------------------
+# Easy peasy! Run fgsea with the pathways 
+test_res <- suppressMessages(
+  fgsea(pathways = dsigdb_sets,
+                 stats = org38_p3_snSN38_rankings,
+                 scoreType = 'std', 
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1) 
+)
+```
+
+GSEA Results:
+
+```{r}
+create_dt(test_res)
+```
+
+
+
+#### SN38_DMSO - NC_DMSO
+
+```{r}
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('../data/DEgenes/P3/ORG38_SNDMSOvsDMSO.csv')
+df <- df %>%
+  rename(gene_symbol = X)
+df <- df[df$logFC > 0, ]
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org38_p3_sndmso_rankings <- sign(df$logFC)*(-log10(df$P.Value)) # we will use the signed p values from spatial DGE as ranking
+names(org38_p3_sndmso_rankings) <- df$gene_symbol # genes as names#
+
+### plot rankings
+org38_p3_sndmso_rankings <- sort(org38_p3_sndmso_rankings, decreasing = TRUE) # sort genes by ranking
+plot(org38_p3_sndmso_rankings)
+
+ggplot(data.frame(gene_symbol = names(org38_p3_sndmso_rankings[1:50]), ranks = org38_p3_sndmso_rankings[1:50]), aes(gene_symbol, ranks)) + 
+	geom_point() +
+	theme_classic() + 
+	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+### 3. Run GSEA ---------------------------------------------------------------
+test_res_2 <- suppressMessages(
+  fgsea(pathways = dsigdb_sets,
+                 stats = org38_p3_sndmso_rankings,
+                 scoreType = 'std', 
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1) 
+)
+```
+
+GSEA Results:
+
+```{r}
+create_dt(test_res_2)
+```
+
+## Poster plots {.tabset}
+
+### NES Heatmaps
+
+```{r, fig.height = 10, fig.width = 15}
+### select top pathways from collapsed dataframes
+
+org38_p2_short <- org38_p2_snsn38_GSEAres[order(org38_p2_snsn38_GSEAres$padj)][padj<0.05, ]
+org38_p3_short <- org38_snSN38_GSEAres[order(org38_snSN38_GSEAres$padj)][padj<0.05, ]
+org38_p2_long <- org38_p2_sndmso_GSEAres[order(org38_p2_sndmso_GSEAres$padj)][padj<0.05, ]
+org38_p3_long <- org38_SNDMSO_GSEAres[order(org38_SNDMSO_GSEAres$padj)][padj<0.05, ]
+
+
+
+### get union of pathways
+all_pathways <- unique(c(
+  org38_p2_short$pathway,
+  org38_p3_short$pathway,
+  org38_p2_long$pathway, 
+  org38_p3_long$pathway
+))
+
+
+main_pathways <- all_pathways[1:25]
+
+
+NES_matrix <- cbind(
+  `ORG38 short-term response (P2)` = get_NES(org38_p2_snsn38_GSEAres, main_pathways),
+  `ORG38 short-term response (P3)` = get_NES(org38_snSN38_GSEAres, main_pathways),
+  `ORG38 long-term response (P2)` = get_NES(org38_p2_sndmso_GSEAres, main_pathways),
+  `ORG38 long-term response (P3)`= get_NES(org38_SNDMSO_GSEAres, main_pathways))
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1.5
+NES_matrix <- NES_matrix[keep, ]
+
+rownames(NES_matrix)[20] <- 'SIGNALING BY PIEZO1 AND INTEGRINS IN ENDOTHELIAL CELLS'
+rownames(NES_matrix)[23] <- 'DISEASES OF SIGNAL TRANSDUCTION BY GROWTH FACTOR RECEPTORS'
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette),
+  border_color = 'NA', 
+  cellwidth = 100,
+  cellheight = 20
+)
+```
+
+```{r, fig.height = 10, fig.width = 15}
+### select top pathways from collapsed dataframes
+
+org49_p2_short <- org49_p2_snsn38_GSEAres[order(org49_p2_snsn38_GSEAres$padj)][padj<0.05, ]
+org49_p3_short <- org49_snSN38_GSEAres[order(org49_snSN38_GSEAres$padj)][padj<0.05, ]
+org49_p2_long <- org49_p2_sndmso_GSEAres[order(org49_p2_sndmso_GSEAres$padj)][padj<0.05, ]
+org49_p3_long <- org49_SNDMSO_GSEAres[order(org49_SNDMSO_GSEAres$padj)][padj<0.05, ]
+
+
+
+### get union of pathways
+all_pathways <- unique(c(
+  org49_p2_short$pathway,
+  org49_p3_short$pathway,
+  org49_p2_long$pathway, 
+  org49_p3_long$pathway
+))
+
+all_pathways <- all_pathways[1:25]
+
+NES_matrix <- cbind(
+  `ORG49 short-term response (P2)` = get_NES(org49_p2_snsn38_GSEAres, all_pathways),
+  `ORG49 short-term response (P3)` = get_NES(org49_snSN38_GSEAres, all_pathways),
+  `ORG49 long-term response (P2)` = get_NES(org49_p2_sndmso_GSEAres, all_pathways),
+  `ORG49 long-term response (P3)`= get_NES(org49_SNDMSO_GSEAres, all_pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1.5
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette),
+  border_color = 'NA', 
+  cellwidth = 100,
+  cellheight = 20
+)
+```
+
+```{r, fig.height = 10, fig.width = 15}
+### select top pathways from collapsed dataframes
+
+org66_p2_short <- org66_p2_snsn38_GSEAres[order(org66_p2_snsn38_GSEAres$padj)][padj<0.05,]
+org66_p3_short <- org66_snSN38_GSEAres[order(org66_snSN38_GSEAres$padj)][padj<0.05,]
+org66_p2_long <- org66_p2_sndmso_GSEAres[order(org66_p2_sndmso_GSEAres$padj)][padj<0.05,]
+org66_p3_long <- org66_SNDMSO_GSEAres[order(org66_SNDMSO_GSEAres$padj)][padj<0.05,]
+
+
+
+### get union of pathways
+all_pathways <- unique(c(
+  org66_p2_short$pathway,
+  org66_p3_short$pathway,
+  org66_p2_long$pathway, 
+  org66_p3_long$pathway
+))
+
+all_pathways <- all_pathways[1:25]
+
+NES_matrix <- cbind(
+  `ORG66 short-term response (P2)` = get_NES(org66_p2_snsn38_GSEAres, all_pathways),
+  `ORG66 short-term response (P3)` = get_NES(org66_snSN38_GSEAres, all_pathways),
+  `ORG66 long-term response (P2)` = get_NES(org66_p2_sndmso_GSEAres, all_pathways),
+  `ORG66 long-term response (P3)`= get_NES(org66_SNDMSO_GSEAres, all_pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1.5
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette),
+  border_color = 'NA', 
+  cellwidth = 100,
+  cellheight = 20
+)
+```
+
+### limma::camera
+
+```{r}
+### loading in genesets
+
+### Sherman-Baust, 2011
+sherman_baust <- read_excel('../data/Literature_genesets/SHERMAN_BAUST_2011.XLSX', sheet='geneset_testing')
+sherman_baust_up <- as.data.frame(sherman_baust[sherman_baust$OV90P > 1,c('Symbol')])
+sherman_baust_dn <- as.data.frame(sherman_baust[sherman_baust$OV90P < -1,c('Symbol')])
+
+### McCorkle, 2021
+mccorkle <- read_excel('../data/Literature_genesets/MCCORKLE_2021.xlsx', sheet='geneset_testing')
+mccorkle_up <- as.data.frame(mccorkle[mccorkle$log2FoldChange > 1, c('hgnc_symbol')])
+mccorkle_dn <- as.data.frame(mccorkle[mccorkle$log2FoldChange < -1, c('hgnc_symbol')])
+
+### Yang, 2024
+yang <- read_excel('../data/Literature_genesets/YANGetal2024.xlsx', sheet='geneset_testing')
+yang_up <- as.data.frame(yang[yang$A.128PTX_logFC > 1, c('Gene_name')])
+yang_dn <- as.data.frame(yang[yang$A.128PTX_logFC < -1, c('Gene_name')])
+
+### creating geneset list 
+paclitaxel_resistance_genesets <- list(sherman_baust_up = sherman_baust_up$Symbol,
+                                       sherman_baust_dn = sherman_baust_dn$Symbol,
+                                       mccorkle_up = mccorkle_up$hgnc_symbol,
+                                       mccorkle_dn = mccorkle_dn$hgnc_symbol,
+                                       yang_up = yang_up$Gene_name,
+                                       yang_dn = yang_dn$Gene_name)
+
+```
+
+Plate 1:
+
+```{r, fig.height=5, fig.width=5}
+### loading "fit"
+org38_pac_fit <- readRDS('../output/P1/org38_pac_fit.rds') 
+org38_sn38_fit <- readRDS('../output/P1/org38_sn38_fit.rds') 
+org49_pac_fit <- readRDS('../output/P1/org49_pac_fit.rds') 
+org49_sn38_fit <- readRDS('../output/P1/org49_sn38_fit.rds') 
+org66_pac_fit <- readRDS('../output/P1/org66_pac_fit.rds')
+org66_sn38_fit <- readRDS('../output/P1/org66_sn38_fit.rds') 
+
+### competitive gene set testing (pre-ranked)
+df1 <- limma::cameraPR(statistic = org38_pac_fit$t[,1],
+       index = paclitaxel_resistance_genesets,
+       use.ranks = TRUE)
+df1$Organoid <- 'ORG38'
+df1$Geneset <- rownames(df1)
+
+df2 <- limma::cameraPR(statistic = org49_pac_fit$t[,1],
+       index = paclitaxel_resistance_genesets,
+       use.ranks = TRUE)
+df2$Organoid <- 'ORG49'
+df2$Geneset <- rownames(df2)
+
+df3 <- limma::cameraPR(statistic = org66_pac_fit$t[,1],
+       index = paclitaxel_resistance_genesets,
+       use.ranks = TRUE)
+df3$Organoid <- 'ORG66'
+df3$Geneset <- rownames(df3)
+
+p1df <- rbind(df1, df2)
+p1df <- rbind(p1df, df3)
+p1df$Timepoint <- 'T1'
+
+ggplot(p1df, aes(x= Geneset, y= FDR, fill= Organoid)) + 
+  geom_bar(stat = 'identity', position = 'dodge') + 
+  coord_flip() +
+  geom_hline(yintercept = 0.05, linetype = 'dashed') +
+  theme_minimal()
+```
+
+Plate 2:
+```{r, fig.height=5, fig.width=5}
+### loading "fit"
+org38_pac_fit <- readRDS('../output/P2/org38_paPAC_fit.rds') 
+org38_sn38_fit <- readRDS('../output/P2/org38_snSN38_fit.rds') 
+org49_pac_fit <- readRDS('../output/P2/org49_paPAC_fit.rds') 
+org49_sn38_fit <- readRDS('../output/P2/org49_snSN38_fit.rds') 
+org66_pac_fit <- readRDS('../output/P2/org66_paPAC_fit.rds')
+org66_sn38_fit <- readRDS('../output/P2/org66_snSN38_fit.rds') 
+
+### competitive gene set testing (pre-ranked)
+df1 <- limma::cameraPR(statistic = org38_pac_fit$t[,1],
+       index = paclitaxel_resistance_genesets,
+       use.ranks = TRUE)
+df1$Organoid <- 'ORG38'
+df1$Geneset <- rownames(df1)
+
+df2 <- limma::cameraPR(statistic = org49_pac_fit$t[,1],
+       index = paclitaxel_resistance_genesets,
+       use.ranks = TRUE)
+df2$Organoid <- 'ORG49'
+df2$Geneset <- rownames(df2)
+
+df3 <- limma::cameraPR(statistic = org66_pac_fit$t[,1],
+       index = paclitaxel_resistance_genesets,
+       use.ranks = TRUE)
+df3$Organoid <- 'ORG66'
+df3$Geneset <- rownames(df3)
+
+p2df <- rbind(df1, df2)
+p2df <- rbind(p2df, df3)
+p2df$Timepoint <- 'T2'
+
+ggplot(p2df, aes(x= Geneset, y= FDR, fill= Organoid)) + 
+  geom_bar(stat = 'identity', position = 'dodge') + 
+  coord_flip() +
+  geom_hline(yintercept = 0.05, linetype = 'dashed') +
+  theme_minimal()
+```
+
+Plate 3:
+```{r, fig.height=5, fig.width=5}
+### loading "fit"
+org38_pac_fit <- readRDS('../output/P3/org38_PPACvsDMSO_fit.rds') 
+org38_sn38_fit <- readRDS('../output/P3/org38_SNSN38vsDMSO_fit.rds') 
+org49_pac_fit <- readRDS('../output/P3/org49_PPACvsDMSO_fit.rds') 
+org49_sn38_fit <- readRDS('../output/P3/org49_SNSN38vsDMSO_fit.rds') 
+org66_pac_fit <- readRDS('../output/P3/org66_PPACvsDMSO_fit.rds')
+org66_sn38_fit <- readRDS('../output/P3/org66_SNSN38vsDMSO_fit.rds') 
+
+### competitive gene set testing (pre-ranked)
+limma::cameraPR(statistic = org38_pac_fit$t[,1],
+       index = paclitaxel_resistance_genesets,
+       use.ranks = TRUE)
+limma::cameraPR(statistic = org49_pac_fit$t[,1],
+       index = paclitaxel_resistance_genesets,
+       use.ranks = TRUE)
+limma::cameraPR(statistic = org66_pac_fit$t[,1],
+       index = paclitaxel_resistance_genesets,
+       use.ranks = TRUE)
+
+### competitive gene set testing (pre-ranked)
+df1 <- limma::cameraPR(statistic = org38_pac_fit$t[,1],
+       index = paclitaxel_resistance_genesets,
+       use.ranks = TRUE)
+df1$Organoid <- 'ORG38'
+df1$Geneset <- rownames(df1)
+
+df2 <- limma::cameraPR(statistic = org49_pac_fit$t[,1],
+       index = paclitaxel_resistance_genesets,
+       use.ranks = TRUE)
+df2$Organoid <- 'ORG49'
+df2$Geneset <- rownames(df2)
+
+df3 <- limma::cameraPR(statistic = org66_pac_fit$t[,1],
+       index = paclitaxel_resistance_genesets,
+       use.ranks = TRUE)
+df3$Organoid <- 'ORG66'
+df3$Geneset <- rownames(df3)
+
+p3df <- rbind(df1, df2)
+p3df <- rbind(p3df, df3)
+p3df$Timepoint <- 'T3'
+
+ggplot(p3df, aes(x= Geneset, y= FDR, fill= Organoid)) + 
+  geom_bar(stat = 'identity', position = 'dodge') + 
+  coord_flip() +
+  geom_hline(yintercept = 0.05, linetype = 'dashed') +
+  theme_minimal()
+```

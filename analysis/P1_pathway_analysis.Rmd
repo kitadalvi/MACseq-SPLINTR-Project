@@ -1,0 +1,755 @@
+---
+title: "Plate 1 Pathway Analysis"
+output: html_document
+date: "2026-05-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.height=4, fig.width = 6)
+```
+
+```{r}
+library(tidyverse)
+library(RColorBrewer)
+library(fgsea)
+library(msigdbr)
+library(DT)
+library(ggpubr)
+library(dplyr)
+library(tidyverse)
+library(Seurat)
+library(gtools)
+library(tidyseurat)
+library(DESeq2)
+library(edgeR)
+library(pheatmap)
+library(EnhancedVolcano)
+library(RColorBrewer)
+library(ggvenn)
+library(gplots)
+library(WGCNA)
+library(tidyr)
+library(ggplot2)
+```
+
+```{r}
+create_dt <-  function(x){
+  datatable(x,
+            extensions = 'Buttons',
+            options = list(dom = 'Blfrtip',
+                           buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                           lengthMenu = list(c(10,25,50,-1),
+                                             c(10,25,50,"All"))))
+}
+```
+
+## Genesets
+
+```{r}
+
+reactome_df <-msigdbr(species = 'Homo sapiens', category = 'C2', subcollection = 'CP:REACTOME')
+reactome_df <- reactome_df %>%
+  split(x = .$gene_symbol, f = .$gs_name)
+cat(paste("Loaded", length(reactome_df), "gene sets\n"))
+
+go_df <-msigdbr(species = 'Homo sapiens', category = 'C5')
+go_df <- go_df %>%
+  split(x = .$gene_symbol, f = .$gs_name)
+cat(paste("Loaded", length(go_df), "gene sets\n"))
+
+kegg_df <-msigdbr(species = 'Homo sapiens', category = 'C2', subcollection = 'CP:KEGG_MEDICUS')
+kegg_df <- kegg_df %>%
+  split(x = .$gene_symbol, f = .$gs_name)
+cat(paste("Loaded", length(kegg_df), "gene sets\n"))
+
+pid_df <- msigdbr(species = 'Homo sapiens', category = 'C2', subcollection = 'CP:PID')
+pid_df <- pid_df %>%
+  split(x = .$gene_symbol, f = .$gs_name)
+cat(paste("Loaded", length(pid_df), "gene sets\n"))
+
+hallmark_df <- msigdbr(species = 'Homo sapiens', category = 'H')
+hallmark_df <- hallmark_df %>%
+  split(x = .$gene_symbol, f = .$gs_name)
+cat(paste("Loaded", length(hallmark_df), "gene sets\n"))
+```
+
+
+```{r}
+### setting up ORG38 DE data
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('data/DEgenes/VCFG_P1/SA_PMC228 Gorringe Lab  PMMSq018 - Differential expression analysis - org38.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org38_pac_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org38_pac_rankings) <- df$gene_symbol 
+
+
+### setting up ORG49 DE data
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('data/DEgenes/VCFG_P1/SA_PMC228 Gorringe Lab  PMMSq018 - Differential expression analysis - org49.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org49_pac_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org49_pac_rankings) <- df$gene_symbol 
+
+
+### setting up ORG66 DE data
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('data/DEgenes/VCFG_P1/SA_PMC228 Gorringe Lab  PMMSq018 - Differential expression analysis - org66.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org66_pac_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org66_pac_rankings) <- df$gene_symbol 
+
+```
+
+## Reactome {.tabset}
+
+### ORG38 
+
+```{r}
+org38_reactome_res <- fgsea(pathways = reactome_df, 
+                 stats = org38_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org38_reactome_res)
+```
+
+
+### ORG49
+
+```{r}
+org49_reactome_res <- fgsea(pathways = reactome_df, 
+                 stats = org49_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org49_reactome_res)
+```
+
+### ORG66
+
+```{r}
+org66_reactome_res <- fgsea(pathways = reactome_df, 
+                 stats = org66_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org66_reactome_res)
+```
+
+## GO {.tabset}
+
+### ORG38 
+
+```{r}
+org38_GO_res <- fgsea(pathways = go_df, 
+                 stats = org38_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org38_GO_res)
+```
+
+### ORG49
+
+```{r}
+org49_GO_res <- fgsea(pathways = go_df, 
+                 stats = org49_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org49_GO_res)
+```
+
+### ORG66
+
+```{r}
+org66_GO_res <- fgsea(pathways = go_df, 
+                 stats = org66_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org66_GO_res)
+```
+
+## KEGG {.tabset}
+
+### ORG38 
+
+```{r}
+org38_kegg_res <- fgsea(pathways = kegg_df, 
+                 stats = org38_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org38_kegg_res)
+```
+
+### ORG49 
+
+```{r}
+org49_kegg_res <- fgsea(pathways = kegg_df, 
+                 stats = org49_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org49_kegg_res)
+```
+
+### ORG66
+
+```{r}
+org66_kegg_res <- fgsea(pathways = kegg_df, 
+                 stats = org66_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org66_kegg_res)
+```
+
+## PID {.tabset}
+
+### ORG38 
+
+```{r}
+org38_PID_res <- fgsea(pathways = pid_df, 
+                 stats = org38_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org38_PID_res)
+```
+
+### ORG49 
+
+```{r}
+org49_PID_res <- fgsea(pathways = pid_df, 
+                 stats = org49_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org49_PID_res)
+```
+
+### ORG66
+
+```{r}
+org66_PID_res <- fgsea(pathways = pid_df, 
+                 stats = org66_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org66_PID_res)
+```
+
+## Hallmark {.tabset}
+
+### ORG38 
+
+```{r}
+org38_hallmark_res <- fgsea(pathways = hallmark_df, 
+                 stats = org38_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org38_hallmark_res)
+```
+
+### ORG49 
+
+```{r}
+org49_hallmark_res <- fgsea(pathways = hallmark_df, 
+                 stats = org49_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org49_hallmark_res)
+```
+
+### ORG66 
+
+```{r}
+org66_hallmark_res <- fgsea(pathways = hallmark_df, 
+                 stats = org66_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org66_hallmark_res)
+```
+
+
+<!-- ## DE IC50 only  -->
+
+<!-- ```{r} -->
+<!-- ### Functions  -->
+
+<!-- source('/Users/dalvinikita/Desktop/macpie/R/filter_genes_by_expression.R') -->
+
+<!-- ### buttons for datatables  -->
+<!-- create_gene_dt <- function(x){ -->
+<!--   colnames <- c('logFC','AveExpr','t','B') -->
+<!--   df <- x %>% -->
+<!--     mutate(across(all_of(colnames),round, digits = 2)) %>% -->
+<!--     mutate(adj.P.Val = format(adj.P.Val, format='e', digits=4)) %>% -->
+<!--     mutate(P.Value = format(P.Value, format='e', digits=4)) -->
+<!--   DT::datatable(df, -->
+<!--                 extensions = 'Buttons', -->
+<!--                 options = list(dom = 'Blfrtip', -->
+<!--                                buttons = c('copy', 'csv', 'excel', 'pdf', 'print'), -->
+<!--                                lengthMenu = list(c(10,25,50,-1), -->
+<!--                                                  c(10,25,50,"All")))) -->
+<!-- } -->
+
+<!-- create_dt <- function(x){ -->
+<!--   DT::datatable(x, -->
+<!--                 extensions = 'Buttons', -->
+<!--                 options = list(dom = 'Blfrtip', -->
+<!--                                buttons = c('copy', 'csv', 'excel', 'pdf', 'print'), -->
+<!--                                lengthMenu = list(c(10,25,50,-1), -->
+<!--                                                  c(10,25,50,"All")))) -->
+<!-- } -->
+
+<!-- plotRLE <- function(data, main = "", ylab = "Relative Log Expression") { -->
+<!--   # Calculate medians -->
+<!--   col <- brewer.pal(8, 'Set3') -->
+<!--   medians <- apply(data, 1, median, na.rm = TRUE) -->
+<!--   rle_data <- data - medians -->
+
+<!--   boxplot(as.data.frame(rle_data), -->
+<!--           outline = FALSE, -->
+<!--           las = 2, -->
+<!--           ylab = ylab, -->
+<!--           main = main, -->
+<!--           col = col) -->
+<!--   abline(h = 0, col = "red", lty = 2) -->
+<!-- } -->
+
+<!-- red_blue_palette <- colorRampPalette(brewer.pal(11, "RdBu"))(100) -->
+<!-- ``` -->
+
+<!-- Thresholds used for DE analysis: -->
+
+<!-- • pvalue threshold = 0.05 -->
+
+<!-- • log FC threshold = log2(1.2) = 20% change in expression compared to control -->
+
+<!-- Differences from previous analyses of MACseq plate 1: -->
+
+<!-- • Utilising new filtering method: count of 10 in at least 80/96 of samples within an ORG line.  -->
+
+<!-- ```{r,echo=TRUE} -->
+<!-- ### Threshold Constants -->
+
+<!-- p_value_threshold <- 0.05 -->
+<!-- ``` -->
+
+<!-- ## Data -->
+<!-- ```{r} -->
+<!-- ### Importing MACseq data -->
+<!-- ### Importing metadata -->
+<!-- ### Joining data in a Seurat object  -->
+
+<!-- ### import metadata -->
+<!-- metadata<-read.csv("/Volumes/bioinf/home/ndalvi/MACseq_PMC228/metadata/PMC228.csv",header=T) %>% -->
+<!--   arrange("Barcode") %>% -->
+<!--   mutate(id=gsub("Plate","",Plate_ID)) %>% -->
+<!--   mutate(label=paste0(Treatment_1," ","(",Well_ID,")")) %>% -->
+<!--   mutate(interaction_condition=paste0(Drug,".",Concentration,".",SPLINTR)) %>% -->
+<!--   mutate(analysis_condition=paste0(Organoid,".",SPLINTR,".",Time)) -->
+
+<!-- ### load in count data  -->
+<!-- raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/3_MACseq_PMC228/raw/PMC228/starsolo/SA_PMC228-null.Solo.out/Gene/raw') -->
+
+<!-- row.names(metadata)<-metadata$label -->
+
+<!-- mac <- CreateSeuratObject(counts = raw_counts, -->
+<!--                           project = 'PMC228', -->
+<!--                           min.cells = 1, -->
+<!--                           min.features = 1) -->
+
+<!-- mac[["percent.mt"]] <- PercentageFeatureSet(mac, pattern = "^mt-|^MT-") -->
+<!-- mac[["percent.ribo"]] <- PercentageFeatureSet(mac, pattern = "^Rp[slp][[:digit:]]|^Rpsa|^RP[SLP][[:digit:]]|^RPSA") -->
+
+<!-- ### add location metadata -->
+<!-- mac<- mac %>% -->
+<!--   inner_join(metadata,by=c(".cell"="Barcode")) -->
+
+<!-- mac <- filter_genes_by_expression(mac, -->
+<!--                                        group_by = "Organoid", -->
+<!--                                        min_counts = 10, -->
+<!--                                        min_samples = 80) -->
+
+<!-- ### exclude mito and ribo genes from the counts -->
+<!-- mac<-mac[!grepl("^MT-",rownames(mac))] -->
+<!-- mac<-mac[!grepl("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA",rownames(mac))] -->
+
+<!-- colnames(mac)<- mac$label -->
+<!-- ``` -->
+
+<!-- ### ORG38  -->
+
+<!-- #### Design Matrix and Contrasts  -->
+
+<!-- Factors to include in design matrix:  -->
+
+<!-- • SPLINTR/treatment group (drug_label, drug_unlabelled) -->
+
+<!-- • Concentration (IC12.5, IC25, IC50) -->
+
+<!-- • Time (48H VS DMSO) -->
+
+<!-- • Not including ORG as only 1 ORG line  -->
+
+<!-- Design matrix: -->
+
+<!-- ```{r} -->
+<!-- ### selecting metadata and countdata relevant for ORG 38 -->
+<!-- ### subset metadata to include only ORG38 cells at 48H -->
+<!-- columns <- metadata[metadata$Organoid=='ORG38'&metadata$Time=='48H' & metadata$Treatment_1!="STAUR",] -->
+<!-- sampleinfo <- columns -->
+<!-- columns <- c(columns[,c("label")]) -->
+
+<!-- ### subset counts to include only relevant ORG38 cells  -->
+<!-- counts_matrix <- mac[,columns] -->
+
+<!-- ### factors to include in deisgn matrix: treatment/splintr, concentration, time -->
+<!-- group <- sampleinfo$interaction_condition -->
+
+<!-- ### set up design matrix -->
+<!-- ### without intercept (means model) -->
+<!-- design <- model.matrix(~0+group) -->
+<!-- rownames(design) <- rownames(sampleinfo) -->
+<!-- datatable(design) -->
+
+<!-- ### Specifying contrasts for analysis -->
+<!-- pacVSdmso <- makeContrasts(((groupPACLITAXEL.IC50.SPL1+groupPACLITAXEL.IC50.SPL2+groupPACLITAXEL.IC50.UNLABELLED)/3)-((groupDMSO.0.05.SPL1+groupDMSO.0.05.SPL2+groupDMSO.0.05.UNLABELLED)/3), levels=colnames(design)) -->
+<!-- ``` -->
+
+<!-- Voom plot:  -->
+
+<!-- ```{r, fig.height=5, fig.width=5} -->
+<!-- ### Normalising data -->
+<!-- counts<-counts_matrix@assays$RNA$counts -->
+<!-- counts <- DGEList(counts = counts) %>% -->
+<!--   calcNormFactors(method = 'TMMwsp') -->
+<!-- v <- voom(counts, design, plot = T) -->
+<!-- org38_voom_matrix <- v -->
+<!-- ``` -->
+
+<!-- RLE of all ORG38 wells before and after normalisation: -->
+
+<!-- ```{r, fig.width=16} -->
+<!-- par(mfrow=c(1,2)) -->
+<!-- plotRLE(counts$counts, main='RLE of all wells - raw') -->
+<!-- plotRLE(v$E, main='RLE of all wells - normalised') -->
+<!-- ``` -->
+
+<!-- ##### Paclitaxel - DMSO -->
+
+<!-- Differentially expressed genes between Paclitaxel and DMSO in ORG38: -->
+
+<!-- ```{r} -->
+<!-- ### following limma trend workflow -->
+<!-- ### difference between PAC and DMSO across concentrations -->
+<!-- fit <- lmFit(v, design) -->
+<!-- fit <- contrasts.fit(fit, pacVSdmso) -->
+<!-- fit <- treat(fit, lfc= log2(1.2)) -->
+<!-- saveRDS(fit, file='../output/P1/org38_pac_IC50_fit.rds') -->
+
+<!-- all_genes <- topTreat(fit, number=Inf) -->
+<!-- org38_pac_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p') -->
+<!-- write.csv(org38_pac_DEgenes, file = '../data/DEgenes/P1/ORG38_NCPACvsDMSO_IC50.csv') -->
+
+<!-- datatable(all_genes) -->
+
+<!-- ### Print summary of DE genes table -->
+<!-- up <- paste('• UPREGULATED:',sum(org38_pac_DEgenes$logFC > 0)) -->
+<!-- down <- paste('• DOWNREGULATED:',sum(org38_pac_DEgenes$logFC< 0)) -->
+<!-- total <- paste('• TOTAL DE genes:', length(rownames(org38_pac_DEgenes))) -->
+<!-- summary=paste (total, up, down, sep="\n") -->
+<!-- cat(summary[1]) -->
+
+<!-- ``` -->
+
+<!-- ```{r, fig.height=10, fig.width=10} -->
+<!-- ### Assigning genes of interest from DEgenes table -->
+<!-- ### Formatting counts to log(CPM) for heatmap -->
+<!-- ### subsetting wells of interest -->
+<!-- genes <- rownames(org38_pac_DEgenes) -->
+<!-- samples_of_interest <- sampleinfo[sampleinfo$Drug=='PACLITAXEL'|sampleinfo$Drug=='DMSO',c('label')] -->
+<!-- heatmap_counts <- as.data.frame(v$E[,samples_of_interest]) -->
+
+
+<!-- ### Setting up annotation data frame -->
+<!-- type_annotation <- data.frame(Drug = as.factor(sampleinfo[,c(17)]), -->
+<!--                               Concentration = as.factor(sampleinfo[,c(11)]), -->
+<!--                               SPLINTR = as.factor(sampleinfo[,c(16)])) -->
+<!-- rownames(type_annotation) <- rownames(sampleinfo) -->
+
+<!-- pheatmap(heatmap_counts[genes[1:50],], -->
+<!--          border_color = 'NA', -->
+<!--          annotation_col = type_annotation, -->
+<!--          treeheight_row = 0, -->
+<!--          cellheight = 8, -->
+<!--          color=rev(red_blue_palette)) -->
+
+<!-- ``` -->
+
+<!-- ### ORG49  -->
+
+<!-- #### Design Matrix and Contrasts  -->
+
+<!-- Factors to include in design matrix:  -->
+
+<!-- • SPLINTR/treatment group (drug_label, drug_unlabelled) -->
+
+<!-- • Concentration (IC12.5, IC25, IC50) -->
+
+<!-- • Time (48H VS DMSO) -->
+
+<!-- • Not including ORG as only 1 ORG line  -->
+
+<!-- Design matrix: -->
+
+<!-- ```{r} -->
+<!-- ### selecting metadata and countdata relevant for ORG49 -->
+<!-- ### subset metadata to include only ORG49 cells at 48H -->
+<!-- columns <- metadata[metadata$Organoid=='ORG49'&metadata$Time=='48H' & metadata$Treatment_1!="STAUR",] -->
+<!-- sampleinfo <- columns -->
+<!-- columns <- c(columns[,c("label")]) -->
+
+<!-- ### subset counts to include only relevant ORG49 cells  -->
+<!-- counts_matrix <- mac[,columns] -->
+
+<!-- ### factors to include in deisgn matrix: treatment/splintr, concentration, time -->
+<!-- group <- sampleinfo$interaction_condition -->
+
+<!-- ### set up design matrix -->
+<!-- ### without intercept (means model) -->
+<!-- design <- model.matrix(~0+group) -->
+<!-- rownames(design) <- rownames(sampleinfo) -->
+<!-- datatable(design) -->
+
+<!-- ### Specifying contrasts for analysis -->
+<!-- pacVSdmso <- makeContrasts(((groupPACLITAXEL.IC50.SPL1+groupPACLITAXEL.IC50.SPL2+groupPACLITAXEL.IC50.UNLABELLED)/3)-((groupDMSO.0.05.SPL1+groupDMSO.0.05.SPL2+groupDMSO.0.05.UNLABELLED)/3), levels=colnames(design)) -->
+<!-- ``` -->
+
+<!-- Voom plot:  -->
+
+<!-- ```{r, fig.height=5, fig.width=5} -->
+<!-- ### Normalising data -->
+<!-- counts<-counts_matrix@assays$RNA$counts -->
+<!-- counts <- DGEList(counts = counts) %>% -->
+<!--   calcNormFactors(method = 'TMMwsp') -->
+<!-- v <- voom(counts, design, plot = T) -->
+<!-- org49_voom_matrix <- v -->
+<!-- ``` -->
+
+<!-- RLE of all ORG49 wells before and after normalisation: -->
+
+<!-- ```{r, fig.width=16} -->
+<!-- par(mfrow=c(1,2)) -->
+<!-- plotRLE(counts$counts, main='RLE of all wells - raw') -->
+<!-- plotRLE(v$E, main='RLE of all wells - normalised') -->
+<!-- ``` -->
+
+<!-- ##### Paclitaxel - DMSO -->
+
+<!-- Differentially expressed genes between Paclitaxel and DMSO in ORG38: -->
+
+<!-- ```{r} -->
+<!-- ### following limma trend workflow -->
+<!-- ### difference between PAC and DMSO across concentrations -->
+<!-- fit <- lmFit(v, design) -->
+<!-- fit <- contrasts.fit(fit, pacVSdmso) -->
+<!-- fit <- treat(fit, lfc= log2(1.2)) -->
+<!-- saveRDS(fit, file='../output/P1/org49_pac_IC50_fit.rds') -->
+
+<!-- all_genes <- topTreat(fit, number=Inf) -->
+<!-- org49_pac_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p') -->
+<!-- write.csv(org49_pac_DEgenes, file = '../data/DEgenes/P1/ORG49_NCPACvsDMSO_IC50.csv') -->
+
+<!-- datatable(all_genes) -->
+
+<!-- ### Print summary of DE genes table -->
+<!-- up <- paste('• UPREGULATED:',sum(org49_pac_DEgenes$logFC > 0)) -->
+<!-- down <- paste('• DOWNREGULATED:',sum(org49_pac_DEgenes$logFC< 0)) -->
+<!-- total <- paste('• TOTAL DE genes:', length(rownames(org49_pac_DEgenes))) -->
+<!-- summary=paste (total, up, down, sep="\n") -->
+<!-- cat(summary[1]) -->
+
+<!-- ``` -->
+
+<!-- ```{r, fig.height=10, fig.width=10} -->
+<!-- ### Assigning genes of interest from DEgenes table -->
+<!-- ### Formatting counts to log(CPM) for heatmap -->
+<!-- ### subsetting wells of interest -->
+<!-- genes <- rownames(org49_pac_DEgenes) -->
+<!-- samples_of_interest <- sampleinfo[sampleinfo$Drug=='PACLITAXEL'|sampleinfo$Drug=='DMSO',c('label')] -->
+<!-- heatmap_counts <- as.data.frame(v$E[,samples_of_interest]) -->
+
+
+<!-- ### Setting up annotation data frame -->
+<!-- type_annotation <- data.frame(Drug = as.factor(sampleinfo[,c(17)]), -->
+<!--                               Concentration = as.factor(sampleinfo[,c(11)]), -->
+<!--                               SPLINTR = as.factor(sampleinfo[,c(16)])) -->
+<!-- rownames(type_annotation) <- rownames(sampleinfo) -->
+
+<!-- pheatmap(heatmap_counts[genes,], -->
+<!--          border_color = 'NA', -->
+<!--          annotation_col = type_annotation, -->
+<!--          treeheight_row = 0, -->
+<!--          cellheight = 8, -->
+<!--          color=rev(red_blue_palette)) -->
+
+<!-- ``` -->
+
+<!-- ### ORG66  -->
+
+<!-- #### Design Matrix and Contrasts  -->
+
+<!-- Factors to include in design matrix:  -->
+
+<!-- • SPLINTR/treatment group (drug_label, drug_unlabelled) -->
+
+<!-- • Concentration (IC12.5, IC25, IC50) -->
+
+<!-- • Time (48H VS DMSO) -->
+
+<!-- • Not including ORG as only 1 ORG line  -->
+
+<!-- Design matrix: -->
+
+<!-- ```{r} -->
+<!-- ### selecting metadata and countdata relevant for ORG66 -->
+<!-- ### subset metadata to include only ORG66 cells at 48H -->
+<!-- columns <- metadata[metadata$Organoid=='ORG66'&metadata$Time=='48H' & metadata$Treatment_1!="STAUR",] -->
+<!-- sampleinfo <- columns -->
+<!-- columns <- c(columns[,c("label")]) -->
+
+<!-- ### subset counts to include only relevant ORG66 cells  -->
+<!-- counts_matrix <- mac[,columns] -->
+
+<!-- ### factors to include in deisgn matrix: treatment/splintr, concentration, time -->
+<!-- group <- sampleinfo$interaction_condition -->
+
+<!-- ### set up design matrix -->
+<!-- ### without intercept (means model) -->
+<!-- design <- model.matrix(~0+group) -->
+<!-- rownames(design) <- rownames(sampleinfo) -->
+<!-- datatable(design) -->
+
+<!-- ### Specifying contrasts for analysis -->
+<!-- pacVSdmso <- makeContrasts(((groupPACLITAXEL.IC50.SPL1+groupPACLITAXEL.IC50.SPL2)/2)-((groupDMSO.0.05.SPL1+groupDMSO.0.05.SPL2)/2), levels=colnames(design)) -->
+<!-- ``` -->
+
+<!-- Voom plot:  -->
+
+<!-- ```{r, fig.height=5, fig.width=5} -->
+<!-- ### Normalising data -->
+<!-- counts<-counts_matrix@assays$RNA$counts -->
+<!-- counts <- DGEList(counts = counts) %>% -->
+<!--   calcNormFactors(method = 'TMMwsp') -->
+<!-- v <- voom(counts, design, plot = T) -->
+<!-- org66_voom_matrix <- v -->
+<!-- ``` -->
+
+<!-- RLE of all ORG66 wells before and after normalisation: -->
+
+<!-- ```{r, fig.width=16} -->
+<!-- par(mfrow=c(1,2)) -->
+<!-- plotRLE(counts$counts, main='RLE of all wells - raw') -->
+<!-- plotRLE(v$E, main='RLE of all wells - normalised') -->
+<!-- ``` -->
+
+<!-- ##### Paclitaxel - DMSO -->
+
+<!-- Differentially expressed genes between Paclitaxel and DMSO in ORG66: -->
+
+<!-- ```{r} -->
+<!-- ### following limma trend workflow -->
+<!-- ### difference between PAC and DMSO across concentrations -->
+<!-- fit <- lmFit(v, design) -->
+<!-- fit <- contrasts.fit(fit, pacVSdmso) -->
+<!-- fit <- treat(fit, lfc= log2(1.2)) -->
+<!-- saveRDS(fit, file='../output/P1/org66_pac_IC50_fit.rds') -->
+
+<!-- all_genes <- topTreat(fit, number=Inf) -->
+<!-- org66_pac_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p') -->
+<!-- write.csv(org66_pac_DEgenes, file = '../data/DEgenes/P1/ORG66_NCPACvsDMSO_IC50.csv') -->
+
+<!-- datatable(all_genes) -->
+
+<!-- ### Print summary of DE genes table -->
+<!-- up <- paste('• UPREGULATED:',sum(org66_pac_DEgenes$logFC > 0)) -->
+<!-- down <- paste('• DOWNREGULATED:',sum(org66_pac_DEgenes$logFC< 0)) -->
+<!-- total <- paste('• TOTAL DE genes:', length(rownames(org66_pac_DEgenes))) -->
+<!-- summary=paste (total, up, down, sep="\n") -->
+<!-- cat(summary[1]) -->
+
+<!-- ``` -->
+
+<!-- ```{r, fig.height=10, fig.width=10} -->
+<!-- ### Assigning genes of interest from DEgenes table -->
+<!-- ### Formatting counts to log(CPM) for heatmap -->
+<!-- ### subsetting wells of interest -->
+<!-- genes <- rownames(org66_pac_DEgenes) -->
+<!-- samples_of_interest <- sampleinfo[sampleinfo$Drug=='PACLITAXEL'|sampleinfo$Drug=='DMSO',c('label')] -->
+<!-- heatmap_counts <- as.data.frame(v$E[,samples_of_interest]) -->
+
+
+<!-- ### Setting up annotation data frame -->
+<!-- type_annotation <- data.frame(Drug = as.factor(sampleinfo[,c(17)]), -->
+<!--                               Concentration = as.factor(sampleinfo[,c(11)]), -->
+<!--                               SPLINTR = as.factor(sampleinfo[,c(16)])) -->
+<!-- rownames(type_annotation) <- rownames(sampleinfo) -->
+
+<!-- pheatmap(heatmap_counts[genes,], -->
+<!--          border_color = 'NA', -->
+<!--          annotation_col = type_annotation, -->
+<!--          treeheight_row = 0, -->
+<!--          cellheight = 8, -->
+<!--          color=rev(red_blue_palette)) -->
+
+<!-- ``` -->

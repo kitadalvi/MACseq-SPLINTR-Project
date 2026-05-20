@@ -274,7 +274,7 @@ plot + facet_wrap(~treatment, scales='free', switch='x') +
 ## Loading Data
 ```{r, echo=TRUE}
 ##Loading data 
-counts_path <- "/Users/dalvinikita/Documents/11_MACseq_PMMSq042/raw/splintr_readlength20.tsv"
+counts_path <- "/Users/dalvinikita/Documents/11_MACseq_PMMSq042/raw/MGC-AK-8417-Plate1_S170_readlength_30.tsv"
 counts <- readBartabCounts(counts_path)
 
 #changing BC names to make them shorter
@@ -302,7 +302,7 @@ individual_counts <- function(df, well_id){
   return(subset)
 }
 
-org_data <- metadata[metadata$Organoid=='ORG66',c('Well_ID',"Organoid","Treatment_1",'Time',"barcode", "bc.umi.count")]
+org_data <- metadata[metadata$Organoid=='ORG38',c('Well_ID',"Organoid","Treatment_1",'Time',"barcode", "bc.umi.count")]
 
 rownames(org_data)<- org_data$Well_ID
 treatments<- c(org_data$Well_ID)
@@ -330,8 +330,8 @@ barcode_data <- barcode_data[rowSums(barcode_data$counts) != 0, ]
 
 ### Entire Plate 
 Visualising proportion of barcodes in all ORG38 wells across both timepoints:
-```{r, fig.height=5, fig.width=6}
-plotBarcodeHistogram(barcode_data, topN = 500)  
+```{r, fig.height=3, fig.width=7}
+plotBarcodeHistogram(barcode_data, topN = 20, )  
 
 dge.filtered <-
   thresholdCounts(
@@ -342,6 +342,6 @@ dge.filtered <-
     plot = F
   )
 
-plotBarcodeHistogram(dge.filtered[,c("H12",'H13','H14','H15','D12','D13','D14','D15','K12','K13','K14','K15')], topN = 20, alphaLowFreq = 0) + ggtitle("Top 20 barcodes in ORG38")
+plotBarcodeHistogram(dge.filtered, topN = 1, alphaLowFreq = 0) + ggtitle("Top 500 BC in MACseq Plate 2")
 
 ```

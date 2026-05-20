@@ -280,7 +280,7 @@ org38_ncPAC_fit <- fit
 saveRDS(org38_ncPAC_fit, file = '../output/P2/org38_ncPAC_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org38_ncPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(org38_ncPAC_DEgenes, file = '../data/DEgenes/P2/ORG38_NCPAC.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG38_NCPAC.csv')
 
 create_dt_genes(org38_ncPAC_DEgenes)
 
@@ -342,7 +342,7 @@ org38_ncSN38_fit <- fit
 saveRDS(org38_ncSN38_fit, file = '../output/P2/org38_ncSN38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org38_ncSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(org38_ncSN38_DEgenes, file = '../data/DEgenes/P2/ORG38_NCSN38.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG38_NCSN38.csv')
 
 create_dt_genes(org38_ncSN38_DEgenes)
 
@@ -404,7 +404,7 @@ org38_paPAC_fit <- fit
 saveRDS(org38_paPAC_fit, file = '../output/P2/org38_paPAC_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org38_paPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(org38_paPAC_DEgenes, file = '../data/DEgenes/P2/ORG38_PACPAC.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG38_PACPAC.csv')
 
 create_dt_genes(org38_paPAC_DEgenes)
 
@@ -492,7 +492,7 @@ org38_snSN38_fit <- fit
 saveRDS(org38_snSN38_fit, file = '../output/P2/org38_snSN38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org38_snSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(org38_snSN38_DEgenes, file = '../data/DEgenes/P2/ORG38_SNSN38.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG38_SNSN38.csv')
 
 create_dt_genes(org38_snSN38_DEgenes)
 
@@ -577,7 +577,7 @@ org38_PDMSOvsDMSO_fit <- fit
 saveRDS(org38_PDMSOvsDMSO_fit, file = '../output/P2/org38_PDMSOvsDMSO_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org38_PDMSOvsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(org38_PDMSOvsDMSO_DEgenes, file = '../data/DEgenes/P2/ORG38_PDMSOvsDMSO.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG38_PDMSOvsDMSO.csv')
 
 create_dt_genes(org38_PDMSOvsDMSO_DEgenes)
 
@@ -639,7 +639,7 @@ org38_SNDMSOvsDMSO_fit <- fit
 saveRDS(org38_SNDMSOvsDMSO_fit, file = '../output/P2/org38_SNDMSOvsDMSO_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org38_SNDMSOvsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(org38_SNDMSOvsDMSO_DEgenes, file = '../data/DEgenes/P2/ORG38_SNDMSOvsDMSO.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG38_SNDMSOvsDMSO.csv')
 
 create_dt_genes(org38_SNDMSOvsDMSO_DEgenes)
 
@@ -967,7 +967,7 @@ org49_ncPAC_fit <- fit
 saveRDS(org49_ncPAC_fit, file = '../output/P2/org49_ncPAC_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_ncPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-#write.csv(org49_ncPAC_DEgenes, file = '../data/DEgenes/P2/ORG49_NCPAC.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG49_NCPAC.csv')
 
 ### Print summary of DE genes table
 total <- paste('• TOTAL DE genes:',length(rownames(org49_ncPAC_DEgenes)))
@@ -1025,7 +1025,7 @@ org49_ncSN38_fit <- fit
 saveRDS(org49_ncSN38_fit, file = '../output/P2/org49_ncSN38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_ncSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG49_NCSN38.csv')
 create_dt_genes(org49_ncSN38_DEgenes)
 
 ### Print summary of DE genes table
@@ -1085,6 +1085,7 @@ fit <- treat(fit, lfc=log2(1.2))
 saveRDS(fit, file = '../output/P2/org49_paPAC_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_paPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG49_PACPAC.csv')
 
 ### Print summary of DE genes table
 total <- paste('• TOTAL DE genes:',length(rownames(org49_paPAC_DEgenes)))
@@ -1143,6 +1144,7 @@ org49_snSN38_fit <- fit
 saveRDS(org49_snSN38_fit, file = '../output/P2/org49_snSN38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_snSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG49_SNSN38.csv')
 
 create_dt_genes(org49_snSN38_DEgenes)
 
@@ -1205,7 +1207,7 @@ org49_PDMSOvsDMSO_fit <- fit
 saveRDS(org49_PDMSOvsDMSO_fit, file = '../output/P2/org49_PDMSOvsDMSO_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_PDMSOvsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(org49_PDMSOvsDMSO_DEgenes, file = '../data/DEgenes/P2/ORG49_PDMSOvsDMSO.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG49_PDMSOvsDMSO.csv')
 
 create_dt_genes(org49_PDMSOvsDMSO_DEgenes)
 
@@ -1268,7 +1270,7 @@ org49_SNDMSOvsDMSO_fit <- fit
 saveRDS(org49_SNDMSOvsDMSO_fit, file = '../output/P2/org49_SNDMSOvsDMSO_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_SNDMSOvsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(org49_SNDMSOvsDMSO_DEgenes, file = '../data/DEgenes/P2/ORG49_SNDMSOvsDMSO.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG49_SNDMSOvsDMSO.csv')
 
 create_dt_genes(org49_SNDMSOvsDMSO_DEgenes)
 
@@ -1556,6 +1558,7 @@ org66_ncPAC_fit <- fit
 saveRDS(org66_ncPAC_fit, file = '../output/P2/org66_ncPAC_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org66_ncPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG66_NCPAC.csv')
 
 create_dt_genes(org66_ncPAC_DEgenes)
 
@@ -1618,6 +1621,7 @@ org66_ncSN38_fit <- fit
 saveRDS(org66_ncSN38_fit, file = '../output/P2/org66_ncSN38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org66_ncSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG66_NCSN38.csv')
 
 create_dt_genes(org66_ncSN38_DEgenes)
 
@@ -1681,6 +1685,7 @@ org66_paPAC_fit <- fit
 saveRDS(org66_paPAC_fit, file = '../output/P2/org66_paPAC_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org66_paPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG66_PACPAC.csv')
 
 create_dt_genes(org66_paPAC_DEgenes)
 
@@ -1744,6 +1749,7 @@ org66_snSN38_fit <- fit
 saveRDS(org66_snSN38_fit, file = '../output/P2/org66_snSN38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org66_snSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG66_SNSN38.csv')
 
 create_dt_genes(org66_snSN38_DEgenes)
 
@@ -1806,7 +1812,7 @@ org66_PDMSOvsDMSO_fit <- fit
 saveRDS(org66_PDMSOvsDMSO_fit, file = '../output/P2/org66_PDMSOvsDMSO_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org66_PDMSOvsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(org66_PDMSOvsDMSO_DEgenes, file = '../data/DEgenes/P2/ORG66_PDMSOvsDMSO.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG66_PDMSOvsDMSO.csv')
 
 create_dt_genes(org66_PDMSOvsDMSO_DEgenes)
 
@@ -1868,7 +1874,7 @@ org66_SNDMSOvsDMSO_fit <- fit
 saveRDS(org66_SNDMSOvsDMSO_fit, file = '../output/P2/org66_SNDMSOvsDMSO_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org66_SNDMSOvsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(org66_SNDMSOvsDMSO_DEgenes, file = '../data/DEgenes/P2/ORG66_SNDMSOvsDMSO.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG66_SNDMSOvsDMSO.csv')
 
 create_dt_genes(org66_SNDMSOvsDMSO_DEgenes)
 

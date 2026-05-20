@@ -270,6 +270,7 @@ saveRDS(fit, file='../output/P1/org38_pac_fit.rds')
 
 all_genes <- topTreat(fit, number=Inf)
 org38_pac_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+write.csv(org38_pac_DEgenes, file = '../data/DEgenes/P1/ORG38_NCPACvsDMSO.csv')
 
 datatable(all_genes)
 
@@ -530,6 +531,7 @@ fit <- treat(fit, lfc=log2(1.2))
 saveRDS(fit, file='../output/P1/org49_pac_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_pac_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+write.csv(org49_pac_DEgenes, file = '../data/DEgenes/P1/ORG49_NCPACvsDMSO.csv')
 
 datatable(org49_pac_DEgenes)
 
@@ -790,6 +792,7 @@ fit <- treat(fit, lfc=log2(1.2))
 saveRDS(fit, file='../output/P1/org66_pac_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org66_pac_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+write.csv(org66_pac_DEgenes, file = '../data/DEgenes/P1/ORG66_NCPACvsDMSO.csv')
 
 datatable(org66_pac_DEgenes)
 
