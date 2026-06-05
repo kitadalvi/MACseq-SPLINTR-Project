@@ -1,0 +1,99 @@
+---
+title: "TC Comparison across plates"
+output: html_document
+date: "2026-06-03"
+---
+```{r setup, echo = FALSE, message =FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.height=8, fig.width = 10)
+```
+
+```{r}
+### loading required packages
+library(tidyverse)
+library(Seurat)
+library(gtools)
+library(tidyseurat)
+library(DESeq2)
+library(edgeR)
+library(DT)
+library(dplyr)
+library(pheatmap)
+library(EnhancedVolcano)
+library(RColorBrewer)
+library(ggvenn)
+library(gplots)
+library(WGCNA)
+library(tidyr)
+library(ggplot2)
+```
+
+```{r}
+### Functions 
+
+source('/Users/dalvinikita/Desktop/macpie/R/filter_genes_by_expression.R')
+
+create_dt <- function(x){
+  DT::datatable(x,
+                extensions = 'Buttons',
+                options = list(dom = 'Blfrtip',
+                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                               lengthMenu = list(c(10,25,50,-1),
+                                                 c(10,25,50,"All"))))
+}
+
+plotRLE <- function(data, main = "", ylab = "Relative Log Expression") {
+  # Calculate medians
+  col <- brewer.pal(8, 'Set3')
+  medians <- apply(data, 1, median, na.rm = TRUE)
+  rle_data <- data - medians
+  
+  boxplot(as.data.frame(rle_data),
+          outline = FALSE,
+          las = 2,
+          ylab = ylab,
+          main = main,
+          col = col)
+  abline(h = 0, col = "red", lty = 2)
+}
+
+red_blue_palette <- colorRampPalette(brewer.pal(11, "RdBu"))(100)
+```
+
+## Notes
+
+## ORG38 {.tabset}
+
+### Plate 1 {.tabset}
+
+### Plate 2 {.tabset}
+
+```{r}
+p2_ncpac <- read.csv('data/DEgenes/P2/ORG38_ncPACvsDMSO_low.csv') 
+```
+
+### Plate 3 {.tabset}
+
+```{r}
+p3_ncpac <- read.csv('data/DEgenes/P3/ORG38_ncPACvsDMSO_low.csv') 
+```
+
+```{r}
+### Venn Diagram df
+
+x <- list(`ncPACvsDMSO_p2`=p2_ncpac$X,
+          `ncPACvsDMSO_p3`=p3_ncpac$X)
+
+x.table <- venn(x[c("ncPACvsDMSO_p2","ncPACvsDMSO_p3")], show.plot = FALSE)
+x_attributes <- attributes(x.table)
+
+ggvenn(x, columns = c('ncPACvsDMSO_p2','ncPACvsDMSO_p3'), 
+       show_percentage = FALSE,
+       text_size = 8)
+
+p2_genes <- x_attributes$intersections$ncPACvsDMSO_p2
+p2_genes[1:25]
+
+p3_genes <- x_attributes$intersections$ncPACvsDMSO_p3
+p3_genes[1:25]
+```
+

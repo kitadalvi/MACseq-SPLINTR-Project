@@ -21,3 +21,17 @@ editor_options:
 
 
 [P1 pathway analysis - ORG paper](P1_pathway_analysis.html)
+
+## Pathway Analysis - June 2026
+
+[ORG38 - Paclitaxel](ORG38_PAC_Pathway_Analysis_JUNE2026.html)
+
+[ORG38 - SN38](ORG38_SN38_Pathway_Analysis_JUNE2026.html)
+
+[ORG49 - Paclitaxel](ORG49_PAC_Pathway_Analysis_JUNE2026.html)
+
+[ORG49 - SN38](ORG49_SN38_Pathway_Analysis_JUNE2026.html)
+
+[ORG66 - Paclitaxel](ORG66_PAC_Pathway_Analysis_JUNE2026.html)
+
+[ORG66 - SN38](ORG66_SN38_Pathway_Analysis_JUNE2026.html)

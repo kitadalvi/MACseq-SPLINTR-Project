@@ -270,6 +270,8 @@ org38_ncPAC_low_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf
 
 create_dt_genes(org38_ncPAC_low_DEgenes)
 
+write.csv(all_genes, file="../data/DEgenes/P3/ORG38_ncPACvsDMSO_low.csv")
+
 ### Print summary of DE genes table
 total <- paste('• TOTAL DE genes:',length(rownames(org38_ncPAC_low_DEgenes)))
 up <- paste('• UPREGULATED:',sum(org38_ncPAC_low_DEgenes$logFC>0))
@@ -292,6 +294,7 @@ all_genes <- topTreat(fit, number=Inf)
 org38_ncPAC_high_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
 create_dt_genes(org38_ncPAC_high_DEgenes)
+write.csv(all_genes, file="../data/DEgenes/P3/ORG38_ncPACvsDMSO_high.csv")
 
 ### Print summary of DE genes table
 total <- paste('• TOTAL DE genes:',length(rownames(org38_ncPAC_high_DEgenes)))
@@ -367,6 +370,8 @@ org38_paPAC_low_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org38_paPAC_low_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
+write.csv(org38_paPAC_low_DEgenes, file="../data/DEgenes/P3/ORG38_paPAC_low.csv")
+
 create_dt_genes(org38_paPAC_low_DEgenes)
 
 ### Print summary of DE genes table
@@ -390,6 +395,8 @@ fit <- treat(fit, lfc=log(1.2))
 org38_paPAC_high_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org38_paPAC_high_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+write.csv(org38_paPAC_high_DEgenes, file="../data/DEgenes/P3/ORG38_paPAC_high.csv")
 
 create_dt_genes(org38_paPAC_high_DEgenes)
 
@@ -635,6 +642,8 @@ fit <- treat(fit, lfc=log(1.2))
 all_genes <- topTreat(fit, number=Inf)
 org49_paPAC_low_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
+write.csv(org49_paPAC_low_DEgenes, file="../data/DEgenes/P3/ORG49_paPAC_low.csv")
+
 ### Print summary of DE genes table
 total <- paste('• TOTAL DE genes:',length(rownames(org49_paPAC_low_DEgenes)))
 up <- paste('• UPREGULATED:',sum(org49_paPAC_low_DEgenes$logFC>0))
@@ -655,6 +664,8 @@ fit <- contrasts.fit(fit, PAC_pacvsdmso_high)
 fit <- treat(fit, lfc=log(1.2))
 all_genes <- topTreat(fit, number=Inf)
 org49_paPAC_high_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+write.csv(org49_paPAC_high_DEgenes, file="../data/DEgenes/P3/ORG49_paPAC_high.csv")
 
 create_dt_genes(org49_paPAC_high_DEgenes)
 
@@ -900,6 +911,7 @@ fit <- treat(fit, lfc=log(1.2))
 all_genes <- topTreat(fit, number=Inf)
 org66_paPAC_low_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
+org49_paPAC_high_DEgenes
 create_dt_genes(org66_paPAC_low_DEgenes)
 
 ### Print summary of DE genes table
@@ -922,6 +934,8 @@ fit <- contrasts.fit(fit, PAC_pacvsdmso_high)
 fit <- treat(fit, lfc=log(1.2))
 all_genes <- topTreat(fit, number=Inf)
 org66_paPAC_high_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+write.csv(org66_paPAC_high_DEgenes, file="../data/DEgenes/P3/ORG66_paPAC_high.csv")
 
 #create_dt_genes(org66_paPAC_high_DEgenes)
 

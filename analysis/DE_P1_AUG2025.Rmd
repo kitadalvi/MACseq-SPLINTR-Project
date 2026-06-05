@@ -125,8 +125,8 @@ mac<- mac %>%
 
 mac <- filter_genes_by_expression(mac,
                                        group_by = "Organoid",
-                                       min_counts = 10,
-                                       min_samples = 80)
+                                       min_counts = 30,
+                                       min_samples = 91)
 
 ### exclude mito and ribo genes from the counts
 mac<-mac[!grepl("^MT-",rownames(mac))]
@@ -147,6 +147,8 @@ create_dt(metadata[metadata$Organoid=="ORG38"| metadata$Organoid=='ORG49' | meta
 ```{r, fig.height=5, fig.width=8}
 vlnplot <- VlnPlot(mac, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", "percent.ribo"),
     ncol = 4, group.by = "Organoid")
+
+vlnplot
 
 ggsave(vlnplot, filename = '../output/P1/violin_plot.png', width=8, height=5)
 ```
@@ -270,9 +272,9 @@ saveRDS(fit, file='../output/P1/org38_pac_fit.rds')
 
 all_genes <- topTreat(fit, number=Inf)
 org38_pac_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(org38_pac_DEgenes, file = '../data/DEgenes/P1/ORG38_NCPACvsDMSO.csv')
+write.csv(all_genes, file = '../data/DEgenes/P1/ORG38_ncPACvsDMSO.csv')
 
-datatable(all_genes)
+datatable(org38_pac_DEgenes)
 
 ### Print summary of DE genes table
 up <- paste('• UPREGULATED:',sum(org38_pac_DEgenes$logFC > 0))
@@ -310,6 +312,7 @@ pheatmap(heatmap_counts[genes[1:50],],
 ```
 
 ###### Volcano plot
+
 ```{r, fig.height=8, fig.width=6}
 ### Assigning different colours for upregulated/downregulates genes
 keyvals <- ifelse(
@@ -360,6 +363,8 @@ saveRDS(fit, file='../output/P1/org38_sn38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org38_sn38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
+write.csv(all_genes, file = '../data/DEgenes/P1/ORG38_ncSN38vsDMSO.csv')
+
 datatable(org38_sn38_DEgenes)
 
 ### Print summary of DE genes table
@@ -387,7 +392,7 @@ type_annotation <- data.frame(Drug = as.factor(sampleinfo[,c(17)]),
                               SPLINTR = as.factor(sampleinfo[,c(16)]))
 rownames(type_annotation) <- rownames(sampleinfo)
 
-pheatmap(heatmap_counts[genes[1:50],],
+pheatmap(heatmap_counts[genes,],
          border_color = 'NA',
          annotation_col = type_annotation,
          treeheight_row = 0,
@@ -531,7 +536,7 @@ fit <- treat(fit, lfc=log2(1.2))
 saveRDS(fit, file='../output/P1/org49_pac_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_pac_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(org49_pac_DEgenes, file = '../data/DEgenes/P1/ORG49_NCPACvsDMSO.csv')
+write.csv(all_genes, file = '../data/DEgenes/P1/ORG49_ncPACvsDMSO.csv')
 
 datatable(org49_pac_DEgenes)
 
@@ -541,6 +546,7 @@ up <- paste('• UPREGULATED:',sum(org49_pac_DEgenes$logFC>0))
 down <- paste('• DOWNREGULATED:',sum(org49_pac_DEgenes$logFC<0))
 summary=paste (total, up, down, sep="\n")
 cat(summary[1])
+
 ```
 
 ###### Heatmap of DEGs
@@ -560,7 +566,7 @@ type_annotation <- data.frame(Drug = as.factor(sampleinfo[,c(17)]),
                               SPLINTR = as.factor(sampleinfo[,c(16)]))
 rownames(type_annotation) <- rownames(sampleinfo)
 
-pheatmap(heatmap_counts[genes[1:50],],
+pheatmap(heatmap_counts[genes,],
          border_color = 'NA',
          annotation_col = type_annotation,
          treeheight_row = 0,
@@ -621,6 +627,8 @@ saveRDS(fit, file='../output/P1/org49_sn38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_sn38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
+write.csv(all_genes, file = '../data/DEgenes/P1/ORG49_ncSN38vsDMSO.csv')
+
 datatable(org49_sn38_DEgenes)
 
 ### Print summary of DE genes table
@@ -634,26 +642,26 @@ cat(summary[1])
 ###### Heatmap of DEGs
 
 ```{r, fig.height=10, fig.width=10}
-### Assigning genes of interest from DEgenes table
-### Formatting counts to log(CPM) for heatmap
-### subsetting wells of interest
-genes <- rownames(org49_sn38_DEgenes)
-samples_of_interest <- sampleinfo[sampleinfo$Drug=='SN38'|sampleinfo$Drug=='DMSO',c('label')]
-heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
-
-
-### Setting up annotation data frame
-type_annotation <- data.frame(Drug = as.factor(sampleinfo[,c(17)]),
-                              Concentration = as.factor(sampleinfo[,c(11)]),
-                              SPLINTR = as.factor(sampleinfo[,c(16)]))
-rownames(type_annotation) <- rownames(sampleinfo)
-
-pheatmap(heatmap_counts[genes[1:50],],
-         border_color = 'NA',
-         annotation_col = type_annotation,
-         treeheight_row = 0,
-         cellheight = 8,
-         color=rev(red_blue_palette))
+# ### Assigning genes of interest from DEgenes table
+# ### Formatting counts to log(CPM) for heatmap
+# ### subsetting wells of interest
+# genes <- rownames(org49_sn38_DEgenes)
+# samples_of_interest <- sampleinfo[sampleinfo$Drug=='SN38'|sampleinfo$Drug=='DMSO',c('label')]
+# heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
+# 
+# 
+# ### Setting up annotation data frame
+# type_annotation <- data.frame(Drug = as.factor(sampleinfo[,c(17)]),
+#                               Concentration = as.factor(sampleinfo[,c(11)]),
+#                               SPLINTR = as.factor(sampleinfo[,c(16)]))
+# rownames(type_annotation) <- rownames(sampleinfo)
+# 
+# pheatmap(heatmap_counts[genes,],
+#          border_color = 'NA',
+#          annotation_col = type_annotation,
+#          treeheight_row = 0,
+#          cellheight = 8,
+#          color=rev(red_blue_palette))
      
 ```
 
@@ -754,9 +762,9 @@ rownames(design) <- rownames(sampleinfo)
 datatable(design)
 
 ### Specifying contrasts for analysis
-pacVSdmso <- makeContrasts(((groupPACLITAXEL.SPL1+groupPACLITAXEL.SPL2+groupPACLITAXEL.UNLABELLED)/3)-((groupDMSO.SPL1+groupDMSO.SPL2+groupDMSO.UNLABELLED)/3), levels=colnames(design))
+pacVSdmso <- makeContrasts(((groupPACLITAXEL.SPL1+groupPACLITAXEL.SPL2)/2)-((groupDMSO.SPL1+groupDMSO.SPL2)/2), levels=colnames(design))
 
-sn38VSdmso <- makeContrasts(((groupSN38.SPL1+groupSN38.SPL2+groupSN38.UNLABELLED)/3)-((groupDMSO.SPL1+groupDMSO.SPL2+groupDMSO.UNLABELLED)/3), levels=colnames(design))
+sn38VSdmso <- makeContrasts(((groupSN38.SPL1+groupSN38.SPL2)/2)-((groupDMSO.SPL1+groupDMSO.SPL2)/2), levels=colnames(design))
 ```
 
 #### Dfferential Expression {.tabset}
@@ -792,7 +800,7 @@ fit <- treat(fit, lfc=log2(1.2))
 saveRDS(fit, file='../output/P1/org66_pac_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org66_pac_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(org66_pac_DEgenes, file = '../data/DEgenes/P1/ORG66_NCPACvsDMSO.csv')
+write.csv(all_genes, file = '../data/DEgenes/P1/ORG66_ncPACvsDMSO.csv')
 
 datatable(org66_pac_DEgenes)
 
@@ -880,6 +888,8 @@ fit <- treat(fit, lfc=log2(1.2))
 saveRDS(fit, file='../output/P1/org66_sn38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org66_sn38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+write.csv(all_genes, file = '../data/DEgenes/P1/ORG66_ncSN38vsDMSO.csv')
 
 datatable(org66_sn38_DEgenes)
 

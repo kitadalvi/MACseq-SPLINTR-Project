@@ -242,6 +242,14 @@ PAC_pacvsdmso_high <- makeContrasts(groupPa_Pacl.2.3287 - groupPa_DMSO.0.2,level
 PAC_pacvsdmso_low <- makeContrasts(groupPa_Pacl.1.5303 - groupPa_DMSO.0.2,levels=colnames(design))
 SN38_sn38vsdmso_high <- makeContrasts(groupSN_SN38.0.7319 - groupSN_DMSO.0.2,levels=colnames(design))
 SN38_sn38vsdmso_low <- makeContrasts(groupSN_SN38.0.499 - groupSN_DMSO.0.2,levels=colnames(design))
+
+long_pac_high <- makeContrasts((groupPa_Pacl.2.3287 - groupPa_DMSO.0.2)-(groupNC_Pacl.2.3287 - groupNC_DMSO.0.2), levels=colnames(design))
+
+long_pac_low <- makeContrasts((groupPa_Pacl.1.5303 - groupPa_DMSO.0.2)-(groupNC_Pacl.1.5303 - groupNC_DMSO.0.2), levels=colnames(design))
+
+long_sn38_high <- makeContrasts((groupSN_SN38.0.7319 - groupSN_DMSO.0.2)-(groupNC_SN38.0.7319 - groupNC_DMSO.0.2), levels=colnames(design))
+
+long_sn38_low <- makeContrasts((groupSN_SN38.0.499 - groupSN_DMSO.0.2)-(groupNC_SN38.0.499 - groupNC_DMSO.0.2), levels=colnames(design))
 ```
 
 #### Differential Expression {.tabset}
@@ -267,7 +275,7 @@ plotRLE(v$E, main='RLE of all wells - normalised')
 
 ##### NC_PAC-NC_DMSO {.tabset}
 
-##### High
+###### High
 
 Differentially expressed genes between NC Pac and NC DMSO in ORG38 at high conc:
 
@@ -282,6 +290,7 @@ all_genes <- topTreat(fit, number=Inf)
 org38_ncPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
 create_dt_genes(org38_ncPAC_DEgenes)
+write.csv(all_genes, file="../data/DEgenes/P2/ORG38_ncPACvsDMSO_high.csv")
 
 ### Print summary of DE genes table
 total <- paste('• TOTAL DE genes:',length(rownames(org38_ncPAC_DEgenes)))
@@ -291,7 +300,7 @@ summary=paste (total, up, down, sep="\n")
 cat(summary[1])
 ```
 
-##### Low
+###### Low
 
 Differentially expressed genes between NC Pac and NC DMSO in ORG38 at low conc:
 
@@ -306,6 +315,7 @@ all_genes <- topTreat(fit, number=Inf)
 org38_ncPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
 create_dt_genes(org38_ncPAC_DEgenes)
+write.csv(all_genes, file="../data/DEgenes/P2/ORG38_ncPACvsDMSO_low.csv")
 
 ### Print summary of DE genes table
 total <- paste('• TOTAL DE genes:',length(rownames(org38_ncPAC_DEgenes)))
@@ -341,6 +351,7 @@ down <- paste('• DOWNREGULATED:',sum(org38_ncSN38_DEgenes$logFC<0))
 summary=paste (total, up, down, sep="\n")
 cat(summary[1])
 ```
+
 ###### Low 
 
 Differentially expressed genes between NC SN38 and NC DMSO in ORG38 at low conc:
@@ -466,6 +477,110 @@ summary=paste (total, up, down, sep="\n")
 cat(summary[1])
 ```
 
+##### (PAC_PAC - PAC_DMSO) - (NC_PAC-NC_DMSO) {.tabset}
+
+###### High
+
+Differentially expressed genes between (PAC_PAC - PAC_DMSO) and (NC_PAC-NC_DMSO) in ORG38 at high conc:
+
+```{r}
+### following limma workflow
+### difference after correcting for effect of culture
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, long_pac_high)
+fit <- treat(fit, lfc=log2(1.2))
+org38_long_pac_high_fit <- fit
+all_genes <- topTreat(fit, number=Inf)
+org38_long_pac_high_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+create_dt_genes(org38_long_pac_high_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org38_long_pac_high_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org38_long_pac_high_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org38_long_pac_high_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+###### Low
+
+Differentially expressed genes between PAC_PAC and PAC_DMSO in ORG38 at low conc:
+
+```{r}
+### following limma workflow
+### difference between PAC and DMSO 
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, long_pac_low)
+fit <- treat(fit, lfc=log2(1.2))
+org38_long_pac_low_fit <- fit
+all_genes <- topTreat(fit, number=Inf)
+org38_long_pac_low_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+create_dt_genes(org38_long_pac_low_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org38_long_pac_low_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org38_long_pac_low_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org38_long_pac_low_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+
+##### (SN38_SN38 - SN38_DMSO) - (NC_SN38-NC_DMSO) {.tabset}
+
+###### High
+
+Differentially expressed genes between (SN38_SN38 - SN38_DMSO) and (NC_SN38-NC_DMSO) in ORG38 at high conc:
+
+```{r}
+### following limma workflow
+### difference after correcting for effect of culture
+
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, long_sn38_high)
+fit <- treat(fit, lfc=log2(1.2))
+org38_long_sn38_high_fit <- fit
+all_genes <- topTreat(fit, number=Inf)
+org38_long_sn38_high_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+create_dt_genes(org38_long_sn38_high_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org38_long_sn38_high_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org38_long_sn38_high_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org38_long_sn38_high_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+###### Low
+
+Differentially expressed genes between (SN38_SN38 - SN38_DMSO) and (NC_SN38-NC_DMSO) in ORG38 at low conc:
+
+```{r}
+### following limma workflow
+### difference after correcting for effect of culture
+
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, SN38_sn38vsdmso_low)
+fit <- treat(fit, lfc=log2(1.2))
+org38_long_sn38_low_fit <- fit
+all_genes <- topTreat(fit, number=Inf)
+org38_long_sn38_low_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+create_dt_genes(org38_long_sn38_low_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org38_long_sn38_low_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org38_long_sn38_low_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org38_long_sn38_low_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+
 ### ORG49 
 
 #### Design Matrix and Contrasts 
@@ -512,6 +627,14 @@ PAC_pacvsdmso_high <- makeContrasts(groupPa_Pacl.0.01 - groupPa_DMSO.0.2,levels=
 PAC_pacvsdmso_low <- makeContrasts(groupPa_Pacl.0.0022 - groupPa_DMSO.0.2,levels=colnames(design))
 SN38_sn38vsdmso_high <- makeContrasts(groupSN_SN38.0.0266 - groupSN_DMSO.0.2,levels=colnames(design))
 SN38_sn38vsdmso_low <- makeContrasts(groupSN_SN38.0.0166 - groupSN_DMSO.0.2,levels=colnames(design))
+
+long_pac_high <- makeContrasts((groupPa_Pacl.0.01 - groupPa_DMSO.0.2)-(groupNC_Pacl.0.01 - groupNC_DMSO.0.2), levels=colnames(design))
+
+long_pac_low <- makeContrasts((groupPa_Pacl.0.0022 - groupPa_DMSO.0.2)-(groupNC_Pacl.0.0022 - groupNC_DMSO.0.2), levels=colnames(design))
+
+long_sn38_high <- makeContrasts((groupSN_SN38.0.0266 - groupSN_DMSO.0.2)-(groupNC_SN38.0.0266 - groupNC_DMSO.0.2), levels=colnames(design))
+
+long_sn38_low <- makeContrasts((groupSN_SN38.0.0166 - groupSN_DMSO.0.2)-(groupNC_SN38.0.0166 - groupNC_DMSO.0.2), levels=colnames(design))
 ```
 
 #### Differential Expression {.tabset}
@@ -550,6 +673,8 @@ fit <- treat(fit, lfc=log2(1.2))
 org49_ncPAC_fit <- fit
 all_genes <- topTreat(fit, number=Inf)
 org49_ncPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+create_dt(org49_ncPAC_DEgenes)
 
 ### Print summary of DE genes table
 total <- paste('• TOTAL DE genes:',length(rownames(org49_ncPAC_DEgenes)))
@@ -646,6 +771,7 @@ fit <- treat(fit, lfc=log2(1.2))
 all_genes <- topTreat(fit, number=Inf)
 org49_paPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
+create_dt(org49_paPAC_DEgenes)
 ### Print summary of DE genes table
 total <- paste('• TOTAL DE genes:',length(rownames(org49_paPAC_DEgenes)))
 up <- paste('• UPREGULATED:',sum(org49_paPAC_DEgenes$logFC>0))
@@ -725,6 +851,104 @@ summary=paste (total, up, down, sep="\n")
 cat(summary[1])
 ```
 
+##### (PAC_PAC - PAC_DMSO) - (NC_PAC-NC_DMSO) {.tabset}
+
+###### High
+
+Differentially expressed genes between (PAC_PAC - PAC_DMSO) and (NC_PAC - NC_DMSO) in ORG49 at high conc:
+
+```{r}
+### following limma workflow
+### difference after correcting for effect of culture
+
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, long_pac_high)
+fit <- treat(fit, lfc=log2(1.2))
+all_genes <- topTreat(fit, number=Inf)
+org49_long_pac_high_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+create_dt(org49_long_pac_high_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org49_long_pac_high_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org49_long_pac_high_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org49_long_pac_high_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+###### Low
+
+Differentially expressed genes between (PAC_PAC - PAC_DMSO) and (NC_PAC - NC_DMSO) in ORG49 at low conc:
+
+```{r}
+### following limma workflow
+### difference after correcting for effect of culture
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, long_pac_low)
+fit <- treat(fit, lfc=log2(1.2))
+all_genes <- topTreat(fit, number=Inf)
+org49_long_pac_low_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+create_dt(org49_long_pac_low_DEgenes)
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org49_long_pac_low_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org49_long_pac_low_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org49_long_pac_low_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+##### (SN38_SN38 - SN38_DMSO) - (NC_SN38 - NC_DMSO) {.tabset}
+
+###### High
+
+Differentially expressed genes between (SN38_SN38 - SN38_DMSO) and (NC_SN38 - NC_DMSO) in ORG49 at high conc:
+
+```{r}
+### following limma workflow
+### difference between SN38 and DMSO
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, long_sn38_high)
+fit <- treat(fit, lfc=log2(1.2))
+org49_long_sn38_high_fit <- fit
+all_genes <- topTreat(fit, number=Inf)
+org49_long_sn38_high_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+create_dt_genes(org49_long_sn38_high_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org49_long_sn38_high_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org49_long_sn38_high_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org49_long_sn38_high_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+###### Low
+
+Differentially expressed genes between SN38_SN38 and SN38_DMSO in ORG49 at low conc:
+
+```{r}
+### following limma workflow
+### difference between SN38 and DMSO
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, SN38_sn38vsdmso_low)
+fit <- treat(fit, lfc=log2(1.2))
+org49_snSN38_fit <- fit
+all_genes <- topTreat(fit, number=Inf)
+org49_snSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+create_dt_genes(org49_snSN38_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org49_snSN38_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org49_snSN38_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org49_snSN38_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
 ### ORG66 
 
 #### Design Matrix and Contrasts 
@@ -771,6 +995,14 @@ PAC_pacvsdmso_high <- makeContrasts(groupPa_Pacl.2.3952 - groupPa_DMSO.0.2,level
 PAC_pacvsdmso_low <- makeContrasts(groupPa_Pacl.1.5968 - groupPa_DMSO.0.2,levels=colnames(design))
 SN38_sn38vsdmso_high <- makeContrasts(groupSN_SN38.0.0299 - groupSN_DMSO.0.2,levels=colnames(design))
 SN38_sn38vsdmso_low <- makeContrasts(groupSN_SN38.0.02 - groupSN_DMSO.0.2,levels=colnames(design))
+
+long_pac_high <- makeContrasts((groupPa_Pacl.2.3952 - groupPa_DMSO.0.2)-(groupNC_Pacl.2.3952 - groupNC_DMSO.0.2), levels=colnames(design))
+
+long_pac_low <- makeContrasts((groupPa_Pacl.1.5968 - groupPa_DMSO.0.2)-(groupNC_Pacl.1.5968 - groupNC_DMSO.0.2), levels=colnames(design))
+
+long_sn38_high <- makeContrasts((groupSN_SN38.0.0299 - groupSN_DMSO.0.2)-(groupNC_SN38.0.0299 - groupNC_DMSO.0.2), levels=colnames(design))
+
+long_sn38_low <- makeContrasts((groupSN_SN38.0.02 - groupSN_DMSO.0.2)-(groupNC_SN38.0.02 - groupNC_DMSO.0.2), levels=colnames(design))
 ```
 
 #### Differential Expression {.tabset}
@@ -969,6 +1201,7 @@ down <- paste('• DOWNREGULATED:',sum(org66_snSN38_DEgenes$logFC<0))
 summary=paste (total, up, down, sep="\n")
 cat(summary[1])
 ```
+
 ###### Low
 
 Differentially expressed genes between SN38_SN38 and SN38_DMSO in ORG66 at low conc:
@@ -993,3 +1226,102 @@ summary=paste (total, up, down, sep="\n")
 cat(summary[1])
 ```
 
+##### (PAC_PAC - PAC_DMSO) - (NC_PAC - NC_DMSO) {.tabset}
+
+###### High
+
+Differentially expressed genes between (PAC_PAC - PAC_DMSO) and (NC_PAC - NC_DMSO) in ORG66 at high conc:
+
+```{r}
+### following limma workflow
+### difference after correcting for effect of culture
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, long_pac_high)
+fit <- treat(fit, lfc=log2(1.2))
+org66_long_pac_high_fit <- fit
+all_genes <- topTreat(fit, number=Inf)
+org66_long_pac_high_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+create_dt(org66_long_pac_high_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org66_long_pac_high_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org66_long_pac_high_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org66_long_pac_high_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+###### Low
+
+Differentially expressed genes between (PAC_PAC - PAC_DMSO) and (NC_PAC - NC_DMSO) in ORG66 at low conc:
+
+```{r}
+### following limma workflow
+### difference between PAC and DMSO  
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, long_pac_low)
+fit <- treat(fit, lfc=log2(1.2))
+org66_long_pac_low_fit <- fit
+all_genes <- topTreat(fit, number=Inf)
+org66_long_pac_low_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+create_dt_genes(org66_long_pac_low_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org66_long_pac_low_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org66_long_pac_low_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org66_long_pac_low_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+##### (SN38_SN38 - SN38_DMSO) - (NC_SN38 - NC_DMSO) {.tabset}
+
+###### High
+
+Differentially expressed genes between (SN38_SN38 - SN38_DMSO) and (NC_SN38 - NC_DMSO) in ORG66 at high conc:
+
+```{r}
+### following limma workflow
+### difference after correcting for effect of culture 
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, long_sn38_high)
+fit <- treat(fit, lfc=log2(1.2))
+org66_long_sn38_high_fit <- fit
+all_genes <- topTreat(fit, number=Inf)
+org66_long_sn38_high_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+create_dt(org66_long_sn38_high_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org66_long_sn38_high_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org66_long_sn38_high_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org66_long_sn38_high_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+###### Low
+
+Differentially expressed genes between (SN38_SN38 - SN38_DMSO) and (NC_SN38 - NC_DMSO) in ORG66 at low conc:
+
+```{r}
+### following limma workflow
+### difference between SN38 and DMSO  
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, long_sn38_low)
+fit <- treat(fit, lfc=log2(1.2))
+org66_long_sn38_low_fit <- fit
+all_genes <- topTreat(fit, number=Inf)
+org66_long_sn38_low_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+
+create_dt(all_genes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org66_long_sn38_low_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org66_long_sn38_low_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org66_long_sn38_low_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```

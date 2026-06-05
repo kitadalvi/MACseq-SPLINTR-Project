@@ -1,0 +1,549 @@
+---
+title: "ORG49_PAC_all"
+output: html_document
+date: "2026-06-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(RColorBrewer)
+library(fgsea)
+library(msigdbr)
+library(DT)
+library(ggpubr)
+library(dplyr)
+library(tidyverse)
+library(RColorBrewer)
+library(ggvenn)
+library(gplots)
+library(tidyr)
+library(ggplot2)
+
+library(clusterProfiler)
+library(DOSE)
+library(enrichplot)
+```
+
+```{r}
+create_dt <-  function(x){
+  datatable(x,
+            extensions = 'Buttons',
+            options = list(dom = 'Blfrtip',
+                           buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                           lengthMenu = list(c(10,25,50,-1),
+                                             c(10,25,50,"All"))))
+}
+```
+
+```{r}
+### loading genesets
+reactome_df <-msigdbr(species = 'Homo sapiens', category = 'C2', subcollection = 'CP:REACTOME')
+reactome_df <- reactome_df %>%
+  split(x = .$gene_symbol, f = .$gs_name)
+cat(paste("Loaded", length(reactome_df), "gene sets\n"))
+
+go_df <-msigdbr(species = 'Homo sapiens', category = 'C5')
+go_df <- go_df %>%
+  split(x = .$gene_symbol, f = .$gs_name)
+cat(paste("Loaded", length(go_df), "gene sets\n"))
+
+kegg_df <-msigdbr(species = 'Homo sapiens', category = 'C2', subcollection = 'CP:KEGG_MEDICUS')
+kegg_df <- kegg_df %>%
+  split(x = .$gene_symbol, f = .$gs_name)
+cat(paste("Loaded", length(kegg_df), "gene sets\n"))
+
+hallmark_df <- msigdbr(species = 'Homo sapiens', category = 'H')
+hallmark_df <- hallmark_df %>%
+  split(x = .$gene_symbol, f = .$gs_name)
+cat(paste("Loaded", length(hallmark_df), "gene sets\n"))
+```
+
+## Notes
+
+This analysis contains data for ORG49 Paclitaxel treated samples (compared to DMSO) across all MACseq Plates (P1-P3). Differential expression analyses are derived from respected .Rmd/.html files previously published on github: 
+
+[P1 Differential Expression]()
+[P2 Differential Expression]()
+[P3 Differential Expression]()
+
+Pathway analysis is a ranked analysis using ALL GENES (even statistically non-significant) where rank = logFC x adj.p.val 
+
+Genes are analysed across different databases (KEGG, Reactome, GO, Hallmark) and results should be compared across databases to identify shared signals. 
+
+## Plate 1 {.tabset}
+
+```{r}
+### load DE results 
+### setting up ORG49 DE data
+df <- read.csv('data/DEgenes/P1/ORG49_ncPACvsDMSO.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### calculate rankings 
+p1_ncPAC <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(p1_ncPAC) <- df$gene_symbol 
+```
+
+### GO
+
+```{r}
+p1_ncpac_go <- fgsea(pathways = go_df, 
+                 stats = p1_ncPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p1_ncpac_go)
+```
+
+### KEGG
+
+```{r}
+p1_ncpac_kegg <- fgsea(pathways = kegg_df, 
+                 stats = p1_ncPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p1_ncpac_kegg)
+```
+
+### Reactome 
+
+```{r}
+p1_ncpac_reactome <- fgsea(pathways = reactome_df, 
+                 stats = p1_ncPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p1_ncpac_reactome)
+```
+
+## Plate 2 {.tabset}
+
+```{r}
+### ncPAC
+### load DE results 
+df <- read.csv('data/DEgenes/P2/ORG49_ncPACvsDMSO.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### calculate rankings 
+p2_ncPAC <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(p2_ncPAC) <- df$gene_symbol 
+
+### paPAC
+### load DE results 
+df <- read.csv('data/DEgenes/P2/ORG49_paPACvsDMSO.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### calculate rankings 
+p2_paPAC <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(p2_paPAC) <- as.factor(df$gene_symbol)
+
+### longPAC
+### load DE results 
+df <- read.csv('data/DEgenes/P2/ORG49_longPAC.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### calculate rankings 
+p2_longPAC <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(p2_longPAC) <- df$gene_symbol 
+
+### paDMSO
+### load DE results 
+df <- read.csv('data/DEgenes/P2/ORG49_paDMSOvsDMSO.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### calculate rankings 
+p2_paDMSO <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(p2_paDMSO) <- df$gene_symbol 
+```
+
+### GO {.tabset}
+
+#### ncPAC - ncDMSO
+
+```{r}
+p2_ncpac_go <- fgsea(pathways = go_df, 
+                 stats = p2_ncPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_ncpac_go)
+```
+
+#### paPAC-paDMSO
+
+```{r}
+p2_papac_go <- fgsea(pathways = go_df, 
+                 stats = p2_paPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_papac_go)
+```
+
+#### longPAC
+
+```{r}
+p2_longPAC_go <- fgsea(pathways = go_df, 
+                 stats = p2_longPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_longPAC_go)
+```
+
+#### paDMSO-ncDMSO
+
+```{r}
+p2_paDMSO_go <- fgsea(pathways = go_df, 
+                 stats = p2_paDMSO,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_paDMSO_go)
+```
+
+### KEGG {.tabset}
+
+#### ncPAC - ncDMSO
+
+```{r}
+p2_ncpac_kegg <- fgsea(pathways = kegg_df, 
+                 stats = p2_ncPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_ncpac_kegg)
+```
+
+#### paPAC-paDMSO
+
+```{r}
+p2_papac_kegg <- fgsea(pathways = kegg_df, 
+                 stats = p2_paPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_papac_kegg)
+```
+
+#### longPAC
+
+```{r}
+p2_longPAC_kegg <- fgsea(pathways = kegg_df, 
+                 stats = p2_longPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_longPAC_kegg)
+```
+
+#### paDMSO-ncDMSO
+
+```{r}
+p2_paDMSO_kegg <- fgsea(pathways = kegg_df, 
+                 stats = p2_paDMSO,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_paDMSO_kegg)
+```
+
+### Reactome {.tabset}
+
+#### ncPAC - ncDMSO
+
+```{r}
+p2_ncpac_reactome <- fgsea(pathways = reactome_df, 
+                 stats = p2_ncPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_ncpac_reactome)
+```
+
+#### paPAC-paDMSO
+
+```{r}
+p2_papac_reactome <- fgsea(pathways = reactome_df, 
+                 stats = p2_paPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_papac_reactome)
+```
+
+#### longPAC
+
+```{r}
+p2_longPAC_reactome <- fgsea(pathways = reactome_df, 
+                 stats = p2_longPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_longPAC_reactome)
+```
+
+#### paDMSO-ncDMSO
+
+```{r}
+p2_paDMSO_reactome <- fgsea(pathways = reactome_df, 
+                 stats = p2_paDMSO,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_paDMSO_reactome)
+```
+
+## Plate 3 {.tabset}
+
+```{r}
+### ncPAC
+### load DE results 
+df <- read.csv('data/DEgenes/P3/ORG49_ncPACvsDMSO.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### calculate rankings 
+p3_ncPAC <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(p3_ncPAC) <- df$gene_symbol 
+
+### paPAC
+### load DE results 
+df <- read.csv('data/DEgenes/P3/ORG49_paPACvsDMSO.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### calculate rankings 
+p3_paPAC <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(p3_paPAC) <- df$gene_symbol 
+
+### longPAC
+### load DE results 
+df <- read.csv('data/DEgenes/P3/ORG49_longPAC.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### calculate rankings 
+p3_longPAC <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(p3_longPAC) <- df$gene_symbol 
+
+### paDMSO
+### load DE results 
+df <- read.csv('data/DEgenes/P3/ORG49_paDMSOvsDMSO.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### calculate rankings 
+p3_paDMSO <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(p3_paDMSO) <- df$gene_symbol 
+```
+
+### GO {.tabset}
+
+#### ncPAC - ncDMSO
+
+```{r}
+p3_ncpac_go <- fgsea(pathways = go_df, 
+                 stats = p3_ncPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_ncpac_go)
+```
+
+#### paPAC-paDMSO
+
+```{r}
+p3_papac_go <- fgsea(pathways = go_df, 
+                 stats = p3_paPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_papac_go)
+```
+
+#### longPAC
+
+```{r}
+p3_longPAC_go <- fgsea(pathways = go_df, 
+                 stats = p3_longPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_longPAC_go)
+```
+
+#### paDMSO-ncDMSO
+
+```{r}
+p3_paDMSO_go <- fgsea(pathways = go_df, 
+                 stats = p3_paDMSO,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_paDMSO_go)
+```
+
+### KEGG {.tabset}
+
+#### ncPAC - ncDMSO
+
+```{r}
+p3_ncpac_kegg <- fgsea(pathways = kegg_df, 
+                 stats = p3_ncPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_ncpac_kegg)
+```
+
+#### paPAC-paDMSO
+
+```{r}
+p3_papac_kegg <- fgsea(pathways = kegg_df, 
+                 stats = p3_paPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_papac_kegg)
+```
+
+#### longPAC
+
+```{r}
+p3_longPAC_kegg <- fgsea(pathways = kegg_df, 
+                 stats = p3_longPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_longPAC_kegg)
+```
+
+#### paDMSO-ncDMSO
+
+```{r}
+p3_paDMSO_kegg <- fgsea(pathways = kegg_df, 
+                 stats = p3_paDMSO,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_paDMSO_kegg)
+```
+
+### Reactome {.tabset}
+
+#### ncPAC - ncDMSO
+
+```{r}
+p3_ncpac_reactome <- fgsea(pathways = reactome_df, 
+                 stats = p3_ncPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_ncpac_reactome)
+```
+
+#### paPAC-paDMSO
+
+```{r}
+p3_papac_reactome <- fgsea(pathways = reactome_df, 
+                 stats = p3_paPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_papac_reactome)
+```
+
+#### longPAC
+
+```{r}
+p3_longPAC_reactome <- fgsea(pathways = reactome_df, 
+                 stats = p3_longPAC,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_longPAC_reactome)
+```
+
+#### paDMSO-ncDMSO
+
+```{r}
+p3_paDMSO_reactome <- fgsea(pathways = reactome_df, 
+                 stats = p3_paDMSO,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_paDMSO_reactome)
+```

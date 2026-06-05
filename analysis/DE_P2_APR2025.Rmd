@@ -128,8 +128,8 @@ mac<- mac %>%
 
 mac <- filter_genes_by_expression(mac,
                                        group_by = "Organoid",
-                                       min_counts = 10,
-                                       min_samples = 80)
+                                       min_counts = 30,
+                                       min_samples = 84)
 
 ### exclude mito and ribo genes from the counts
 mac<-mac[!grepl("^MT-",rownames(mac))]
@@ -280,7 +280,8 @@ org38_ncPAC_fit <- fit
 saveRDS(org38_ncPAC_fit, file = '../output/P2/org38_ncPAC_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org38_ncPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(all_genes, file = '../data/DEgenes/P2/ORG38_NCPAC.csv')
+
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG38_ncPACvsDMSO.csv')
 
 create_dt_genes(org38_ncPAC_DEgenes)
 
@@ -342,7 +343,7 @@ org38_ncSN38_fit <- fit
 saveRDS(org38_ncSN38_fit, file = '../output/P2/org38_ncSN38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org38_ncSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(all_genes, file = '../data/DEgenes/P2/ORG38_NCSN38.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG38_ncSN38vsDMSO.csv')
 
 create_dt_genes(org38_ncSN38_DEgenes)
 
@@ -390,6 +391,7 @@ volcano_plot
 ggsave(plot= volcano_plot, filename = '../output/P2/VP_org38_ncsn38.png', height=8, width=6)
 ```
 
+
 ##### PAC_PAC - PAC_DMSO
 
 Differentially expressed genes between PAC_PAC and PAC_DMSO in ORG38:
@@ -404,7 +406,7 @@ org38_paPAC_fit <- fit
 saveRDS(org38_paPAC_fit, file = '../output/P2/org38_paPAC_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org38_paPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(all_genes, file = '../data/DEgenes/P2/ORG38_PACPAC.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG38_paPACvsDMSO.csv')
 
 create_dt_genes(org38_paPAC_DEgenes)
 
@@ -492,7 +494,8 @@ org38_snSN38_fit <- fit
 saveRDS(org38_snSN38_fit, file = '../output/P2/org38_snSN38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org38_snSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(all_genes, file = '../data/DEgenes/P2/ORG38_SNSN38.csv')
+
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG38_snSN38vsDMSO.csv')
 
 create_dt_genes(org38_snSN38_DEgenes)
 
@@ -573,11 +576,14 @@ Differentially expressed genes between PAC_DMSO and NC_DMSO in ORG38:
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, PDMSOvsDMSO)
 fit <- treat(fit, lfc=log2(1.2))
+
 org38_PDMSOvsDMSO_fit <- fit
-saveRDS(org38_PDMSOvsDMSO_fit, file = '../output/P2/org38_PDMSOvsDMSO_fit.rds')
+saveRDS(org38_PDMSOvsDMSO_fit, file = '../output/P2/org38_paDMSOvsDMSO_fit.rds')
+
 all_genes <- topTreat(fit, number=Inf)
 org38_PDMSOvsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(all_genes, file = '../data/DEgenes/P2/ORG38_PDMSOvsDMSO.csv')
+
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG38_paDMSOvsDMSO.csv')
 
 create_dt_genes(org38_PDMSOvsDMSO_DEgenes)
 
@@ -622,7 +628,7 @@ volcano_plot <- EnhancedVolcano(all_genes,
                                 colCustom = keyvals)
 volcano_plot
 
-ggsave(plot= volcano_plot, filename = '../output/P2/VP_org38_PDMSOvsDMSO.png', height=8, width=6)
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org38_paDMSOvsDMSOpng', height=8, width=6)
 ```
 
 ##### SN38_DMSO - NC_DMSO
@@ -635,11 +641,14 @@ Differentially expressed genes between SN38_DMSO and NC_DMSO in ORG38:
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, SNDMSOvsDMSO)
 fit <- treat(fit, lfc=log2(1.2))
+
 org38_SNDMSOvsDMSO_fit <- fit
-saveRDS(org38_SNDMSOvsDMSO_fit, file = '../output/P2/org38_SNDMSOvsDMSO_fit.rds')
+saveRDS(org38_SNDMSOvsDMSO_fit, file = '../output/P2/org38_snDMSOvsDMSO_fit.rds')
+
 all_genes <- topTreat(fit, number=Inf)
 org38_SNDMSOvsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(all_genes, file = '../data/DEgenes/P2/ORG38_SNDMSOvsDMSO.csv')
+
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG38_snDMSOvsDMSO.csv')
 
 create_dt_genes(org38_SNDMSOvsDMSO_DEgenes)
 
@@ -684,7 +693,7 @@ volcano_plot <- EnhancedVolcano(all_genes,
                                 colCustom = keyvals)
 volcano_plot
 
-ggsave(plot= volcano_plot, filename = '../output/P2/VP_org38_SNDMSOvsDMSO.png', height=8, width=6)
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org38_snDMSOvsDMSO.png', height=8, width=6)
 ```
 
 
@@ -702,6 +711,8 @@ all_genes <- topTreat(fit, number=Inf)
 org38_longPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
 create_dt_genes(org38_longPAC_DEgenes)
+
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG38_longPAC.csv')
 
 ### Print summary of DE genes table
 total <- paste('• TOTAL DE genes:',length(rownames(org38_longPAC_DEgenes)))
@@ -751,10 +762,13 @@ Differentially expressed genes between (SN38_SN38 - SN38_DMSO) and (NC_SN38-NC_D
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, long_SN38)
 fit <- treat(fit, lfc=log2(1.2))
+
 all_genes <- topTreat(fit, number=Inf)
 org38_longSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
 create_dt_genes(org38_longSN38_DEgenes)
+
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG38_longSN38.csv')
 
 ### Print summary of DE genes table
 total <- paste('• TOTAL DE genes:',length(rownames(org38_longSN38_DEgenes)))
@@ -967,8 +981,9 @@ org49_ncPAC_fit <- fit
 saveRDS(org49_ncPAC_fit, file = '../output/P2/org49_ncPAC_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_ncPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(all_genes, file = '../data/DEgenes/P2/ORG49_NCPAC.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG49_ncPACvsDMSO.csv')
 
+create_dt(all_genes)
 ### Print summary of DE genes table
 total <- paste('• TOTAL DE genes:',length(rownames(org49_ncPAC_DEgenes)))
 up <- paste('• UPREGULATED:',sum(org49_ncPAC_DEgenes$logFC>0))
@@ -1008,7 +1023,7 @@ volcano_plot <- EnhancedVolcano(all_genes,
                                 colCustom = keyvals)
 volcano_plot
 
-ggsave(plot= volcano_plot, filename = '../output/P2/VP_org39_ncpac.png', height=8, width=6)
+ggsave(plot= volcano_plot, filename = '../output/P2/VP_org49_ncpac.png', height=8, width=6)
 ```
 
 ##### NC_SN38-NC_DMSO
@@ -1022,10 +1037,14 @@ fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_sn38vsdmso)
 fit <- treat(fit, lfc=log2(1.2))
 org49_ncSN38_fit <- fit
+
 saveRDS(org49_ncSN38_fit, file = '../output/P2/org49_ncSN38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
+
 org49_ncSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(all_genes, file = '../data/DEgenes/P2/ORG49_NCSN38.csv')
+
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG49_ncSN38vsDMSO.csv')
+
 create_dt_genes(org49_ncSN38_DEgenes)
 
 ### Print summary of DE genes table
@@ -1085,7 +1104,10 @@ fit <- treat(fit, lfc=log2(1.2))
 saveRDS(fit, file = '../output/P2/org49_paPAC_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_paPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(all_genes, file = '../data/DEgenes/P2/ORG49_PACPAC.csv')
+
+create_dt(all_genes)
+
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG49_paPACvsDMSO.csv')
 
 ### Print summary of DE genes table
 total <- paste('• TOTAL DE genes:',length(rownames(org49_paPAC_DEgenes)))
@@ -1144,7 +1166,7 @@ org49_snSN38_fit <- fit
 saveRDS(org49_snSN38_fit, file = '../output/P2/org49_snSN38_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_snSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(all_genes, file = '../data/DEgenes/P2/ORG49_SNSN38.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG49_snSN38vsDMSO.csv')
 
 create_dt_genes(org49_snSN38_DEgenes)
 
@@ -1204,10 +1226,10 @@ fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, PDMSOvsDMSO)
 fit <- treat(fit, lfc=log2(1.2))
 org49_PDMSOvsDMSO_fit <- fit
-saveRDS(org49_PDMSOvsDMSO_fit, file = '../output/P2/org49_PDMSOvsDMSO_fit.rds')
+saveRDS(org49_PDMSOvsDMSO_fit, file = '../output/P2/org49_paDMSOvsDMSO_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_PDMSOvsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(all_genes, file = '../data/DEgenes/P2/ORG49_PDMSOvsDMSO.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG49_paDMSOvsDMSO.csv')
 
 create_dt_genes(org49_PDMSOvsDMSO_DEgenes)
 
@@ -1267,10 +1289,10 @@ fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, SNDMSOvsDMSO)
 fit <- treat(fit, lfc=log2(1.2))
 org49_SNDMSOvsDMSO_fit <- fit
-saveRDS(org49_SNDMSOvsDMSO_fit, file = '../output/P2/org49_SNDMSOvsDMSO_fit.rds')
+saveRDS(org49_SNDMSOvsDMSO_fit, file = '../output/P2/org49_snDMSOvsDMSO_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org49_SNDMSOvsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(all_genes, file = '../data/DEgenes/P2/ORG49_SNDMSOvsDMSO.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG49_snDMSOvsDMSO.csv')
 
 create_dt_genes(org49_SNDMSOvsDMSO_DEgenes)
 
@@ -1331,6 +1353,9 @@ fit <- treat(fit, lfc=log2(1.2))
 all_genes <- topTreat(fit, number=Inf)
 org49_longPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG49_longPAC.csv')
+
+create_dt(all_genes)
 ### Print summary of DE genes table
 total <- paste('• TOTAL DE genes:',length(rownames(org49_longPAC_DEgenes)))
 up <- paste('• UPREGULATED:',sum(org49_longPAC_DEgenes$logFC>0))
@@ -1353,6 +1378,7 @@ all_genes <- topTreat(fit, number=Inf)
 org49_longSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
 create_dt_genes(org49_longSN38_DEgenes)
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG49_longSN38.csv')
 
 ### Print summary of DE genes table
 total <- paste('• TOTAL DE genes:',length(rownames(org49_longSN38_DEgenes)))
@@ -1554,8 +1580,10 @@ Differentially expressed genes between NC Pac and NC DMSO in ORG66:
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_pacvsdmso)
 fit <- treat(fit, lfc=log2(1.2))
+
 org66_ncPAC_fit <- fit
-saveRDS(org66_ncPAC_fit, file = '../output/P2/org66_ncPAC_fit.rds')
+saveRDS(org66_ncPAC_fit, file = '../output/P2/org66_ncPACvsDMSO_fit.rds')
+
 all_genes <- topTreat(fit, number=Inf)
 org66_ncPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 write.csv(all_genes, file = '../data/DEgenes/P2/ORG66_NCPAC.csv')
@@ -1617,11 +1645,13 @@ Differentially expressed genes between NC SN38 and NC DMSO in ORG66:
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, NC_sn38vsdmso)
 fit <- treat(fit, lfc=log2(1.2))
+
 org66_ncSN38_fit <- fit
 saveRDS(org66_ncSN38_fit, file = '../output/P2/org66_ncSN38_fit.rds')
+
 all_genes <- topTreat(fit, number=Inf)
 org66_ncSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(all_genes, file = '../data/DEgenes/P2/ORG66_NCSN38.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG66_ncSN38vsDMSO.csv')
 
 create_dt_genes(org66_ncSN38_DEgenes)
 
@@ -1681,11 +1711,13 @@ Differentially expressed genes between PAC_PAC and PAC_DMSO in ORG66:
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, PAC_pacvsdmso)
 fit <- treat(fit, lfc=log2(1.2))
+
 org66_paPAC_fit <- fit
-saveRDS(org66_paPAC_fit, file = '../output/P2/org66_paPAC_fit.rds')
+saveRDS(org66_paPAC_fit, file = '../output/P2/org66_paPACvsDMSO_fit.rds')
+
 all_genes <- topTreat(fit, number=Inf)
 org66_paPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(all_genes, file = '../data/DEgenes/P2/ORG66_PACPAC.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG66_paPACvsDMSO.csv')
 
 create_dt_genes(org66_paPAC_DEgenes)
 
@@ -1746,10 +1778,10 @@ fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, SN38_sn38vsdmso)
 fit <- treat(fit, lfc=log2(1.2))
 org66_snSN38_fit <- fit
-saveRDS(org66_snSN38_fit, file = '../output/P2/org66_snSN38_fit.rds')
+saveRDS(org66_snSN38_fit, file = '../output/P2/org66_snSN38vsDMSO_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org66_snSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(all_genes, file = '../data/DEgenes/P2/ORG66_SNSN38.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG66_snSN38vsDMSO.csv')
 
 create_dt_genes(org66_snSN38_DEgenes)
 
@@ -1808,11 +1840,13 @@ Differentially expressed genes between PAC_DMSO and NC_DMSO in ORG66:
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, PDMSOvsDMSO)
 fit <- treat(fit, lfc=log2(1.2))
+
 org66_PDMSOvsDMSO_fit <- fit
-saveRDS(org66_PDMSOvsDMSO_fit, file = '../output/P2/org66_PDMSOvsDMSO_fit.rds')
+saveRDS(org66_PDMSOvsDMSO_fit, file = '../output/P2/org66_paDMSOvsDMSO_fit.rds')
+
 all_genes <- topTreat(fit, number=Inf)
 org66_PDMSOvsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(all_genes, file = '../data/DEgenes/P2/ORG66_PDMSOvsDMSO.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG66_paDMSOvsDMSO.csv')
 
 create_dt_genes(org66_PDMSOvsDMSO_DEgenes)
 
@@ -1871,10 +1905,10 @@ fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, SNDMSOvsDMSO)
 fit <- treat(fit, lfc=log2(1.2))
 org66_SNDMSOvsDMSO_fit <- fit
-saveRDS(org66_SNDMSOvsDMSO_fit, file = '../output/P2/org66_SNDMSOvsDMSO_fit.rds')
+saveRDS(org66_SNDMSOvsDMSO_fit, file = '../output/P2/org66_snDMSOvsDMSO_fit.rds')
 all_genes <- topTreat(fit, number=Inf)
 org66_SNDMSOvsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
-write.csv(all_genes, file = '../data/DEgenes/P2/ORG66_SNDMSOvsDMSO.csv')
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG66_snDMSOvsDMSO.csv')
 
 create_dt_genes(org66_SNDMSOvsDMSO_DEgenes)
 
@@ -1932,10 +1966,12 @@ Differentially expressed genes between (PAC_PAC - PAC_DMSO) and (NC_PAC-NC_DMSO)
 fit <- lmFit(v, design)
 fit <- contrasts.fit(fit, long_PAC)
 fit <- treat(fit, lfc=log2(1.2))
+
 all_genes <- topTreat(fit, number=Inf)
 org66_longPAC_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
 create_dt_genes(org66_longPAC_DEgenes)
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG66_longPAC.csv')
 
 ### Print summary of DE genes table
 total <- paste('• TOTAL DE genes:',length(rownames(org66_longPAC_DEgenes)))
@@ -1960,6 +1996,7 @@ all_genes <- topTreat(fit, number=Inf)
 org66_longSN38_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
 
 create_dt_genes(org66_longSN38_DEgenes)
+write.csv(all_genes, file = '../data/DEgenes/P2/ORG66_longSN38.csv')
 
 ### Print summary of DE genes table
 total <- paste('• TOTAL DE genes:',length(rownames(org66_longSN38_DEgenes)))

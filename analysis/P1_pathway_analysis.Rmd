@@ -17,19 +17,15 @@ library(DT)
 library(ggpubr)
 library(dplyr)
 library(tidyverse)
-library(Seurat)
-library(gtools)
-library(tidyseurat)
-library(DESeq2)
-library(edgeR)
-library(pheatmap)
-library(EnhancedVolcano)
 library(RColorBrewer)
 library(ggvenn)
 library(gplots)
-library(WGCNA)
 library(tidyr)
 library(ggplot2)
+
+library(clusterProfiler)
+library(DOSE)
+library(enrichplot)
 ```
 
 ```{r}
@@ -43,7 +39,7 @@ create_dt <-  function(x){
 }
 ```
 
-## Genesets
+# Genesets
 
 ```{r}
 
@@ -73,6 +69,7 @@ hallmark_df <- hallmark_df %>%
 cat(paste("Loaded", length(hallmark_df), "gene sets\n"))
 ```
 
+# Plate 1
 
 ```{r}
 ### setting up ORG38 DE data
@@ -318,6 +315,870 @@ org66_hallmark_res <- fgsea(pathways = hallmark_df,
 create_dt(org66_hallmark_res)
 ```
 
+# Plate 2
+
+```{r}
+### setting up ORG38 DE data
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('../data/DEgenes/P2/ORG38_PACPAC.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org38_pac_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org38_pac_rankings) <- df$gene_symbol 
+
+
+### setting up ORG49 DE data
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('../data/DEgenes/P2/ORG49_PACPAC.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org49_pac_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org49_pac_rankings) <- df$gene_symbol 
+
+
+### setting up ORG66 DE data
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('../data/DEgenes/P2/ORG66_PACPAC.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org66_pac_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org66_pac_rankings) <- df$gene_symbol 
+
+```
+
+## Reactome {.tabset}
+
+### ORG38 
+
+```{r}
+org38_reactome_res <- fgsea(pathways = reactome_df, 
+                 stats = org38_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org38_reactome_res)
+```
+
+
+### ORG49
+
+```{r}
+org49_reactome_res <- fgsea(pathways = reactome_df, 
+                 stats = org49_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org49_reactome_res)
+```
+
+### ORG66
+
+```{r}
+org66_reactome_res <- fgsea(pathways = reactome_df, 
+                 stats = org66_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org66_reactome_res)
+```
+
+### comparison
+
+```{r}
+x <- list(`org38`=org38_reactome_res[org38_reactome_res$padj<0.05,]$pathway,
+          `org49`=org49_reactome_res[org49_reactome_res$padj<0.05,]$pathway,
+          `org66`=org66_reactome_res[org66_reactome_res$padj<0.05,]$pathway)
+
+x.table <- venn(x[c("org38","org49", "org66")], show.plot = FALSE)
+x_attributes <- attributes(x.table)
+
+ggvenn(x, columns = c("org38","org49", "org66"), 
+       show_percentage = FALSE,
+       text_size = 8)
+
+common_pathways <- x_attributes$intersections$`org38:org66`
+```
+
+`r length(common_pathways)` pathways were found to be shared between org38 and org66 : 
+
+  • `r common_pathways`
+  
+## GO {.tabset}
+
+### ORG38 
+
+```{r}
+org38_GO_res <- fgsea(pathways = go_df, 
+                 stats = org38_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org38_GO_res)
+```
+
+### ORG49
+
+```{r}
+org49_GO_res <- fgsea(pathways = go_df, 
+                 stats = org49_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org49_GO_res)
+```
+
+### ORG66
+
+```{r}
+org66_GO_res <- fgsea(pathways = go_df, 
+                 stats = org66_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org66_GO_res)
+```
+
+### comparison
+
+```{r}
+x <- list(`org38`=org38_GO_res[org38_GO_res$padj<0.05,]$pathway,
+          `org49`=org49_GO_res[org49_GO_res$padj<0.05,]$pathway,
+          `org66`=org66_GO_res[org66_GO_res$padj<0.05,]$pathway)
+
+x.table <- venn(x[c("org38","org49", "org66")], show.plot = FALSE)
+x_attributes <- attributes(x.table)
+
+ggvenn(x, columns = c("org38","org49", "org66"), 
+       show_percentage = FALSE,
+       text_size = 8)
+
+common_pathways <- x_attributes$intersections$`org38:org66`
+```
+
+`r length(common_pathways)` pathways were found to be shared between org38 and org66 : 
+
+  • `r common_pathways`
+  
+## KEGG {.tabset}
+
+### ORG38 
+
+```{r}
+org38_kegg_res <- fgsea(pathways = kegg_df, 
+                 stats = org38_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org38_kegg_res)
+```
+
+### ORG49 
+
+```{r}
+org49_kegg_res <- fgsea(pathways = kegg_df, 
+                 stats = org49_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org49_kegg_res)
+```
+
+### ORG66
+
+```{r}
+org66_kegg_res <- fgsea(pathways = kegg_df, 
+                 stats = org66_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org66_kegg_res)
+```
+
+### comparison
+
+```{r}
+x <- list(`org38`=org38_kegg_res[org38_kegg_res$padj<0.05,]$pathway,
+          `org49`=org49_kegg_res[org49_kegg_res$padj<0.05,]$pathway,
+          `org66`=org66_kegg_res[org66_kegg_res$padj<0.05,]$pathway)
+
+x.table <- venn(x[c("org38","org49", "org66")], show.plot = FALSE)
+x_attributes <- attributes(x.table)
+
+ggvenn(x, columns = c("org38","org49", "org66"), 
+       show_percentage = FALSE,
+       text_size = 8)
+
+common_pathways <- x_attributes$intersections$`org38:org66`
+```
+
+`r length(common_pathways)` pathways were found to be shared between org38 and org66 : 
+
+  • `r common_pathways`
+  
+## PID {.tabset}
+
+### ORG38 
+
+```{r}
+org38_PID_res <- fgsea(pathways = pid_df, 
+                 stats = org38_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org38_PID_res)
+```
+
+### ORG49 
+
+```{r}
+org49_PID_res <- fgsea(pathways = pid_df, 
+                 stats = org49_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org49_PID_res)
+```
+
+### ORG66
+
+```{r}
+org66_PID_res <- fgsea(pathways = pid_df, 
+                 stats = org66_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org66_PID_res)
+```
+
+### comparison
+
+```{r}
+x <- list(`org38`=org38_PID_res[org38_PID_res$padj<0.05,]$pathway,
+          `org49`=org49_PID_res[org49_PID_res$padj<0.05,]$pathway,
+          `org66`=org66_PID_res[org66_PID_res$padj<0.05,]$pathway)
+
+x.table <- venn(x[c("org38","org49", "org66")], show.plot = FALSE)
+x_attributes <- attributes(x.table)
+
+ggvenn(x, columns = c("org38","org49", "org66"), 
+       show_percentage = FALSE,
+       text_size = 8)
+
+
+```
+
+## Hallmark {.tabset}
+
+### ORG38 
+
+```{r}
+org38_hallmark_res <- fgsea(pathways = hallmark_df, 
+                 stats = org38_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org38_hallmark_res)
+```
+
+### ORG49 
+
+```{r}
+org49_hallmark_res <- fgsea(pathways = hallmark_df, 
+                 stats = org49_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org49_hallmark_res)
+```
+
+### ORG66 
+
+```{r}
+org66_hallmark_res <- fgsea(pathways = hallmark_df, 
+                 stats = org66_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org66_hallmark_res)
+```
+
+### comparison
+
+```{r}
+x <- list(`org38`=org38_hallmark_res[org38_hallmark_res$padj<0.05,]$pathway,
+          `org49`=org49_hallmark_res[org49_hallmark_res$padj<0.05,]$pathway,
+          `org66`=org66_hallmark_res[org66_hallmark_res$padj<0.05,]$pathway)
+
+x.table <- venn(x[c("org38","org49", "org66")], show.plot = FALSE)
+x_attributes <- attributes(x.table)
+
+ggvenn(x, columns = c("org38","org49", "org66"), 
+       show_percentage = FALSE,
+       text_size = 8)
+
+common_pathways <- x_attributes$intersections$`org38:org66`
+```
+
+`r length(common_pathways)` pathways were found to be shared between org38 and org66 : 
+
+  • `r common_pathways`
+  
+# Plate 3
+
+```{r}
+### setting up ORG38 DE data
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('../data/DEgenes/P3/ORG38_paPAC.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org38_pac_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org38_pac_rankings) <- df$gene_symbol 
+
+### 3. create gene list for visualisation
+org38_p3_gene_list <- df$logFC
+names(org38_p3_gene_list) <- df$gene_symbol
+org38_p3_gene_list<-na.omit(org38_p3_gene_list)
+org38_p3_gene_list = sort(org38_p3_gene_list, decreasing = TRUE)
+
+### setting up ORG49 DE data
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('../data/DEgenes/P3/ORG49_paPAC.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org49_pac_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org49_pac_rankings) <- df$gene_symbol 
+
+
+### setting up ORG66 DE data
+### 1. Read in data -----------------------------------------------------------
+df <- read.csv('../data/DEgenes/P3/ORG66_paPAC.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### 2. Prepare ranked list of genes -----------------------------------------------
+org66_pac_rankings <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(org66_pac_rankings) <- df$gene_symbol 
+
+```
+
+## Reactome {.tabset}
+
+### ORG38 
+
+```{r}
+org38_reactome_res <- fgsea(pathways = reactome_df, 
+                 stats = org38_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org38_reactome_res)
+```
+
+
+### ORG49
+
+```{r}
+org49_reactome_res <- fgsea(pathways = reactome_df, 
+                 stats = org49_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org49_reactome_res)
+```
+
+### ORG66
+
+```{r}
+org66_reactome_p3_res <- fgsea(pathways = reactome_df, 
+                 stats = org66_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org66_reactome_p3_res)
+```
+
+### comparison
+
+```{r}
+x <- list(`org38`=org38_reactome_res[org38_reactome_res$padj<0.05,]$pathway,
+          `org49`=org49_reactome_res[org49_reactome_res$padj<0.05,]$pathway,
+          `org66`=org66_reactome_res[org66_reactome_res$padj<0.05,]$pathway)
+
+x.table <- venn(x[c("org38","org49", "org66")], show.plot = FALSE)
+x_attributes <- attributes(x.table)
+
+ggvenn(x, columns = c("org38","org49", "org66"), 
+       show_percentage = FALSE,
+       text_size = 8)
+
+common_pathways <- x_attributes$intersections$`org38:org66`
+```
+
+`r length(common_pathways)` pathways were found to be shared between org38 and org66 : 
+
+  • `r common_pathways`
+
+## GO {.tabset}
+
+### ORG38 
+
+```{r}
+org38_GO_res <- fgsea(pathways = go_df, 
+                 stats = org38_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org38_GO_res)
+```
+
+### ORG49
+
+```{r}
+org49_GO_res <- fgsea(pathways = go_df, 
+                 stats = org49_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org49_GO_res)
+```
+
+### ORG66
+
+```{r}
+org66_p3_GO_res <- fgsea(pathways = go_df, 
+                 stats = org66_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org66_p3_GO_res)
+```
+
+### comparison
+
+```{r}
+x <- list(`org38`=org38_GO_res[org38_GO_res$padj<0.05,]$pathway,
+          `org49`=org49_GO_res[org49_GO_res$padj<0.05,]$pathway,
+          `org66`=org66_GO_res[org66_GO_res$padj<0.05,]$pathway)
+
+x.table <- venn(x[c("org38","org49", "org66")], show.plot = FALSE)
+x_attributes <- attributes(x.table)
+
+ggvenn(x, columns = c("org38","org49", "org66"), 
+       show_percentage = FALSE,
+       text_size = 8)
+
+common_pathways <- x_attributes$intersections$`org38:org66`
+```
+
+`r length(common_pathways)` pathways were found to be shared between org38 and org66 : 
+
+  • `r common_pathways`
+  
+## KEGG {.tabset}
+
+### ORG38 
+
+```{r}
+org38_kegg_res <- fgsea(pathways = kegg_df, 
+                 stats = org38_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org38_kegg_res)
+```
+
+### ORG49 
+
+```{r}
+org49_kegg_res <- fgsea(pathways = kegg_df, 
+                 stats = org49_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org49_kegg_res)
+```
+
+### ORG66
+
+```{r}
+org66_kegg_res <- fgsea(pathways = kegg_df, 
+                 stats = org66_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org66_kegg_res)
+```
+
+### comparison
+
+```{r}
+x <- list(`org38`=org38_kegg_res[org38_kegg_res$padj<0.05,]$pathway,
+          `org49`=org49_kegg_res[org49_kegg_res$padj<0.05,]$pathway,
+          `org66`=org66_kegg_res[org66_kegg_res$padj<0.05,]$pathway)
+
+x.table <- venn(x[c("org38","org49", "org66")], show.plot = FALSE)
+x_attributes <- attributes(x.table)
+
+ggvenn(x, columns = c("org38","org49", "org66"), 
+       show_percentage = FALSE,
+       text_size = 8)
+
+common_pathways <- x_attributes$intersections$`org38:org66`
+```
+
+`r length(common_pathways)` pathways were found to be shared between org38 and org66 : 
+
+  • `r common_pathways`
+  
+## PID {.tabset}
+
+### ORG38 
+
+```{r}
+org38_PID_res <- fgsea(pathways = pid_df, 
+                 stats = org38_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org38_PID_res)
+```
+
+### ORG49 
+
+```{r}
+org49_PID_res <- fgsea(pathways = pid_df, 
+                 stats = org49_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org49_PID_res)
+```
+
+### ORG66
+
+```{r}
+org66_PID_res <- fgsea(pathways = pid_df, 
+                 stats = org66_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org66_PID_res)
+```
+
+### comparison
+
+```{r}
+x <- list(`org38`=org38_PID_res[org38_PID_res$padj<0.05,]$pathway,
+          `org49`=org49_PID_res[org49_PID_res$padj<0.05,]$pathway,
+          `org66`=org66_PID_res[org66_PID_res$padj<0.05,]$pathway)
+
+x.table <- venn(x[c("org38","org49", "org66")], show.plot = FALSE)
+x_attributes <- attributes(x.table)
+
+ggvenn(x, columns = c("org38","org49", "org66"), 
+       show_percentage = FALSE,
+       text_size = 8)
+
+
+```
+
+
+## Hallmark {.tabset}
+
+### ORG38 
+
+```{r}
+org38_hallmark_res <- fgsea(pathways = hallmark_df, 
+                 stats = org38_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org38_hallmark_res)
+```
+
+### ORG49 
+
+```{r}
+org49_hallmark_res <- fgsea(pathways = hallmark_df, 
+                 stats = org49_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org49_hallmark_res)
+```
+
+### ORG66 
+
+```{r}
+org66_p3_hallmark_res <- fgsea(pathways = hallmark_df, 
+                 stats = org66_pac_rankings,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(org66_p3_hallmark_res)
+```
+
+### comparison
+
+```{r}
+x <- list(`org38`=org38_hallmark_res[org38_hallmark_res$padj<0.05,]$pathway,
+          `org49`=org49_hallmark_res[org49_hallmark_res$padj<0.05,]$pathway,
+          `org66`=org66_hallmark_res[org66_hallmark_res$padj<0.05,]$pathway)
+
+x.table <- venn(x[c("org38","org49", "org66")], show.plot = FALSE)
+x_attributes <- attributes(x.table)
+
+ggvenn(x, columns = c("org38","org49", "org66"), 
+       show_percentage = FALSE,
+       text_size = 8)
+
+common_pathways <- x_attributes$intersections$`org38:org66`
+```
+
+`r length(common_pathways)` pathways were found to be shared between org38 and org66 : 
+
+  • `r common_pathways`
+  
+```{r}
+plotEnrichment(hallmark_df[['HALLMARK_MYC_TARGETS_V1']],
+               org38_pac_rankings) + 
+  labs(title ='HALLMARK_MYC_TARGETS_V1')
+
+plotEnrichment(hallmark_df[['HALLMARK_MYC_TARGETS_V1']],
+               org66_pac_rankings) + 
+  labs(title ='HALLMARK_MYC_TARGETS_V1')
+```
+# NES matrices 
+
+```{r}
+### Extract NES - fill missing with 0
+get_NES <- function(res, pathways) {
+  out <- setNames(rep(0, length(pathways)), pathways)
+  match_idx <- match(res$pathway, pathways)
+  out[match_idx[!is.na(match_idx)]] <- res$NES[!is.na(match_idx)]
+  return(out)
+}
+
+get_NES <- function(res, pathways, padj_thresh = 0.05) {
+  out <- setNames(rep(0, length(pathways)), pathways)
+  sig_res <- res[res$padj < padj_thresh, ]
+  match_idx <- match(sig_res$pathway, pathways)
+  out[match_idx[!is.na(match_idx)]] <- sig_res$NES[!is.na(match_idx)]
+  return(out)
+}
+
+col_palette <- colorRampPalette(brewer.pal(11, "RdBu"))(100)
+```
+
+
+```{r, fig.height=8, fig.width=10}
+pathways <- c('HALLMARK_TNFA_SIGNALING_VIA_NFKB',
+              'HALLMARK_TGF_BETA_SIGNALING',
+              'HALLMARK_KRAS_SIGNALING_UP',
+              'HALLMARK_INFLAMMATORY_RESPONSE',
+              'HALLMARK_IL2_STAT5_SIGNALING',
+              'HALLMARK_INTERFERON_GAMMA_RESPONSE',
+              'HALLMARK_IL6_JAK_STAT3_SIGNALING',
+              'HALLMARK_INTERFERON_ALPHA_RESPONSE',
+              'HALLMARK_FATTY_ACID_METABOLISM',
+              'HALLMARK_ADIPOGENESIS',
+              'HALLMARK_CHOLESTEROL_HOMEOSTASIS')
+NES_matrix <- cbind(
+  `ORG38 (P3)` = get_NES(org38_hallmark_res, pathways),
+  `ORG66 (P3)` = get_NES(org66_hallmark_res, pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^HALLMARK_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette),
+  border_color = 'NA', 
+  cellwidth = 75,
+  cellheight = 15
+)
+```
+```{r, fig.height=15, fig.width=10}
+combined_pathways <- union(org38_reactome_res$pathway[org38_reactome_res$padj<0.05], org66_reactome_res$pathway[org66_reactome_res$padj<0.05])
+
+NES_matrix <- cbind(
+  `ORG38 (P3)` = get_NES(org38_reactome_res, combined_pathways),
+  `ORG66 (P3)` = get_NES(org66_reactome_res, combined_pathways)
+)
+
+### Clean pathway names for plotting 
+rownames(NES_matrix) <- gsub("^REACTOME_", "", rownames(NES_matrix))
+rownames(NES_matrix) <- gsub("_", " ", rownames(NES_matrix))
+
+### Filter to strongest signals
+keep <- apply(abs(NES_matrix), 1, max) > 1
+NES_matrix <- NES_matrix[keep, ]
+
+### Plot heatmap
+pheatmap(
+  NES_matrix,
+  scale = "none",
+  col=rev(col_palette),
+  border_color = 'NA', 
+  cellwidth = 80,
+  cellheight = 10
+)
+```
+
+```{r}
+org38_p2_pac <- read.csv('../data/DEgenes/P2/ORG38_PACPAC.csv')
+org38_p3_pac <- read.csv('../data/DEgenes/P3/ORG38_paPAC.csv')
+
+x <- list(`P2`=org38_p2_pac[org38_p2_pac$adj.P.Val < 0.05, c("X")],
+          `P3`=org38_p3_pac[org38_p3_pac$adj.P.Val < 0.05, c("X")]
+)
+
+x.table <- venn(x[c("P2","P3")], show.plot = FALSE)
+x_attributes <- attributes(x.table)
+
+ggvenn(x, columns = c("P2", "P3"), 
+       show_percentage = FALSE,
+       text_size = 8)
+
+common_genes <- x_attributes$intersections$`P2:P3`
+```
+
+```{r}
+org66_p2_pac <- read.csv('../data/DEgenes/P2/ORG66_')
+org66_p3_pac <- read.csv('../data/DEgenes/P3/ORG66_paPAC.csv')
+
+x <- list(`P2`=org66_p2_pac[org66_p2_pac$adj.P.Val < 0.05, c("X")],
+          `P3`=org66_p3_pac[org66_p3_pac$adj.P.Val < 0.05, c("X")]
+)
+
+x.table <- venn(x[c("P2","P3")], show.plot = FALSE)
+x_attributes <- attributes(x.table)
+
+ggvenn(x, columns = c("P2", "P3"), 
+       show_percentage = FALSE,
+       text_size = 8)
+
+common_genes <- x_attributes$intersections$`P2:P3`
+```
+
+```{r}
+### ORG38 pathways 
+plotEnrichment(go_df[['GOBP_CYTOKINE_MEDIATED_SIGNALING_PATHWAY']],
+               org38_pac_rankings) + 
+  labs(title ='GOBP_CYTOKINE_MEDIATED_SIGNALING_PATHWAY')
+
+plotEnrichment(go_df[['GOBP_REGULATION_OF_INFLAMMATORY_RESPONSE']],
+               org38_pac_rankings) + 
+  labs(title ='GOBP_REGULATION_OF_INFLAMMATORY_RESPONSE')
+
+plotEnrichment(go_df[['GOBP_RESPONSE_TO_TUMOR_NECROSIS_FACTOR']],
+               org38_pac_rankings) + 
+  labs(title ='GOBP_RESPONSE_TO_TUMOR_NECROSIS_FACTOR')
+```
+
+```{r}
+plotEnrichment(pid_df[['PID_INTEGRIN1_PATHWAY']],
+               org38_pac_rankings) + 
+  labs(title ='PID_INTEGRIN1_PATHWAY')
+
+plotEnrichment(pid_df[['PID_SYNDECAN_2_PATHWAY']],
+               org38_pac_rankings) + 
+  labs(title ='PID_SYNDECAN_PATHWAY')
+```
+
+```{r}
+plotEnrichment(reactome_df[['REACTOME_METABOLISM_OF_STEROIDS']],
+               org66_pac_rankings) + 
+  labs(title ='REACTOME_METABOLISM_OF_STEROIDS')
+
+plotEnrichment(reactome_df[['REACTOME_REGULATION_OF_CHOLESTEROL_BIOSYNTHESIS_BY_SREBP_SREBF']],
+               org66_pac_rankings) + 
+  labs(title ='REGULATION_OF_CHOLESTEROL_BY_SREBP_SREBF')
+```
 
 <!-- ## DE IC50 only  -->
 

@@ -1,0 +1,549 @@
+---
+title: "ORG38_SN38_all"
+output: html_document
+date: "2026-06-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(RColorBrewer)
+library(fgsea)
+library(msigdbr)
+library(DT)
+library(ggpubr)
+library(dplyr)
+library(tidyverse)
+library(RColorBrewer)
+library(ggvenn)
+library(gplots)
+library(tidyr)
+library(ggplot2)
+
+library(clusterProfiler)
+library(DOSE)
+library(enrichplot)
+```
+
+```{r}
+create_dt <-  function(x){
+  datatable(x,
+            extensions = 'Buttons',
+            options = list(dom = 'Blfrtip',
+                           buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                           lengthMenu = list(c(10,25,50,-1),
+                                             c(10,25,50,"All"))))
+}
+```
+
+```{r}
+### loading genesets
+reactome_df <-msigdbr(species = 'Homo sapiens', category = 'C2', subcollection = 'CP:REACTOME')
+reactome_df <- reactome_df %>%
+  split(x = .$gene_symbol, f = .$gs_name)
+cat(paste("Loaded", length(reactome_df), "gene sets\n"))
+
+go_df <-msigdbr(species = 'Homo sapiens', category = 'C5')
+go_df <- go_df %>%
+  split(x = .$gene_symbol, f = .$gs_name)
+cat(paste("Loaded", length(go_df), "gene sets\n"))
+
+kegg_df <-msigdbr(species = 'Homo sapiens', category = 'C2', subcollection = 'CP:KEGG_MEDICUS')
+kegg_df <- kegg_df %>%
+  split(x = .$gene_symbol, f = .$gs_name)
+cat(paste("Loaded", length(kegg_df), "gene sets\n"))
+
+hallmark_df <- msigdbr(species = 'Homo sapiens', category = 'H')
+hallmark_df <- hallmark_df %>%
+  split(x = .$gene_symbol, f = .$gs_name)
+cat(paste("Loaded", length(hallmark_df), "gene sets\n"))
+```
+
+## Notes
+
+This analysis contains data for ORG38 SN38 treated samples (compared to DMSO) across all MACseq Plates (P1-P3). Differential expression analyses are derived from respected .Rmd/.html files previously published on github: 
+
+[P1 Differential Expression]()
+[P2 Differential Expression]()
+[P3 Differential Expression]()
+
+Pathway analysis is a ranked analysis using ALL GENES (even statistically non-significant) where rank = logFC x adj.p.val 
+
+Genes are analysed across different databases (KEGG, Reactome, GO, Hallmark) and results should be compared across databases to identify shared signals. 
+
+## Plate 1 {.tabset}
+
+```{r}
+### load DE results 
+### setting up ORG38 DE data
+df <- read.csv('data/DEgenes/P1/ORG38_ncSN38vsDMSO.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### calculate rankings 
+p1_ncSN38 <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(p1_ncSN38) <- df$gene_symbol 
+```
+
+### GO
+
+```{r}
+p1_ncSN38_go <- fgsea(pathways = go_df, 
+                 stats = p1_ncSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p1_ncSN38_go)
+```
+
+### KEGG
+
+```{r}
+p1_ncSN38_kegg <- fgsea(pathways = kegg_df, 
+                 stats = p1_ncSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p1_ncSN38_kegg)
+```
+
+### Reactome 
+
+```{r}
+p1_ncSN38_reactome <- fgsea(pathways = reactome_df, 
+                 stats = p1_ncSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p1_ncSN38_reactome)
+```
+
+## Plate 2 {.tabset}
+
+```{r}
+### ncSN38
+### load DE results 
+df <- read.csv('data/DEgenes/P2/ORG38_ncSN38vsDMSO.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### calculate rankings 
+p2_ncSN38 <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(p2_ncSN38) <- df$gene_symbol 
+
+### snSN38
+### load DE results 
+df <- read.csv('data/DEgenes/P2/ORG38_snSN38vsDMSO.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### calculate rankings 
+p2_snSN38 <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(p2_snSN38) <- as.factor(df$gene_symbol)
+
+### longSN38
+### load DE results 
+df <- read.csv('data/DEgenes/P2/ORG38_longSN38.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### calculate rankings 
+p2_longSN38 <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(p2_longSN38) <- df$gene_symbol 
+
+### snDMSO
+### load DE results 
+df <- read.csv('data/DEgenes/P2/ORG38_snDMSOvsDMSO.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### calculate rankings 
+p2_snDMSO <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(p2_snDMSO) <- df$gene_symbol 
+```
+
+### GO {.tabset}
+
+#### ncSN38 - ncDMSO
+
+```{r}
+p2_ncSN38_go <- fgsea(pathways = go_df, 
+                 stats = p2_ncSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_ncSN38_go)
+```
+
+#### snSN38-snDMSO
+
+```{r}
+p2_snSN38_go <- fgsea(pathways = go_df, 
+                 stats = p2_snSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_snSN38_go)
+```
+
+#### longSN38
+
+```{r}
+p2_longSN38_go <- fgsea(pathways = go_df, 
+                 stats = p2_longSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_longSN38_go)
+```
+
+#### snDMSO-ncDMSO
+
+```{r}
+p2_snDMSO_go <- fgsea(pathways = go_df, 
+                 stats = p2_snDMSO,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_snDMSO_go)
+```
+
+### KEGG {.tabset}
+
+#### ncSN38 - ncDMSO
+
+```{r}
+p2_ncSN38_kegg <- fgsea(pathways = kegg_df, 
+                 stats = p2_ncSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_ncSN38_kegg)
+```
+
+#### snSN38-snDMSO
+
+```{r}
+p2_snSN38_kegg <- fgsea(pathways = kegg_df, 
+                 stats = p2_snSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_snSN38_kegg)
+```
+
+#### longSN38
+
+```{r}
+p2_longSN38_kegg <- fgsea(pathways = kegg_df, 
+                 stats = p2_longSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_longSN38_kegg)
+```
+
+#### snDMSO-ncDMSO
+
+```{r}
+p2_snDMSO_kegg <- fgsea(pathways = kegg_df, 
+                 stats = p2_snDMSO,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_snDMSO_kegg)
+```
+
+### Reactome {.tabset}
+
+#### ncSN38 - ncDMSO
+
+```{r}
+p2_ncSN38_reactome <- fgsea(pathways = reactome_df, 
+                 stats = p2_ncSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_ncSN38_reactome)
+```
+
+#### snSN38-snDMSO
+
+```{r}
+p2_snSN38_reactome <- fgsea(pathways = reactome_df, 
+                 stats = p2_snSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_snSN38_reactome)
+```
+
+#### longSN38
+
+```{r}
+p2_longSN38_reactome <- fgsea(pathways = reactome_df, 
+                 stats = p2_longSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_longSN38_reactome)
+```
+
+#### snDMSO-ncDMSO
+
+```{r}
+p2_snDMSO_reactome <- fgsea(pathways = reactome_df, 
+                 stats = p2_snDMSO,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p2_snDMSO_reactome)
+```
+
+## Plate 3 {.tabset}
+
+```{r}
+### ncSN38
+### load DE results 
+df <- read.csv('data/DEgenes/P3/ORG38_ncSN38vsDMSO.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### calculate rankings 
+p3_ncSN38 <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(p3_ncSN38) <- df$gene_symbol 
+
+### snSN38
+### load DE results 
+df <- read.csv('data/DEgenes/P3/ORG38_snSN38vsDMSO.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### calculate rankings 
+p3_snSN38 <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(p3_snSN38) <- df$gene_symbol 
+
+### longSN38
+### load DE results 
+df <- read.csv('data/DEgenes/P3/ORG38_longSN38.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### calculate rankings 
+p3_longSN38 <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(p3_longSN38) <- df$gene_symbol 
+
+### snDMSO
+### load DE results 
+df <- read.csv('data/DEgenes/P3/ORG38_snDMSOvsDMSO.csv')
+df <- df %>%
+  dplyr::rename(gene_symbol = X)
+head(df)
+
+### calculate rankings 
+p3_snDMSO <- sign(df$logFC)*(-log10(df$P.Value)) 
+names(p3_snDMSO) <- df$gene_symbol 
+```
+
+### GO {.tabset}
+
+#### ncSN38 - ncDMSO
+
+```{r}
+p3_ncSN38_go <- fgsea(pathways = go_df, 
+                 stats = p3_ncSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_ncSN38_go)
+```
+
+#### snSN38-snDMSO
+
+```{r}
+p3_snSN38_go <- fgsea(pathways = go_df, 
+                 stats = p3_snSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_snSN38_go)
+```
+
+#### longSN38
+
+```{r}
+p3_longSN38_go <- fgsea(pathways = go_df, 
+                 stats = p3_longSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_longSN38_go)
+```
+
+#### snDMSO-ncDMSO
+
+```{r}
+p3_snDMSO_go <- fgsea(pathways = go_df, 
+                 stats = p3_snDMSO,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_snDMSO_go)
+```
+
+### KEGG {.tabset}
+
+#### ncSN38 - ncDMSO
+
+```{r}
+p3_ncSN38_kegg <- fgsea(pathways = kegg_df, 
+                 stats = p3_ncSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_ncSN38_kegg)
+```
+
+#### snSN38-snDMSO
+
+```{r}
+p3_snSN38_kegg <- fgsea(pathways = kegg_df, 
+                 stats = p3_snSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_snSN38_kegg)
+```
+
+#### longSN38
+
+```{r}
+p3_longSN38_kegg <- fgsea(pathways = kegg_df, 
+                 stats = p3_longSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_longSN38_kegg)
+```
+
+#### snDMSO-ncDMSO
+
+```{r}
+p3_snDMSO_kegg <- fgsea(pathways = kegg_df, 
+                 stats = p3_snDMSO,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_snDMSO_kegg)
+```
+
+### Reactome {.tabset}
+
+#### ncSN38 - ncDMSO
+
+```{r}
+p3_ncSN38_reactome <- fgsea(pathways = reactome_df, 
+                 stats = p3_ncSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_ncSN38_reactome)
+```
+
+#### snSN38-snDMSO
+
+```{r}
+p3_snSN38_reactome <- fgsea(pathways = reactome_df, 
+                 stats = p3_snSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_snSN38_reactome)
+```
+
+#### longSN38
+
+```{r}
+p3_longSN38_reactome <- fgsea(pathways = reactome_df, 
+                 stats = p3_longSN38,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_longSN38_reactome)
+```
+
+#### snDMSO-ncDMSO
+
+```{r}
+p3_snDMSO_reactome <- fgsea(pathways = reactome_df, 
+                 stats = p3_snDMSO,
+                 scoreType = 'std',
+                 minSize = 10,
+                 maxSize = 500,
+                 nproc = 1)
+
+create_dt(p3_snDMSO_reactome)
+```
