@@ -74,7 +74,7 @@ plotRLE <- function(data, main = "", ylab = "Relative Log Expression") {
   abline(h = 0, col = "red", lty = 2)
 }
 
-red_blue_palette <- colorRampPalette(brewer.pal(11, "RdBu"))(100)
+red_blue_palette <- colorRampPalette(brewer.pal(11, "RdYlBu"))(100)
 ```
 
 ```{r}
@@ -328,7 +328,7 @@ volcano_plot
 
 Heatmap of all DEGs between Paclitaxel and DMSO
 
-```{r, fig.height=10, fig.width=10}
+```{r}
 
 ### Assigning genes of interest from DEgenes table
 ### Formatting counts to log(CPM) for heatmap
@@ -342,15 +342,28 @@ heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
 type_annotation <- data.frame(Drug = as.factor(sampleinfo$Treatment_1),
                               Concentration = as.factor(sampleinfo$Concentration_1))
 rownames(type_annotation) <- rownames(sampleinfo)
+```
 
+Log2 normalised counts:
+
+```{r, fig.height=10, fig.width=10}
 pheatmap(heatmap_counts[genes,],
          border_color = 'NA',
          annotation_col = type_annotation,
          treeheight_row = 0,
          color=rev(red_blue_palette))
-     
 ```
 
+Log2 normalised counts scaled by gene:
+
+```{r, fig.height=10, fig.width=10}
+pheatmap(heatmap_counts[genes,],
+         border_color = 'NA',
+         annotation_col = type_annotation,
+         treeheight_row = 0,
+         color=rev(red_blue_palette),
+         scale="row")
+```
 
 ##### Pathway Analysis {.tabset}
 
@@ -478,10 +491,9 @@ volcano_plot
 
 ###### Top 100
 
-Heatmap of top 100 DEGs between SN38 and DMSO:
+Heatmap of top 100 DEGs between SN38 and DMSO.
 
-```{r, fig.height=10, fig.width=10}
-
+```{r}
 ### Assigning genes of interest from DEgenes table
 ### Formatting counts to log(CPM) for heatmap
 ### subsetting wells of interest
@@ -495,7 +507,11 @@ type_annotation <- data.frame(Drug = as.factor(sampleinfo$Treatment_1),
                               Concentration = as.factor(sampleinfo$Concentration_1))
 
 rownames(type_annotation) <- rownames(sampleinfo)
+```
 
+Log2 normalised counts:
+
+```{r, fig.height=10, fig.width=10}
 pheatmap(heatmap_counts[genes[1:100],],
          border_color = 'NA',
          annotation_col = type_annotation,
@@ -503,9 +519,22 @@ pheatmap(heatmap_counts[genes[1:100],],
          color=rev(red_blue_palette))
 ```
 
+Log2 normalised counts scaled by gene:
+
+```{r, fig.height=13, fig.width=10}
+pheatmap(heatmap_counts[genes[1:100],],
+         border_color = 'NA',
+         annotation_col = type_annotation,
+         treeheight_row = 0,
+         color=rev(red_blue_palette),
+         scale="row")
+```
+
 ###### Top 500
 
-Heatmap of top 500 DEGs between SN38 and DMSO:
+Heatmap of top 500 DEGs between SN38 and DMSO
+
+Log2 normalised counts:
 
 ```{r, fig.height=13, fig.width=10}
 pheatmap(heatmap_counts[genes[1:500],],
@@ -513,6 +542,17 @@ pheatmap(heatmap_counts[genes[1:500],],
          annotation_col = type_annotation,
          treeheight_row = 0,
          color=rev(red_blue_palette))
+```
+
+Log2 normalised counts scaled by gene:
+
+```{r, fig.height=13, fig.width=10}
+pheatmap(heatmap_counts[genes[1:500],],
+         border_color = 'NA',
+         annotation_col = type_annotation,
+         treeheight_row = 0,
+         color=rev(red_blue_palette),
+         scale="row")
 ```
 
 ##### Pathway Analysis {.tabset}
@@ -640,9 +680,9 @@ volcano_plot
 
 ###### Top 100
 
-Heatmap of top 100 DEGs between both drugs and DMSO:
+Heatmap of top 100 DEGs between both drugs and DMSO,
 
-```{r, fig.height=12, fig.width=12}
+```{r}
 
 ### Assigning genes of interest from DEgenes table
 ### Formatting counts to log(CPM) for heatmap
@@ -655,7 +695,11 @@ heatmap_counts <- as.data.frame(v$E)
 type_annotation <- data.frame(Drug = as.factor(sampleinfo$Treatment_1),
                               Concentration = as.factor(sampleinfo$Concentration_1))
 rownames(type_annotation) <- rownames(sampleinfo)
+```
 
+Log2 normalised counts:
+
+```{r, fig.height=12, fig.width=12}
 pheatmap(heatmap_counts[genes[1:100],],
          border_color = 'NA',
          annotation_col = type_annotation,
@@ -663,22 +707,48 @@ pheatmap(heatmap_counts[genes[1:100],],
          color=rev(red_blue_palette),
          cellwidth = 40,
          cellheight = 6)
-     
+```
+
+Log2 normalised counts scaled by gene:
+
+```{r, fig.height=12, fig.width=12}
+pheatmap(heatmap_counts[genes[1:100],],
+         border_color = 'NA',
+         annotation_col = type_annotation,
+         treeheight_row = 0,
+         color=rev(red_blue_palette),
+         cellwidth = 40,
+         cellheight = 6,
+         scale="row")
 ```
 
 ###### Top 500
 
 Heatmap of top 500 DEGs between both drugs and DMSO:
 
-```{r, fig.height=15, fig.width=15}
+Log2 normalised counts:
 
+```{r, fig.height=12, fig.width=12}
 pheatmap(heatmap_counts[genes[1:500],],
          border_color = 'NA',
          annotation_col = type_annotation,
          treeheight_row = 0,
          color=rev(red_blue_palette),
-         cellwidth = 80)
-     
+         cellwidth = 40,
+         cellheight = 6)
+```
+
+Log2 normalised counts scaled by gene:
+
+```{r, fig.height=12, fig.width=12}
+pheatmap(heatmap_counts[genes[1:500],],
+         border_color = 'NA',
+         annotation_col = type_annotation,
+         treeheight_row = 0,
+         color=rev(red_blue_palette),
+         cellwidth = 40,
+         cellheight = 6,
+         scale="row")
 ```
 
 ##### Pathway Analysis {.tabset}
