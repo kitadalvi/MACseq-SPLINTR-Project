@@ -1,0 +1,741 @@
+---
+title: "ORG60 - Short term response"
+output: html_document
+date: "2026-06-09"
+---
+
+```{r setup}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.height=8, fig.width = 10)
+```
+
+```{r}
+### loading required packages
+library(tidyverse)
+library(Seurat)
+library(gtools)
+library(tidyseurat)
+library(DESeq2)
+library(edgeR)
+library(DT)
+library(dplyr)
+library(pheatmap)
+library(EnhancedVolcano)
+library(RColorBrewer)
+library(ggvenn)
+library(gplots)
+library(clusterProfiler)
+library(enrichplot)
+library(msigdbr)
+library(fgsea)
+```
+
+```{r}
+### Functions 
+
+source('/Users/dalvinikita/Desktop/macpie/R/filter_genes_by_expression.R')
+
+### buttons for datatables 
+create_dt_genes <- function(x){
+  colnames <- c('logFC','AveExpr','t','adj.P.Val')
+  df <- x %>%
+    mutate(across(all_of(colnames),round, digits = 2)) %>%
+    mutate(adj.P.Val = format(adj.P.Val, format='e', digits=4)) %>%
+    mutate(P.Value = format(P.Value, format='e', digits=4))
+  DT::datatable(df,
+                extensions = 'Buttons',
+                options = list(dom = 'Blfrtip',
+                               buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                               lengthMenu = list(c(10,25,50,-1),
+                                                 c(10,25,50,"All"))))
+}
+
+create_dt <-  function(x){
+  datatable(x,
+            extensions = 'Buttons',
+            options = list(dom = 'Blfrtip',
+                           buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                           lengthMenu = list(c(10,25,50,-1),
+                                             c(10,25,50,"All"))))
+}
+
+
+plotRLE <- function(data, main = "", ylab = "Relative Log Expression") {
+  # Calculate medians
+  col <- brewer.pal(8, 'Set3')
+  medians <- apply(data, 1, median, na.rm = TRUE)
+  rle_data <- data - medians
+  
+  boxplot(as.data.frame(rle_data),
+          outline = FALSE,
+          las = 2,
+          ylab = ylab,
+          main = main,
+          col = col)
+  abline(h = 0, col = "red", lty = 2)
+}
+
+red_blue_palette <- colorRampPalette(brewer.pal(11, "RdBu"))(100)
+```
+
+```{r}
+### loading genesets
+reactome_df <-msigdbr(species = 'Homo sapiens', category = 'C2', subcollection = 'CP:REACTOME')
+reactome_df <- reactome_df %>%
+  split(x = .$gene_symbol, f = .$gs_name)
+#cat(paste("Loaded", length(reactome_df), "gene sets\n"))
+
+go_df <-msigdbr(species = 'Homo sapiens', category = 'C5')
+go_df <- go_df %>%
+  split(x = .$gene_symbol, f = .$gs_name)
+#cat(paste("Loaded", length(go_df), "gene sets\n"))
+
+kegg_df <-msigdbr(species = 'Homo sapiens', category = 'C2', subcollection = 'CP:KEGG_MEDICUS')
+kegg_df <- kegg_df %>%
+  split(x = .$gene_symbol, f = .$gs_name)
+#cat(paste("Loaded", length(kegg_df), "gene sets\n"))
+
+hallmark_df <- msigdbr(species = 'Homo sapiens', category = 'H')
+hallmark_df <- hallmark_df %>%
+  split(x = .$gene_symbol, f = .$gs_name)
+#cat(paste("Loaded", length(hallmark_df), "gene sets\n"))
+```
+
+
+## Notes
+
+Thresholds used for DE analysis:
+
+• pvalue threshold = 0.05
+
+• log FC threshold = log2(1.2) = 20% change in expression compared to control
+
+```{r, echo=TRUE}
+### Threshold Constants
+p_value_threshold <- 0.05
+```
+
+## Data
+
+```{r}
+### Importing MACseq data
+### Importing metadata
+### Joining data in a Seurat object 
+
+### import metadata
+metadata<-read.csv("/Users/dalvinikita/Documents/13_MACseq_PMMSq057/metadata/PMMSq057_metadata.csv",header=T) %>%
+  arrange("Barcode") %>%
+  mutate(id=gsub("Plate","",Plate_ID)) %>%
+  mutate(Treatment_Combination=paste0(PreTreatment,'_',substr(Treatment_1,1,4))) %>%
+  mutate(label=paste0(Treatment_Combination,"_",Well_ID)) %>%
+  mutate(Concentration_1=as.factor(Concentration_1)) %>%
+  mutate(group = paste0(Treatment_Combination,'.',SPLINTR))
+
+row.names(metadata)<-metadata$label
+
+### load in count data 
+raw_counts <- Read10X(data.dir = '/Users/dalvinikita/Documents/13_MACseq_PMMSq057/raw/starsolo/')
+
+### filter for the minimum number of reads per gene per sample, as per edgeR
+mac <- CreateSeuratObject(counts = raw_counts,
+                          project = 'PMMSq057',
+                          min.cells = 1,
+                          min.features = 1)
+
+mac[["percent.mt"]] <- PercentageFeatureSet(mac, pattern = "^mt-|^MT-")
+mac[["percent.ribo"]] <- PercentageFeatureSet(mac, pattern = "^Rp[slp][[:digit:]]|^Rpsa|^RP[SLP][[:digit:]]|^RPSA")
+
+### add location metadata
+mac<- mac %>%
+  dplyr::inner_join(metadata,by=c(".cell"="Barcode"))
+
+colnames(mac)<- mac$label
+
+mac <- mac[,mac$Organoid=='Org60']
+mac <- filter_genes_by_expression(mac,
+                                       group_by = "Organoid",
+                                       min_counts = 15,
+                                       min_samples = 8)
+
+### exclude mito and ribo genes from the counts
+mac<-mac[!grepl("^MT-",rownames(mac))]
+mac<-mac[!grepl("^RP[SL][[:digit:]]|^RPLP[[:digit:]]|^RPSA",rownames(mac))]
+
+mac_filtered <- mac 
+
+samples <- colnames(mac_filtered)
+metadata_filtered <- metadata[samples,]
+metadata_filtered <- droplevels(metadata_filtered)
+```
+
+A quick look at the metadata:
+
+```{r}
+create_dt(metadata_filtered[,c("Well_ID","Barcode","Organoid", "Treatment_Combination", "SPLINTR","PreTreatment", "Treatment_1")])
+```
+
+A quick look at the treatment groups across the plate:
+
+```{r}
+table(mac_filtered$Treatment_Combination)
+
+table(mac_filtered$Organoid)
+```
+Checking data order:
+
+```{r, fig.width=10, fig.height=6}
+###   Select wells from mac that are not empty 
+rawdata <- mac_filtered
+sampleinfo <- metadata_filtered[is.na(metadata_filtered$Organoid)!=TRUE | metadata$Treatment_1!="Staurosporine",]
+samples <- rownames(sampleinfo)
+rawdata <- mac_filtered[,samples]
+
+### Keep only DMSO treated wells
+rawdata <- rawdata %>%
+  filter(Treatment_1=="DMSO")
+
+### Ensure counts data and sampleinfo are in the same order
+order <- colnames(rawdata)
+sampleinfo <- sampleinfo[order,]
+order_check <- rownames(sampleinfo)==colnames(rawdata)
+cat('Instances where metadata sample matches counts matric sample (checking correct order):',"\n", order_check)
+```
+
+## Analysis
+
+Differential expression for ORG60 after 48H treatment with either Paclitaxel or SN38.
+
+Factors to include in design matrix: 
+
+• Drug Treatment (SN38, Paclitaxel, or DMSO)
+
+• Concentration (Different for each drug)
+
+Design matrix:
+
+
+```{r}
+### selecting metadata and countdata relevant for ORG 60
+### subset metadata to include only ORG60 cells 
+columns <- metadata_filtered[metadata_filtered$Organoid=='Org60' & metadata_filtered$Treatment_1!="STAUR",]
+sampleinfo <- columns
+samples <- c(rownames(sampleinfo))
+counts_matrix <- mac_filtered[,samples]
+order <- colnames(counts_matrix)
+sampleinfo <- sampleinfo[colnames(counts_matrix),]
+
+### factors to include in deisgn matrix: SPLINTR group and treatment, concentration
+treatment <- as.factor(sampleinfo$Treatment_1)
+concentration <- as.factor(sampleinfo$Concentration_1)
+
+### set up design matrix
+### without intercept (means model)
+design <- model.matrix(~0+treatment)
+rownames(design) <- rownames(sampleinfo)
+create_dt(design)
+org60_design <- design
+
+PACvsDMSO <- makeContrasts(treatmentPACLITAXEL-treatmentDMSO,levels=colnames(design))
+SN38vsDMSO <- makeContrasts(treatmentSN38-treatmentDMSO,levels=colnames(design))
+DRUGvsDMSO <- makeContrasts((treatmentPACLITAXEL+treatmentSN38)/2-treatmentDMSO,levels=colnames(design))
+```
+
+### Filtering + Normalisation
+
+```{r, fig.height=5, fig.width=5}
+### Normalising data
+counts<-counts_matrix@assays$RNA$counts
+counts <- DGEList(counts = counts) %>%
+  calcNormFactors(method = 'TMMwsp')
+v <- voom(counts, design, plot = T)
+org60_voom_mat <- v
+```
+
+RLE of all ORG60 wells before and after normalisation:
+
+```{r, fig.width=16}
+par(mfrow=c(1,2))
+plotRLE(counts$counts, main='RLE of all wells - raw')
+plotRLE(v$E, main='RLE of all wells - normalised')
+```
+
+### Differential Expression {.tabset}
+
+#### PACLITAXEL - DMSO 
+
+##### DEGs
+
+Differentially expressed genes between PACLITAXEL and DMSO in ORG60:
+
+```{r}
+### following limma workflow
+### difference between PAC and DMSO 
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, PACvsDMSO)
+fit <- treat(fit, lfc=log(1.2))
+org60_PAC_fit <- fit
+all_genes <- topTreat(fit, number=Inf)
+org60_PACvsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+#write.csv(all_genes, file = 'data/DEgenes/P3/ORG60_PACvsDMSO.csv')
+
+create_dt_genes(org60_PACvsDMSO_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org60_PACvsDMSO_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org60_PACvsDMSO_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org60_PACvsDMSO_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+##### Volcano Plot
+
+Volcano Plot of DEGs between Paclitaxel and DMSO with top 10 DEGs labelled: 
+
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="PACLITAXEL VS DMSO",
+                                subtitle="ORG60",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org60_PACvsDMSO_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals,
+                                ylim = c(0,5))
+volcano_plot
+```
+
+##### Heatmap
+
+Heatmap of all DEGs between Paclitaxel and DMSO
+
+```{r, fig.height=10, fig.width=10}
+
+### Assigning genes of interest from DEgenes table
+### Formatting counts to log(CPM) for heatmap
+### subsetting wells of interest
+genes <- rownames(org60_PACvsDMSO_DEgenes)
+samples_of_interest <- sampleinfo[sampleinfo$Treatment_1=='PACLITAXEL'|sampleinfo$Treatment_1=='DMSO',c('label')]
+heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
+
+
+### Setting up annotation data frame
+type_annotation <- data.frame(Drug = as.factor(sampleinfo$Treatment_1),
+                              Concentration = as.factor(sampleinfo$Concentration_1))
+rownames(type_annotation) <- rownames(sampleinfo)
+
+pheatmap(heatmap_counts[genes,],
+         border_color = 'NA',
+         annotation_col = type_annotation,
+         treeheight_row = 0,
+         color=rev(red_blue_palette))
+     
+```
+
+
+##### Pathway Analysis {.tabset}
+
+```{r}
+# ### setting up ORG66 DE data
+# df <- read_csv('data/DEgenes/P3/ORG60_PACvsDMSO.csv')
+# df <- df %>%
+#   dplyr::rename(gene_symbol = `...1`)
+# head(df)
+# 
+# ### calculate rankings 
+# org60_pac <- sign(df$logFC)*(-log10(df$P.Value)) 
+# names(org60_pac) <- df$gene_symbol 
+```
+
+###### GO
+
+```{r}
+# org66_pac_go <- fgsea(pathways = go_df, 
+#                  stats = org60_pac,
+#                  scoreType = 'std',
+#                  minSize = 10,
+#                  maxSize = 500,
+#                  nproc = 1)
+# saveRDS(org66_pac_go, file='data/pathwayAnalysis/P3/ORG60_PACvsDMSO_go.rds')
+
+res <- readRDS('data/pathwayAnalysis/P3/ORG60_PACvsDMSO_go.rds')
+create_dt(res)
+```
+
+###### Reactome
+
+```{r}
+# org66_pac_reactome <- fgsea(pathways = reactome_df,
+#                  stats = org60_pac,
+#                  scoreType = 'std',
+#                  minSize = 10,
+#                  maxSize = 500,
+#                  nproc = 1)
+# saveRDS(org66_pac_reactome, file='data/pathwayAnalysis/P3/ORG60_PACvsDMSO_reactome.rds')
+
+res <- readRDS('data/pathwayAnalysis/P3/ORG60_PACvsDMSO_reactome.rds')
+create_dt(res)
+```
+
+###### KEGG
+
+```{r}
+# org66_pac_kegg <- fgsea(pathways = kegg_df,
+#                  stats = org60_pac,
+#                  scoreType = 'std',
+#                  minSize = 10,
+#                  maxSize = 500,
+#                  nproc = 1)
+# saveRDS(org66_pac_kegg, file='data/pathwayAnalysis/P3/ORG60_PACvsDMSO_kegg.rds')
+
+res <- readRDS('data/pathwayAnalysis/P3/ORG60_PACvsDMSO_kegg.rds')
+create_dt(res)
+```
+
+#### SN38 - DMSO 
+
+##### DEGs
+
+Differentially expressed genes between SN38 and DMSO in ORG60:
+
+```{r}
+### following limma workflow
+### difference between SN38 and DMSO 
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, SN38vsDMSO)
+fit <- treat(fit, lfc=log(1.2))
+org60_SN38_fit <- fit
+all_genes <- topTreat(fit, number=Inf)
+org60_SN38vsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+#write.csv(all_genes, file = 'data/DEgenes/P3/ORG60_SN38vsDMSO.csv')
+
+create_dt_genes(org60_SN38vsDMSO_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org60_SN38vsDMSO_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org60_SN38vsDMSO_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org60_SN38vsDMSO_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+##### Volcano Plot 
+
+Volcano plot of DEGs between SN38 and DMSO with top 10 DEGs labelled:
+
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="SN38 VS DMSO",
+                                subtitle="ORG60",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org60_SN38vsDMSO_DEgenes)[1:10],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
+```
+
+##### Heatmap {.tabset}
+
+###### Top 100
+
+Heatmap of top 100 DEGs between SN38 and DMSO:
+
+```{r, fig.height=10, fig.width=10}
+
+### Assigning genes of interest from DEgenes table
+### Formatting counts to log(CPM) for heatmap
+### subsetting wells of interest
+genes <- rownames(org60_SN38vsDMSO_DEgenes)
+samples_of_interest <- sampleinfo[sampleinfo$Treatment_1=='SN38'|sampleinfo$Treatment_1=='DMSO',c('label')]
+heatmap_counts <- as.data.frame(v$E[,samples_of_interest])
+
+
+### Setting up annotation data frame
+type_annotation <- data.frame(Drug = as.factor(sampleinfo$Treatment_1),
+                              Concentration = as.factor(sampleinfo$Concentration_1))
+
+rownames(type_annotation) <- rownames(sampleinfo)
+
+pheatmap(heatmap_counts[genes[1:100],],
+         border_color = 'NA',
+         annotation_col = type_annotation,
+         treeheight_row = 0,
+         color=rev(red_blue_palette))
+```
+
+###### Top 500
+
+Heatmap of top 500 DEGs between SN38 and DMSO:
+
+```{r, fig.height=13, fig.width=10}
+pheatmap(heatmap_counts[genes[1:500],],
+         border_color = 'NA',
+         annotation_col = type_annotation,
+         treeheight_row = 0,
+         color=rev(red_blue_palette))
+```
+
+##### Pathway Analysis {.tabset}
+
+```{r}
+# ### setting up ORG60 DE data
+# df <- read_csv('data/DEgenes/P3/ORG60_SN38vsDMSO.csv')
+# df <- df %>%
+#   dplyr::rename(gene_symbol = `...1`)
+# head(df)
+# 
+# ### calculate rankings 
+# org60_sn38 <- sign(df$logFC)*(-log10(df$P.Value)) 
+# names(org60_sn38) <- df$gene_symbol 
+```
+
+###### GO
+
+```{r}
+# org60_sn38_go <- fgsea(pathways = go_df,
+#                  stats = org60_sn38,
+#                  scoreType = 'std',
+#                  minSize = 10,
+#                  maxSize = 500,
+#                  nproc = 1)
+# saveRDS(org60_sn38_go, file='data/pathwayAnalysis/P3/ORG60_SN38vsDMSO_go.rds')
+
+res <- readRDS('data/pathwayAnalysis/P3/ORG60_SN38vsDMSO_go.rds')
+create_dt(res)
+```
+
+###### Reactome
+
+```{r}
+# org60_sn38_reactome <- fgsea(pathways = reactome_df,
+#                  stats = org60_sn38,
+#                  scoreType = 'std',
+#                  minSize = 10,
+#                  maxSize = 500,
+#                  nproc = 1)
+# saveRDS(org60_sn38_reactome, file='data/pathwayAnalysis/P3/ORG60_SN38vsDMSO_reactome.rds')
+
+res <- readRDS('data/pathwayAnalysis/P3/ORG60_SN38vsDMSO_reactome.rds')
+create_dt(res)
+```
+
+###### KEGG
+
+```{r}
+# org60_sn38_kegg <- fgsea(pathways = kegg_df,
+#                  stats = org60_sn38,
+#                  scoreType = 'std',
+#                  minSize = 10,
+#                  maxSize = 500,
+#                  nproc = 1)
+# saveRDS(org60_sn38_kegg, file='data/pathwayAnalysis/P3/ORG60_SN38vsDMSO_kegg.rds')
+
+res <- readRDS('data/pathwayAnalysis/P3/ORG60_SN38vsDMSO_kegg.rds')
+create_dt(res)
+```
+
+#### DRUG - DMSO
+
+##### DEGs
+
+Differentially expressed genes between (PACLITAXEL+SN38) and DMSO in ORG60:
+
+```{r}
+### following limma workflow
+### difference between both drugs and DMSO 
+fit <- lmFit(v, design)
+fit <- contrasts.fit(fit, DRUGvsDMSO)
+fit <- treat(fit, lfc=log(1.2))
+all_genes <- topTreat(fit, number=Inf)
+org60_DRUGvsDMSO_DEgenes <- topTreat(fit, p.value = p_value_threshold, number=Inf, sort.by='p')
+#write.csv(all_genes, file = 'data/DEgenes/P3/ORG60_DRUGvsDMSO.csv')
+
+create_dt_genes(org60_DRUGvsDMSO_DEgenes)
+
+### Print summary of DE genes table
+total <- paste('• TOTAL DE genes:',length(rownames(org60_DRUGvsDMSO_DEgenes)))
+up <- paste('• UPREGULATED:',sum(org60_DRUGvsDMSO_DEgenes$logFC>0))
+down <- paste('• DOWNREGULATED:',sum(org60_DRUGvsDMSO_DEgenes$logFC<0))
+summary=paste (total, up, down, sep="\n")
+cat(summary[1])
+```
+
+##### Volcano plot
+
+Volcano Plot of DEGs between both drugs and DMSO with top 20 DEGs labelled:
+
+```{r, fig.height=8, fig.width=6}
+### Assigning different colours for upregulated/downregulates genes
+keyvals <- ifelse(
+    all_genes$logFC < -1, 'darkred',
+      ifelse(all_genes$logFC > 1, 'darkgreen',
+        'black'))
+  keyvals[is.na(keyvals)] <- 'black'
+  names(keyvals)[keyvals == 'darkgreen'] <- 'UP'
+  names(keyvals)[keyvals == 'black'] <- 'NO'
+  names(keyvals)[keyvals == 'darkred'] <- 'DOWN'
+  
+### Volcano plot 
+volcano_plot <- EnhancedVolcano(all_genes,
+                                title="(PACLITAXEL + SN38) VS DMSO",
+                                subtitle="ORG60",
+                                lab=rownames(all_genes),
+                                selectLab = rownames(org60_DRUGvsDMSO_DEgenes)[1:20],
+                                boxedLabels = TRUE,
+                                drawConnectors = TRUE,
+                                arrowheads = FALSE,
+                                pointSize = 3,
+                                colAlpha = 1, 
+                                x='logFC', 
+                                y='adj.P.Val', 
+                                pCutoff=0.05,
+                                FCcutoff = 1,
+                                border="full",
+                                legendPosition = "bottom",
+                                colCustom = keyvals)
+volcano_plot
+```
+
+##### Heatmap {.tabset}
+
+###### Top 100
+
+Heatmap of top 100 DEGs between both drugs and DMSO:
+
+```{r, fig.height=12, fig.width=12}
+
+### Assigning genes of interest from DEgenes table
+### Formatting counts to log(CPM) for heatmap
+### subsetting wells of interest
+genes <- rownames(org60_DRUGvsDMSO_DEgenes)
+heatmap_counts <- as.data.frame(v$E)
+
+
+### Setting up annotation data frame
+type_annotation <- data.frame(Drug = as.factor(sampleinfo$Treatment_1),
+                              Concentration = as.factor(sampleinfo$Concentration_1))
+rownames(type_annotation) <- rownames(sampleinfo)
+
+pheatmap(heatmap_counts[genes[1:100],],
+         border_color = 'NA',
+         annotation_col = type_annotation,
+         treeheight_row = 0,
+         color=rev(red_blue_palette),
+         cellwidth = 40,
+         cellheight = 6)
+     
+```
+
+###### Top 500
+
+Heatmap of top 500 DEGs between both drugs and DMSO:
+
+```{r, fig.height=15, fig.width=15}
+
+pheatmap(heatmap_counts[genes[1:500],],
+         border_color = 'NA',
+         annotation_col = type_annotation,
+         treeheight_row = 0,
+         color=rev(red_blue_palette),
+         cellwidth = 80)
+     
+```
+
+##### Pathway Analysis {.tabset}
+
+```{r}
+# ### setting up ORG66 DE data
+# df <- read_csv('data/DEgenes/P3/ORG60_DRUGvsDMSO.csv')
+# df <- df %>%
+#   dplyr::rename(gene_symbol = `...1`)
+# head(df)
+# 
+# ### calculate rankings 
+# org60_drug <- sign(df$logFC)*(-log10(df$P.Value)) 
+# names(org60_drug) <- df$gene_symbol 
+```
+
+###### GO
+
+```{r}
+# org60_drug_go <- fgsea(pathways = go_df,
+#                  stats = org60_drug,
+#                  scoreType = 'std',
+#                  minSize = 10,
+#                  maxSize = 500,
+#                  nproc = 1)
+# saveRDS(org60_drug_go, file='data/pathwayAnalysis/P3/ORG60_DRUGvsDMSO_go.rds')
+
+res <- readRDS('data/pathwayAnalysis/P3/ORG60_DRUGvsDMSO_go.rds')
+create_dt(res)
+```
+
+###### Reactome
+
+```{r}
+# org60_drug_reactome <- fgsea(pathways = reactome_df,
+#                  stats = org60_drug,
+#                  scoreType = 'std',
+#                  minSize = 10,
+#                  maxSize = 500,
+#                  nproc = 1)
+# saveRDS(org60_drug_reactome, file='data/pathwayAnalysis/P3/ORG60_DRUGvsDMSO_reactome.rds')
+
+res <- readRDS('data/pathwayAnalysis/P3/ORG60_DRUGvsDMSO_reactome.rds')
+create_dt(res)
+```
+
+###### KEGG
+
+```{r}
+# org60_drug_kegg <- fgsea(pathways = kegg_df,
+#                  stats = org60_drug,
+#                  scoreType = 'std',
+#                  minSize = 10,
+#                  maxSize = 500,
+#                  nproc = 1)
+# saveRDS(org60_drug_kegg, file='data/pathwayAnalysis/P3/ORG60_DRUGvsDMSO_kegg.rds')
+
+res <- readRDS('data/pathwayAnalysis/P3/ORG60_DRUGvsDMSO_kegg.rds')
+create_dt(res)
+```

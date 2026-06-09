@@ -61,25 +61,32 @@ red_blue_palette <- colorRampPalette(brewer.pal(11, "RdBu"))(100)
 
 ## Notes
 
-## ORG38 {.tabset}
+## ORG38 PAC {.tabset}
 
-### Plate 1 {.tabset}
+### Plate 1 
 
-### Plate 2 {.tabset}
-
-```{r}
-p2_ncpac <- read.csv('data/DEgenes/P2/ORG38_ncPACvsDMSO_low.csv') 
-```
-
-### Plate 3 {.tabset}
+### Plate 2 
 
 ```{r}
-p3_ncpac <- read.csv('data/DEgenes/P3/ORG38_ncPACvsDMSO_low.csv') 
+p2_ncpac <- read.csv('../data/DEgenes/P2/ORG38_ncPACvsDMSO_low.csv') 
+create_dt(p2_ncpac)
 ```
+
+### Plate 3
+
+```{r}
+p3_ncpac <- read.csv('../data/DEgenes/P3/ORG38_ncPACvsDMSO_low.csv') 
+create_dt(p3_ncpac)
+```
+
+### {-}
+
+### Comparison
+
+Overlap in genes: 
 
 ```{r}
 ### Venn Diagram df
-
 x <- list(`ncPACvsDMSO_p2`=p2_ncpac$X,
           `ncPACvsDMSO_p3`=p3_ncpac$X)
 
@@ -96,4 +103,44 @@ p2_genes[1:25]
 p3_genes <- x_attributes$intersections$ncPACvsDMSO_p3
 p3_genes[1:25]
 ```
+### Pathway Analysis 
 
+
+## ORG38 SN38 {.tabset}
+
+### Plate 1
+
+```{r}
+
+```
+
+### Plate 2
+
+```{r}
+p2_ncsn38 <- read.csv('../data/DEgenes/P2/ORG38_nc') 
+create_dt(p2_ncsn38)
+```
+
+### Plate 3
+
+```{r}
+p3_ncsn38 <- read.csv('../data/DEgenes/P3/ORG49_ncPACvsDMSO_low.csv') 
+create_dt(p3_ncsn38)
+```
+
+### {-}
+
+### Comparison
+
+Venn Diagram: 
+
+Pathway Analysis:
+
+
+## ORG49 PAC
+
+## ORG49 SN38
+
+## ORG66 PAC
+
+## ORG66 SN38
