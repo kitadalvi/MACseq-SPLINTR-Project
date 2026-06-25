@@ -1,11 +1,11 @@
 ---
 title: "ORG49_SN38_all"
 output: html_document
-date: "2026-06-03"
+date: "2026-06-02"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 ```
 
 ```{r}
@@ -26,6 +26,9 @@ library(ggplot2)
 library(clusterProfiler)
 library(DOSE)
 library(enrichplot)
+library(org.Hs.eg.db)
+library(gsubfn)
+
 ```
 
 ```{r}
@@ -60,6 +63,39 @@ hallmark_df <- msigdbr(species = 'Homo sapiens', category = 'H')
 hallmark_df <- hallmark_df %>%
   split(x = .$gene_symbol, f = .$gs_name)
 cat(paste("Loaded", length(hallmark_df), "gene sets\n"))
+```
+
+
+
+```{r}
+pathway_theme_map <- function(pathway_names){
+
+  case_when(
+    grepl("IMMUNE|INTERFERON|INFLAMM|CYTOKINE|ANTIGEN|T_CELL|B_CELL|NK|MHC|TLR|INNATE|ADAPTIVE|COMPLEMENT",
+          pathway_names, ignore.case = TRUE) ~ "Immune / Inflammation",
+    grepl("SIGNAL|MAPK|ERK|JAK|STAT|PI3K|AKT|WNT|NOTCH|HEDGEHOG|TGF|NF.KB|RAS|RHO|GTPase",
+          pathway_names, ignore.case = TRUE) ~ "Signal Transduction",
+    grepl("CELL_CYCLE|MITOSIS|MEIOSIS|G1|S PHASE|G2|CHECKPOINT|APC.C|CDK|CYCLIN|REPLICATION|CHROMOSOME_SEGREGATION|CHROMOSOME_CONDENSATION|CHROMOSOME_SEPARATION",
+          pathway_names, ignore.case = TRUE) ~ "Cell Cycle / Division",
+    grepl("APOPTOSIS|PYROPTOSIS|NECROPTOSIS|FERROPTOSIS|AUTOPHAGY|DNA DAMAGE|STRESS|UNFOLDED PROTEIN",
+          pathway_names, ignore.case = TRUE) ~ "Cell Death / Stress Response",
+    grepl("METABOLISM|GLYCOLYSIS|TCA|OXIDATIVE PHOSPHORYLATION|FATTY ACID|CHOLESTEROL|LIPID|AMINO ACID|NUCLEOTIDE|METABOLIC|CATABOLIC",
+          pathway_names, ignore.case = TRUE) ~ "Metabolism",
+    grepl("TRANSLATION|RIBOSOME|SPLICING|RNA|TRANSCRIPTION|RNA POLYMERASE|MRNA|RRNA|TRNA|PROCESSING",
+          pathway_names, ignore.case = TRUE) ~ "Gene Expression / RNA Processing",
+    grepl("DNA REPAIR|REPLICATION|TELOMERE|CHROMATIN|NUCLEOSOME|EPIGEN|HISTONE|METHYLATION",
+          pathway_names, ignore.case = TRUE) ~ "Genome Maintenance / Epigenetics",
+    grepl("DEVELOP|DIFFERENTIATION|MORPHOGEN|EMBRYO|AXIS|NEUROGEN|CELL FATE",
+          pathway_names, ignore.case = TRUE) ~ "Development / Differentiation",
+    grepl("ECM|EXTRACELLULAR|INTEGRIN|ADHESION|COLLAGEN|MIGRATION|CYTOSKELETON|ACTIN|MICROTUBULE",
+          pathway_names, ignore.case = TRUE) ~ "ECM / Adhesion / Cytoskeleton",
+    grepl("VESICLE|ENDOCYTOSIS|EXOCYTOSIS|GOLGI|ER|LYSOSOME|PEROXISOME|TRANSPORT",
+          pathway_names, ignore.case = TRUE) ~ "Transport / Organelle Function",
+    grepl("CANCER|CARCINOMA|MELANOMA|LEUKEMIA|TUMOR|ONCOGEN|P53|ONCOGENIC",
+          pathway_names, ignore.case = TRUE) ~ "Cancer / Disease",
+    TRUE ~ "Other / Unclassified"
+  )
+}
 ```
 
 ## Notes
@@ -97,10 +133,45 @@ p1_ncSN38_go <- fgsea(pathways = go_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p1_ncSN38_go)
 ```
+
+```{r}
+sigPathways <- p1_ncSN38_go[padj < 0.05]$pathway
+sigRes <- p1_ncSN38_go[p1_ncSN38_go$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p1_ncSN38,
+                                           pathways = go_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p1_ncSN38_go_simplified <- p1_ncSN38_go[p1_ncSN38_go$pathway %in% main_pathways, ]
+
+create_dt(p1_ncSN38_go_simplified)
+
+### format dataframe
+p1_ncSN38_go_simplified$ONTOLOGY <- p1_ncSN38_go_simplified$pathway
+  
+p1_ncSN38_go_simplified <- p1_ncSN38_go_simplified %>%
+  mutate(ONTOLOGY = gsub('GO', '', p1_ncSN38_go_simplified$ONTOLOGY)) %>%
+  mutate(ONTOLOGY = substr(ONTOLOGY, 1,2)) %>%
+  mutate(label= gsub("GOBP_|GOMF_|GOCC_|HP_", "", pathway)) %>%
+  arrange(padj)
+
+p1_ncSN38_go_simplified$theme <- pathway_theme_map(p1_ncSN38_go_simplified$pathway)
+```
+
+```{r, fig.width=15}
+ggplot(p1_ncSN38_go_simplified,
+       aes(x=label, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  facet_grid(vars(ONTOLOGY), scales = 'free', space='free')+
+  theme_bw()
+```
+
 
 ### KEGG
 
@@ -110,9 +181,35 @@ p1_ncSN38_kegg <- fgsea(pathways = kegg_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p1_ncSN38_kegg)
+```
+
+```{r}
+sigPathways <- p1_ncSN38_kegg[padj < 0.05]$pathway
+sigRes <- p1_ncSN38_kegg[p1_ncSN38_kegg$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p1_ncSN38,
+                                           pathways = kegg_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p1_ncSN38_kegg_simplified <- p1_ncSN38_kegg[p1_ncSN38_kegg$pathway %in% main_pathways, ]
+
+create_dt(p1_ncSN38_kegg_simplified)
+```
+
+```{r}
+p1_ncSN38_kegg_simplified$theme <- pathway_theme_map(p1_ncSN38_kegg_simplified$pathway)
+```
+
+```{r, fig.width=15}
+ggplot(p1_ncSN38_kegg_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 ### Reactome 
@@ -123,10 +220,37 @@ p1_ncSN38_reactome <- fgsea(pathways = reactome_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p1_ncSN38_reactome)
 ```
+
+```{r}
+sigPathways <- p1_ncSN38_reactome[padj < 0.05]$pathway
+sigRes <- p1_ncSN38_reactome[p1_ncSN38_reactome$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p1_ncSN38,
+                                           pathways = reactome_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p1_ncSN38_reactome_simplified <- p1_ncSN38_reactome[p1_ncSN38_reactome$pathway %in% main_pathways, ]
+
+create_dt(p1_ncSN38_reactome_simplified)
+```
+
+```{r, fig.width=15}
+p1_ncSN38_reactome_simplified$theme <- pathway_theme_map(p1_ncSN38_reactome_simplified$pathway)
+p1_ncSN38_reactome_simplified <- p1_ncSN38_reactome_simplified %>%
+  arrange(NES)
+
+ggplot(p1_ncSN38_reactome_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
+```
+
 
 ## Plate 2 {.tabset}
 
@@ -186,9 +310,43 @@ p2_ncSN38_go <- fgsea(pathways = go_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_ncSN38_go)
+```
+
+```{r}
+sigPathways <- p2_ncSN38_go[padj < 0.05]$pathway
+sigRes <- p2_ncSN38_go[p2_ncSN38_go$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_ncSN38,
+                                           pathways = go_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_ncSN38_go_simplified <- p2_ncSN38_go[p2_ncSN38_go$pathway %in% main_pathways, ]
+
+create_dt(p2_ncSN38_go_simplified)
+
+### format dataframe
+p2_ncSN38_go_simplified$ONTOLOGY <- p2_ncSN38_go_simplified$pathway
+  
+p2_ncSN38_go_simplified <- p2_ncSN38_go_simplified %>%
+  mutate(ONTOLOGY = gsub('GO', '', p2_ncSN38_go_simplified$ONTOLOGY)) %>%
+  mutate(ONTOLOGY = substr(ONTOLOGY, 1,2)) %>%
+  mutate(label= gsub("GOBP_|GOMF_|GOCC_|HP_", "", pathway)) %>%
+  arrange(padj)
+
+p2_ncSN38_go_simplified$theme <- pathway_theme_map(p2_ncSN38_go_simplified$pathway)
+```
+
+```{r, fig.width=15}
+ggplot(p2_ncSN38_go_simplified,
+       aes(x=label, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  facet_grid(vars(ONTOLOGY), scales = 'free', space='free')+
+  theme_bw()
 ```
 
 #### snSN38-snDMSO
@@ -199,9 +357,43 @@ p2_snSN38_go <- fgsea(pathways = go_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_snSN38_go)
+```
+
+```{r}
+sigPathways <- p2_snSN38_go[padj < 0.05]$pathway
+sigRes <- p2_snSN38_go[p2_snSN38_go$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_snSN38,
+                                           pathways = go_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_snSN38_go_simplified <- p2_snSN38_go[p2_snSN38_go$pathway %in% main_pathways, ]
+
+create_dt(p2_snSN38_go_simplified)
+
+### format dataframe
+p2_snSN38_go_simplified$ONTOLOGY <- p2_snSN38_go_simplified$pathway
+  
+p2_snSN38_go_simplified <- p2_snSN38_go_simplified %>%
+  mutate(ONTOLOGY = gsub('GO', '', p2_snSN38_go_simplified$ONTOLOGY)) %>%
+  mutate(ONTOLOGY = substr(ONTOLOGY, 1,2)) %>%
+  mutate(label= gsub("GOBP_|GOMF_|GOCC_|HP_", "", pathway)) %>%
+  arrange(padj)
+
+p2_snSN38_go_simplified$theme <- pathway_theme_map(p2_snSN38_go_simplified$pathway)
+```
+
+```{r, fig.width=15}
+ggplot(p2_snSN38_go_simplified,
+       aes(x=label, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  facet_grid(vars(ONTOLOGY), scales = 'free', space='free')+
+  theme_bw()
 ```
 
 #### longSN38
@@ -212,9 +404,43 @@ p2_longSN38_go <- fgsea(pathways = go_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_longSN38_go)
+```
+
+```{r}
+sigPathways <- p2_longSN38_go[padj < 0.05]$pathway
+sigRes <- p2_longSN38_go[p2_longSN38_go$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_longSN38,
+                                           pathways = go_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_longSN38_go_simplified <- p2_longSN38_go[p2_longSN38_go$pathway %in% main_pathways, ]
+
+create_dt(p2_longSN38_go_simplified)
+
+### format dataframe
+p2_longSN38_go_simplified$ONTOLOGY <- p2_longSN38_go_simplified$pathway
+  
+p2_longSN38_go_simplified <- p2_longSN38_go_simplified %>%
+  mutate(ONTOLOGY = gsub('GO', '', p2_longSN38_go_simplified$ONTOLOGY)) %>%
+  mutate(ONTOLOGY = substr(ONTOLOGY, 1,2)) %>%
+  mutate(label= gsub("GOBP_|GOMF_|GOCC_|HP_", "", pathway)) %>%
+  arrange(padj)
+
+p2_longSN38_go_simplified$theme <- pathway_theme_map(p2_longSN38_go_simplified$pathway)
+```
+
+```{r, fig.width=15}
+ggplot(p2_longSN38_go_simplified[1:40],
+       aes(x=label, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  facet_grid(vars(ONTOLOGY), scales = 'free', space='free')+
+  theme_bw()
 ```
 
 #### snDMSO-ncDMSO
@@ -225,9 +451,43 @@ p2_snDMSO_go <- fgsea(pathways = go_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_snDMSO_go)
+```
+
+```{r}
+sigPathways <- p2_snDMSO_go[padj < 0.05]$pathway
+sigRes <- p2_snDMSO_go[p2_snDMSO_go$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_snDMSO,
+                                           pathways = go_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_snDMSO_go_simplified <- p2_snDMSO_go[p2_snDMSO_go$pathway %in% main_pathways, ]
+
+create_dt(p2_snDMSO_go_simplified)
+
+### format dataframe
+p2_snDMSO_go_simplified$ONTOLOGY <- p2_snDMSO_go_simplified$pathway
+  
+p2_snDMSO_go_simplified <- p2_snDMSO_go_simplified %>%
+  mutate(ONTOLOGY = gsub('GO', '', p2_snDMSO_go_simplified$ONTOLOGY)) %>%
+  mutate(ONTOLOGY = substr(ONTOLOGY, 1,2)) %>%
+  mutate(label= gsub("GOBP_|GOMF_|GOCC_|HP_", "", pathway)) %>%
+  arrange(padj)
+
+p2_snDMSO_go_simplified$theme <- pathway_theme_map(p2_snDMSO_go_simplified$pathway)
+```
+
+```{r, fig.width=10, fig.height=3}
+ggplot(p2_snDMSO_go_simplified,
+       aes(x=label, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  facet_grid(vars(ONTOLOGY), scales = 'free', space='free')+
+  theme_bw()
 ```
 
 ### KEGG {.tabset}
@@ -240,9 +500,33 @@ p2_ncSN38_kegg <- fgsea(pathways = kegg_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_ncSN38_kegg)
+```
+
+```{r}
+sigPathways <- p2_ncSN38_kegg[padj < 0.05]$pathway
+sigRes <- p2_ncSN38_kegg[p2_ncSN38_kegg$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_ncSN38,
+                                           pathways = kegg_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_ncSN38_kegg_simplified <- p2_ncSN38_kegg[p2_ncSN38_kegg$pathway %in% main_pathways, ]
+
+create_dt(p2_ncSN38_kegg_simplified)
+
+p2_ncSN38_kegg_simplified$theme <- pathway_theme_map(p2_ncSN38_kegg_simplified$pathway)
+```
+
+```{r, fig.width=10, fig.height=3}
+ggplot(p2_ncSN38_kegg_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 #### snSN38-snDMSO
@@ -253,9 +537,33 @@ p2_snSN38_kegg <- fgsea(pathways = kegg_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_snSN38_kegg)
+```
+
+```{r}
+sigPathways <- p2_snSN38_kegg[padj < 0.05]$pathway
+sigRes <- p2_snSN38_kegg[p2_snSN38_kegg$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_snSN38,
+                                           pathways = kegg_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_snSN38_kegg_simplified <- p2_snSN38_kegg[p2_snSN38_kegg$pathway %in% main_pathways, ]
+
+create_dt(p2_snSN38_kegg_simplified)
+
+p2_snSN38_kegg_simplified$theme <- pathway_theme_map(p2_snSN38_kegg_simplified$pathway)
+```
+
+```{r, fig.width=10, fig.height=3}
+ggplot(p2_snSN38_kegg_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 #### longSN38
@@ -266,9 +574,33 @@ p2_longSN38_kegg <- fgsea(pathways = kegg_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_longSN38_kegg)
+```
+
+```{r}
+sigPathways <- p2_longSN38_kegg[padj < 0.05]$pathway
+sigRes <- p2_longSN38_kegg[p2_longSN38_kegg$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_longSN38,
+                                           pathways = kegg_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_longSN38_kegg_simplified <- p2_longSN38_kegg[p2_longSN38_kegg$pathway %in% main_pathways, ]
+
+create_dt(p2_longSN38_kegg_simplified)
+
+p2_longSN38_kegg_simplified$theme <- pathway_theme_map(p2_longSN38_kegg_simplified$pathway)
+```
+
+```{r, fig.width=30, fig.height=3}
+ggplot(p2_longSN38_kegg_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 #### snDMSO-ncDMSO
@@ -279,9 +611,34 @@ p2_snDMSO_kegg <- fgsea(pathways = kegg_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_snDMSO_kegg)
+```
+
+```{r}
+sigPathways <- p2_snDMSO_kegg[padj < 0.05]$pathway
+sigRes <- p2_snDMSO_kegg[p2_snDMSO_kegg$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_snDMSO,
+                                           pathways = kegg_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_snDMSO_kegg_simplified <- p2_snDMSO_kegg[p2_snDMSO_kegg$pathway %in% main_pathways, ]
+
+create_dt(p2_snDMSO_kegg_simplified)
+
+p2_snDMSO_kegg_simplified$theme <- pathway_theme_map(p2_snDMSO_kegg_simplified$pathway)
+```
+*No pathways pass multiple testing for simplified analysis*
+
+```{r, fig.width=20}
+# ggplot(p2_snDMSO_kegg_simplified,
+#        aes(x=pathway, y= NES, fill=theme)) +
+#   geom_bar(stat='identity') +
+#   coord_flip()+
+#   theme_bw()
 ```
 
 ### Reactome {.tabset}
@@ -294,9 +651,33 @@ p2_ncSN38_reactome <- fgsea(pathways = reactome_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_ncSN38_reactome)
+```
+
+```{r}
+sigPathways <- p2_ncSN38_reactome[padj < 0.05]$pathway
+sigRes <- p2_ncSN38_reactome[p2_ncSN38_reactome$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_ncSN38,
+                                           pathways = reactome_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_ncSN38_reactome_simplified <- p2_ncSN38_reactome[p2_ncSN38_reactome$pathway %in% main_pathways, ]
+
+create_dt(p2_ncSN38_reactome_simplified)
+```
+
+```{r, fig.width=15}
+p2_ncSN38_reactome_simplified$theme <- pathway_theme_map(p2_ncSN38_reactome_simplified$pathway)
+
+ggplot(p2_ncSN38_reactome_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 #### snSN38-snDMSO
@@ -307,9 +688,33 @@ p2_snSN38_reactome <- fgsea(pathways = reactome_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_snSN38_reactome)
+```
+
+```{r}
+sigPathways <- p2_snSN38_reactome[padj < 0.05]$pathway
+sigRes <- p2_snSN38_reactome[p2_snSN38_reactome$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_snSN38,
+                                           pathways = reactome_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_snSN38_reactome_simplified <- p2_snSN38_reactome[p2_snSN38_reactome$pathway %in% main_pathways, ]
+
+create_dt(p2_snSN38_reactome_simplified)
+```
+
+```{r, fig.width=15}
+p2_snSN38_reactome_simplified$theme <- pathway_theme_map(p2_snSN38_reactome_simplified$pathway)
+
+ggplot(p2_snSN38_reactome_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 #### longSN38
@@ -320,9 +725,33 @@ p2_longSN38_reactome <- fgsea(pathways = reactome_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_longSN38_reactome)
+```
+
+```{r}
+sigPathways <- p2_longSN38_reactome[padj < 0.05]$pathway
+sigRes <- p2_longSN38_reactome[p2_longSN38_reactome$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_longSN38,
+                                           pathways = reactome_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_longSN38_reactome_simplified <- p2_longSN38_reactome[p2_longSN38_reactome$pathway %in% main_pathways, ]
+
+create_dt(p2_longSN38_reactome_simplified)
+```
+
+```{r, fig.width=15}
+p2_longSN38_reactome_simplified$theme <- pathway_theme_map(p2_longSN38_reactome_simplified$pathway)
+
+ggplot(p2_longSN38_reactome_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 #### snDMSO-ncDMSO
@@ -333,9 +762,34 @@ p2_snDMSO_reactome <- fgsea(pathways = reactome_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_snDMSO_reactome)
+```
+
+```{r}
+sigPathways <- p2_snDMSO_reactome[padj < 0.05]$pathway
+sigRes <- p2_snDMSO_reactome[p2_snDMSO_reactome$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_snDMSO,
+                                           pathways = reactome_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_snDMSO_reactome_simplified <- p2_snDMSO_reactome[p2_snDMSO_reactome$pathway %in% main_pathways, ]
+
+create_dt(p2_snDMSO_reactome_simplified)
+```
+*No pathways pass multiple testing for simplified analysis*
+
+```{r, fig.width=15}
+# p2_snDMSO_reactome_simplified$theme <- pathway_theme_map(p2_snDMSO_reactome_simplified$pathway)
+# 
+# ggplot(p2_snDMSO_reactome_simplified,
+#        aes(x=pathway, y= NES, fill=theme)) +
+#   geom_bar(stat='identity') +
+#   coord_flip()+
+#   theme_bw()
 ```
 
 ## Plate 3 {.tabset}
@@ -396,9 +850,43 @@ p3_ncSN38_go <- fgsea(pathways = go_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_ncSN38_go)
+```
+
+```{r}
+sigPathways <- p3_ncSN38_go[padj < 0.05]$pathway
+sigRes <- p3_ncSN38_go[p3_ncSN38_go$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_ncSN38,
+                                           pathways = go_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_ncSN38_go_simplified <- p3_ncSN38_go[p3_ncSN38_go$pathway %in% main_pathways, ]
+
+create_dt(p3_ncSN38_go_simplified)
+
+### format dataframe
+p3_ncSN38_go_simplified$ONTOLOGY <- p3_ncSN38_go_simplified$pathway
+  
+p3_ncSN38_go_simplified <- p3_ncSN38_go_simplified %>%
+  mutate(ONTOLOGY = gsub('GO', '', p3_ncSN38_go_simplified$ONTOLOGY)) %>%
+  mutate(ONTOLOGY = substr(ONTOLOGY, 1,2)) %>%
+  mutate(label= gsub("GOBP_|GOMF_|GOCC_|HP_", "", pathway)) %>%
+  arrange(padj)
+
+p3_ncSN38_go_simplified$theme <- pathway_theme_map(p3_ncSN38_go_simplified$pathway)
+```
+
+```{r, fig.width=15}
+ggplot(p3_ncSN38_go_simplified[1:40],
+       aes(x=label, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  facet_grid(vars(ONTOLOGY), scales = 'free', space='free')+
+  theme_bw()
 ```
 
 #### snSN38-snDMSO
@@ -409,9 +897,43 @@ p3_snSN38_go <- fgsea(pathways = go_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_snSN38_go)
+```
+
+```{r}
+sigPathways <- p3_snSN38_go[padj < 0.05]$pathway
+sigRes <- p3_snSN38_go[p3_snSN38_go$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_snSN38,
+                                           pathways = go_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_snSN38_go_simplified <- p3_snSN38_go[p3_snSN38_go$pathway %in% main_pathways, ]
+
+create_dt(p3_snSN38_go_simplified)
+
+### format dataframe
+p3_snSN38_go_simplified$ONTOLOGY <- p3_snSN38_go_simplified$pathway
+  
+p3_snSN38_go_simplified <- p3_snSN38_go_simplified %>%
+  mutate(ONTOLOGY = gsub('GO', '', p3_snSN38_go_simplified$ONTOLOGY)) %>%
+  mutate(ONTOLOGY = substr(ONTOLOGY, 1,2)) %>%
+  mutate(label= gsub("GOBP_|GOMF_|GOCC_|HP_", "", pathway)) %>%
+  arrange(padj)
+
+p3_snSN38_go_simplified$theme <- pathway_theme_map(p3_snSN38_go_simplified$pathway)
+```
+
+```{r, fig.width=20}
+ggplot(p3_snSN38_go_simplified[1:40],
+       aes(x=label, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  facet_grid(vars(ONTOLOGY), scales = 'free', space='free')+
+  theme_bw()
 ```
 
 #### longSN38
@@ -422,9 +944,43 @@ p3_longSN38_go <- fgsea(pathways = go_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_longSN38_go)
+```
+
+```{r}
+sigPathways <- p3_longSN38_go[padj < 0.05]$pathway
+sigRes <- p3_longSN38_go[p3_longSN38_go$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_longSN38,
+                                           pathways = go_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_longSN38_go_simplified <- p3_longSN38_go[p3_longSN38_go$pathway %in% main_pathways, ]
+
+create_dt(p3_longSN38_go_simplified)
+
+### format dataframe
+p3_longSN38_go_simplified$ONTOLOGY <- p3_longSN38_go_simplified$pathway
+  
+p3_longSN38_go_simplified <- p3_longSN38_go_simplified %>%
+  mutate(ONTOLOGY = gsub('GO', '', p3_longSN38_go_simplified$ONTOLOGY)) %>%
+  mutate(ONTOLOGY = substr(ONTOLOGY, 1,2)) %>%
+  mutate(label= gsub("GOBP_|GOMF_|GOCC_|HP_", "", pathway)) %>%
+  arrange(padj)
+
+p3_longSN38_go_simplified$theme <- pathway_theme_map(p3_longSN38_go_simplified$pathway)
+```
+
+```{r, fig.width=10}
+ggplot(p3_longSN38_go_simplified[1:40],
+       aes(x=label, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  facet_grid(vars(ONTOLOGY), scales = 'free', space='free')+
+  theme_bw()
 ```
 
 #### snDMSO-ncDMSO
@@ -435,9 +991,43 @@ p3_snDMSO_go <- fgsea(pathways = go_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_snDMSO_go)
+```
+
+```{r}
+sigPathways <- p3_snDMSO_go[padj < 0.05]$pathway
+sigRes <- p3_snDMSO_go[p3_snDMSO_go$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_snDMSO,
+                                           pathways = go_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_snDMSO_go_simplified <- p3_snDMSO_go[p3_snDMSO_go$pathway %in% main_pathways, ]
+
+create_dt(p3_snDMSO_go_simplified)
+
+### format dataframe
+p3_snDMSO_go_simplified$ONTOLOGY <- p3_snDMSO_go_simplified$pathway
+  
+p3_snDMSO_go_simplified <- p3_snDMSO_go_simplified %>%
+  mutate(ONTOLOGY = gsub('GO', '', p3_snDMSO_go_simplified$ONTOLOGY)) %>%
+  mutate(ONTOLOGY = substr(ONTOLOGY, 1,2)) %>%
+  mutate(label= gsub("GOBP_|GOMF_|GOCC_|HP_", "", pathway)) %>%
+  arrange(padj)
+
+p3_snDMSO_go_simplified$theme <- pathway_theme_map(p3_snDMSO_go_simplified$pathway)
+```
+
+```{r, fig.width=20}
+ggplot(p3_snDMSO_go_simplified[1:40],
+       aes(x=label, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  facet_grid(vars(ONTOLOGY), scales = 'free', space='free')+
+  theme_bw()
 ```
 
 ### KEGG {.tabset}
@@ -450,9 +1040,33 @@ p3_ncSN38_kegg <- fgsea(pathways = kegg_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_ncSN38_kegg)
+```
+
+```{r}
+sigPathways <- p3_ncSN38_kegg[padj < 0.05]$pathway
+sigRes <- p3_ncSN38_kegg[p3_ncSN38_kegg$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_ncSN38,
+                                           pathways = kegg_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_ncSN38_kegg_simplified <- p3_ncSN38_kegg[p3_ncSN38_kegg$pathway %in% main_pathways, ]
+
+create_dt(p3_ncSN38_kegg_simplified)
+
+p3_ncSN38_kegg_simplified$theme <- pathway_theme_map(p3_ncSN38_kegg_simplified$pathway)
+```
+
+```{r, fig.width=15, fig.height=5}
+ggplot(p3_ncSN38_kegg_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 #### snSN38-snDMSO
@@ -463,9 +1077,33 @@ p3_snSN38_kegg <- fgsea(pathways = kegg_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_snSN38_kegg)
+```
+
+```{r}
+sigPathways <- p3_snSN38_kegg[padj < 0.05]$pathway
+sigRes <- p3_snSN38_kegg[p3_snSN38_kegg$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_snSN38,
+                                           pathways = kegg_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_snSN38_kegg_simplified <- p3_snSN38_kegg[p3_snSN38_kegg$pathway %in% main_pathways, ]
+
+create_dt(p3_snSN38_kegg_simplified)
+
+p3_snSN38_kegg_simplified$theme <- pathway_theme_map(p3_snSN38_kegg_simplified$pathway)
+```
+
+```{r, fig.width=20, fig.height =4}
+ggplot(p3_snSN38_kegg_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 #### longSN38
@@ -476,9 +1114,33 @@ p3_longSN38_kegg <- fgsea(pathways = kegg_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_longSN38_kegg)
+```
+
+```{r}
+sigPathways <- p3_longSN38_kegg[padj < 0.05]$pathway
+sigRes <- p3_longSN38_kegg[p3_longSN38_kegg$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_longSN38,
+                                           pathways = kegg_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_longSN38_kegg_simplified <- p3_longSN38_kegg[p3_longSN38_kegg$pathway %in% main_pathways, ]
+
+create_dt(p3_longSN38_kegg_simplified)
+
+p3_longSN38_kegg_simplified$theme <- pathway_theme_map(p3_longSN38_kegg_simplified$pathway)
+```
+
+```{r, fig.width=15, fig.height =3}
+ggplot(p3_longSN38_kegg_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 #### snDMSO-ncDMSO
@@ -489,9 +1151,33 @@ p3_snDMSO_kegg <- fgsea(pathways = kegg_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_snDMSO_kegg)
+```
+
+```{r}
+sigPathways <- p3_snDMSO_kegg[padj < 0.05]$pathway
+sigRes <- p3_snDMSO_kegg[p3_snDMSO_kegg$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_snDMSO,
+                                           pathways = kegg_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_snDMSO_kegg_simplified <- p3_snDMSO_kegg[p3_snDMSO_kegg$pathway %in% main_pathways, ]
+
+create_dt(p3_snDMSO_kegg_simplified)
+
+p3_snDMSO_kegg_simplified$theme <- pathway_theme_map(p3_snDMSO_kegg_simplified$pathway)
+```
+
+```{r, fig.width=20, fig.height=3}
+ggplot(p3_snDMSO_kegg_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 ### Reactome {.tabset}
@@ -504,9 +1190,33 @@ p3_ncSN38_reactome <- fgsea(pathways = reactome_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_ncSN38_reactome)
+```
+
+```{r}
+sigPathways <- p3_ncSN38_reactome[padj < 0.05]$pathway
+sigRes <- p3_ncSN38_reactome[p3_ncSN38_reactome$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_ncSN38,
+                                           pathways = reactome_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_ncSN38_reactome_simplified <- p3_ncSN38_reactome[p3_ncSN38_reactome$pathway %in% main_pathways, ]
+
+create_dt(p3_ncSN38_reactome_simplified)
+```
+
+```{r, fig.width=15, fig.height=4}
+p3_ncSN38_reactome_simplified$theme <- pathway_theme_map(p3_ncSN38_reactome_simplified$pathway)
+
+ggplot(p3_ncSN38_reactome_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 #### snSN38-snDMSO
@@ -517,9 +1227,33 @@ p3_snSN38_reactome <- fgsea(pathways = reactome_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_snSN38_reactome)
+```
+
+```{r}
+sigPathways <- p3_snSN38_reactome[padj < 0.05]$pathway
+sigRes <- p3_snSN38_reactome[p3_snSN38_reactome$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_snSN38,
+                                           pathways = reactome_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_snSN38_reactome_simplified <- p3_snSN38_reactome[p3_snSN38_reactome$pathway %in% main_pathways, ]
+
+create_dt(p3_snSN38_reactome_simplified)
+```
+
+```{r, fig.width=15}
+p3_snSN38_reactome_simplified$theme <- pathway_theme_map(p3_snSN38_reactome_simplified$pathway)
+
+ggplot(p3_snSN38_reactome_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 #### longSN38
@@ -530,9 +1264,33 @@ p3_longSN38_reactome <- fgsea(pathways = reactome_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_longSN38_reactome)
+```
+
+```{r}
+sigPathways <- p3_longSN38_reactome[padj < 0.05]$pathway
+sigRes <- p3_longSN38_reactome[p3_longSN38_reactome$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_longSN38,
+                                           pathways = reactome_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_longSN38_reactome_simplified <- p3_longSN38_reactome[p3_longSN38_reactome$pathway %in% main_pathways, ]
+
+create_dt(p3_longSN38_reactome_simplified)
+```
+
+```{r, fig.width=15, fig.height=5}
+p3_longSN38_reactome_simplified$theme <- pathway_theme_map(p3_longSN38_reactome_simplified$pathway)
+
+ggplot(p3_longSN38_reactome_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 #### snDMSO-ncDMSO
@@ -543,7 +1301,31 @@ p3_snDMSO_reactome <- fgsea(pathways = reactome_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_snDMSO_reactome)
+```
+
+```{r}
+sigPathways <- p3_snDMSO_reactome[padj < 0.05]$pathway
+sigRes <- p3_snDMSO_reactome[p3_snDMSO_reactome$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_snDMSO,
+                                           pathways = reactome_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_snDMSO_reactome_simplified <- p3_snDMSO_reactome[p3_snDMSO_reactome$pathway %in% main_pathways, ]
+
+create_dt(p3_snDMSO_reactome_simplified)
+```
+
+```{r, fig.width=15, fig.height=5}
+p3_snDMSO_reactome_simplified$theme <- pathway_theme_map(p3_snDMSO_reactome_simplified$pathway)
+
+ggplot(p3_snDMSO_reactome_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```

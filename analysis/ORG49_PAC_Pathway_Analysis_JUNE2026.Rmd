@@ -5,7 +5,7 @@ date: "2026-06-02"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 ```
 
 ```{r}
@@ -26,6 +26,9 @@ library(ggplot2)
 library(clusterProfiler)
 library(DOSE)
 library(enrichplot)
+library(org.Hs.eg.db)
+library(gsubfn)
+
 ```
 
 ```{r}
@@ -60,6 +63,39 @@ hallmark_df <- msigdbr(species = 'Homo sapiens', category = 'H')
 hallmark_df <- hallmark_df %>%
   split(x = .$gene_symbol, f = .$gs_name)
 cat(paste("Loaded", length(hallmark_df), "gene sets\n"))
+```
+
+
+
+```{r}
+pathway_theme_map <- function(pathway_names){
+
+  case_when(
+    grepl("IMMUNE|INTERFERON|INFLAMM|CYTOKINE|ANTIGEN|T_CELL|B_CELL|NK|MHC|TLR|INNATE|ADAPTIVE|COMPLEMENT",
+          pathway_names, ignore.case = TRUE) ~ "Immune / Inflammation",
+    grepl("SIGNAL|MAPK|ERK|JAK|STAT|PI3K|AKT|WNT|NOTCH|HEDGEHOG|TGF|NF.KB|RAS|RHO|GTPase",
+          pathway_names, ignore.case = TRUE) ~ "Signal Transduction",
+    grepl("CELL_CYCLE|MITOSIS|MEIOSIS|G1|S PHASE|G2|CHECKPOINT|APC.C|CDK|CYCLIN|REPLICATION|CHROMOSOME_SEGREGATION|CHROMOSOME_CONDENSATION|CHROMOSOME_SEPARATION",
+          pathway_names, ignore.case = TRUE) ~ "Cell Cycle / Division",
+    grepl("APOPTOSIS|PYROPTOSIS|NECROPTOSIS|FERROPTOSIS|AUTOPHAGY|DNA DAMAGE|STRESS|UNFOLDED PROTEIN",
+          pathway_names, ignore.case = TRUE) ~ "Cell Death / Stress Response",
+    grepl("METABOLISM|GLYCOLYSIS|TCA|OXIDATIVE PHOSPHORYLATION|FATTY ACID|CHOLESTEROL|LIPID|AMINO ACID|NUCLEOTIDE|METABOLIC|CATABOLIC",
+          pathway_names, ignore.case = TRUE) ~ "Metabolism",
+    grepl("TRANSLATION|RIBOSOME|SPLICING|RNA|TRANSCRIPTION|RNA POLYMERASE|MRNA|RRNA|TRNA|PROCESSING",
+          pathway_names, ignore.case = TRUE) ~ "Gene Expression / RNA Processing",
+    grepl("DNA REPAIR|REPLICATION|TELOMERE|CHROMATIN|NUCLEOSOME|EPIGEN|HISTONE|METHYLATION",
+          pathway_names, ignore.case = TRUE) ~ "Genome Maintenance / Epigenetics",
+    grepl("DEVELOP|DIFFERENTIATION|MORPHOGEN|EMBRYO|AXIS|NEUROGEN|CELL FATE",
+          pathway_names, ignore.case = TRUE) ~ "Development / Differentiation",
+    grepl("ECM|EXTRACELLULAR|INTEGRIN|ADHESION|COLLAGEN|MIGRATION|CYTOSKELETON|ACTIN|MICROTUBULE",
+          pathway_names, ignore.case = TRUE) ~ "ECM / Adhesion / Cytoskeleton",
+    grepl("VESICLE|ENDOCYTOSIS|EXOCYTOSIS|GOLGI|ER|LYSOSOME|PEROXISOME|TRANSPORT",
+          pathway_names, ignore.case = TRUE) ~ "Transport / Organelle Function",
+    grepl("CANCER|CARCINOMA|MELANOMA|LEUKEMIA|TUMOR|ONCOGEN|P53|ONCOGENIC",
+          pathway_names, ignore.case = TRUE) ~ "Cancer / Disease",
+    TRUE ~ "Other / Unclassified"
+  )
+}
 ```
 
 ## Notes
@@ -97,10 +133,45 @@ p1_ncpac_go <- fgsea(pathways = go_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p1_ncpac_go)
 ```
+
+```{r}
+sigPathways <- p1_ncpac_go[padj < 0.05]$pathway
+sigRes <- p1_ncpac_go[p1_ncpac_go$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p1_ncPAC,
+                                           pathways = go_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p1_ncpac_go_simplified <- p1_ncpac_go[p1_ncpac_go$pathway %in% main_pathways, ]
+
+create_dt(p1_ncpac_go_simplified)
+
+### format dataframe
+p1_ncpac_go_simplified$ONTOLOGY <- p1_ncpac_go_simplified$pathway
+  
+p1_ncpac_go_simplified <- p1_ncpac_go_simplified %>%
+  mutate(ONTOLOGY = gsub('GO', '', p1_ncpac_go_simplified$ONTOLOGY)) %>%
+  mutate(ONTOLOGY = substr(ONTOLOGY, 1,2)) %>%
+  mutate(label= gsub("GOBP_|GOMF_|GOCC_|HP_", "", pathway)) %>%
+  arrange(padj)
+
+p1_ncpac_go_simplified$theme <- pathway_theme_map(p1_ncpac_go_simplified$pathway)
+```
+
+```{r, fig.width=10}
+ggplot(p1_ncpac_go_simplified,
+       aes(x=label, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  facet_grid(vars(ONTOLOGY), scales = 'free', space='free')+
+  theme_bw()
+```
+
 
 ### KEGG
 
@@ -110,9 +181,35 @@ p1_ncpac_kegg <- fgsea(pathways = kegg_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p1_ncpac_kegg)
+```
+
+```{r}
+sigPathways <- p1_ncpac_kegg[padj < 0.05]$pathway
+sigRes <- p1_ncpac_kegg[p1_ncpac_kegg$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p1_ncPAC,
+                                           pathways = kegg_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p1_ncpac_kegg_simplified <- p1_ncpac_kegg[p1_ncpac_kegg$pathway %in% main_pathways, ]
+
+create_dt(p1_ncpac_kegg_simplified)
+```
+
+```{r}
+p1_ncpac_kegg_simplified$theme <- pathway_theme_map(p1_ncpac_kegg_simplified$pathway)
+```
+
+```{r, fig.width=10}
+ggplot(p1_ncpac_kegg_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 ### Reactome 
@@ -123,10 +220,37 @@ p1_ncpac_reactome <- fgsea(pathways = reactome_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p1_ncpac_reactome)
 ```
+
+```{r}
+sigPathways <- p1_ncpac_reactome[padj < 0.05]$pathway
+sigRes <- p1_ncpac_reactome[p1_ncpac_reactome$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p1_ncPAC,
+                                           pathways = reactome_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p1_ncpac_reactome_simplified <- p1_ncpac_reactome[p1_ncpac_reactome$pathway %in% main_pathways, ]
+
+create_dt(p1_ncpac_reactome_simplified)
+```
+
+```{r, fig.width=15}
+p1_ncpac_reactome_simplified$theme <- pathway_theme_map(p1_ncpac_reactome_simplified$pathway)
+p1_ncpac_reactome_simplified <- p1_ncpac_reactome_simplified %>%
+  arrange(NES)
+
+ggplot(p1_ncpac_reactome_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
+```
+
 
 ## Plate 2 {.tabset}
 
@@ -186,9 +310,44 @@ p2_ncpac_go <- fgsea(pathways = go_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_ncpac_go)
+```
+
+```{r}
+sigPathways <- p2_ncpac_go[padj < 0.05]$pathway
+sigRes <- p2_ncpac_go[p2_ncpac_go$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_ncPAC,
+                                           pathways = go_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_ncpac_go_simplified <- p2_ncpac_go[p2_ncpac_go$pathway %in% main_pathways, ]
+
+create_dt(p2_ncpac_go_simplified)
+
+### format dataframe
+p2_ncpac_go_simplified$ONTOLOGY <- p2_ncpac_go_simplified$pathway
+  
+p2_ncpac_go_simplified <- p2_ncpac_go_simplified %>%
+  mutate(ONTOLOGY = gsub('GO', '', p2_ncpac_go_simplified$ONTOLOGY)) %>%
+  mutate(ONTOLOGY = substr(ONTOLOGY, 1,2)) %>%
+  mutate(label= gsub("GOBP_|GOMF_|GOCC_|HP_", "", pathway)) %>%
+  arrange(padj)
+
+p2_ncpac_go_simplified$theme <- pathway_theme_map(p2_ncpac_go_simplified$pathway)
+```
+*No pathways pass multiple testing for simplified analysis*
+
+```{r, fig.width=10}
+# ggplot(p2_ncpac_go_simplified,
+#        aes(x=label, y= NES, fill=theme)) +
+#   geom_bar(stat='identity') +
+#   coord_flip()+
+#   facet_grid(vars(ONTOLOGY), scales = 'free', space='free')+
+#   theme_bw()
 ```
 
 #### paPAC-paDMSO
@@ -199,9 +358,43 @@ p2_papac_go <- fgsea(pathways = go_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_papac_go)
+```
+
+```{r}
+sigPathways <- p2_papac_go[padj < 0.05]$pathway
+sigRes <- p2_papac_go[p2_papac_go$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_paPAC,
+                                           pathways = go_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_papac_go_simplified <- p2_papac_go[p2_papac_go$pathway %in% main_pathways, ]
+
+create_dt(p2_papac_go_simplified)
+
+### format dataframe
+p2_papac_go_simplified$ONTOLOGY <- p2_papac_go_simplified$pathway
+  
+p2_papac_go_simplified <- p2_papac_go_simplified %>%
+  mutate(ONTOLOGY = gsub('GO', '', p2_papac_go_simplified$ONTOLOGY)) %>%
+  mutate(ONTOLOGY = substr(ONTOLOGY, 1,2)) %>%
+  mutate(label= gsub("GOBP_|GOMF_|GOCC_|HP_", "", pathway)) %>%
+  arrange(padj)
+
+p2_papac_go_simplified$theme <- pathway_theme_map(p2_papac_go_simplified$pathway)
+```
+
+```{r, fig.width=10}
+ggplot(p2_papac_go_simplified,
+       aes(x=label, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  facet_grid(vars(ONTOLOGY), scales = 'free', space='free')+
+  theme_bw()
 ```
 
 #### longPAC
@@ -212,10 +405,46 @@ p2_longPAC_go <- fgsea(pathways = go_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_longPAC_go)
 ```
+
+```{r}
+sigPathways <- p2_longPAC_go[padj < 0.05]$pathway
+sigRes <- p2_longPAC_go[p2_longPAC_go$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_longPAC,
+                                           pathways = go_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_longpac_go_simplified <- p2_longPAC_go[p2_longPAC_go$pathway %in% main_pathways, ]
+
+create_dt(p2_longpac_go_simplified)
+
+### format dataframe
+p2_longpac_go_simplified$ONTOLOGY <- p2_longpac_go_simplified$pathway
+  
+p2_longpac_go_simplified <- p2_longpac_go_simplified %>%
+  mutate(ONTOLOGY = gsub('GO', '', p2_longpac_go_simplified$ONTOLOGY)) %>%
+  mutate(ONTOLOGY = substr(ONTOLOGY, 1,2)) %>%
+  mutate(label= gsub("GOBP_|GOMF_|GOCC_|HP_", "", pathway)) %>%
+  arrange(padj)
+
+p2_longpac_go_simplified$theme <- pathway_theme_map(p2_longpac_go_simplified$pathway)
+```
+
+```{r, fig.width=10}
+# ggplot(p2_longpac_go_simplified,
+#        aes(x=label, y= NES, fill=theme)) +
+#   geom_bar(stat='identity') +
+#   coord_flip()+
+#   facet_grid(vars(ONTOLOGY), scales = 'free', space='free')+
+#   theme_bw()
+```
+
+*No pathways pass multiple testing for simplified analysis*
 
 #### paDMSO-ncDMSO
 
@@ -225,9 +454,43 @@ p2_paDMSO_go <- fgsea(pathways = go_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_paDMSO_go)
+```
+
+```{r}
+sigPathways <- p2_paDMSO_go[padj < 0.05]$pathway
+sigRes <- p2_paDMSO_go[p2_paDMSO_go$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_paDMSO,
+                                           pathways = go_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_paDMSO_go_simplified <- p2_paDMSO_go[p2_paDMSO_go$pathway %in% main_pathways, ]
+
+create_dt(p2_paDMSO_go_simplified)
+
+### format dataframe
+p2_paDMSO_go_simplified$ONTOLOGY <- p2_paDMSO_go_simplified$pathway
+  
+p2_paDMSO_go_simplified <- p2_paDMSO_go_simplified %>%
+  mutate(ONTOLOGY = gsub('GO', '', p2_paDMSO_go_simplified$ONTOLOGY)) %>%
+  mutate(ONTOLOGY = substr(ONTOLOGY, 1,2)) %>%
+  mutate(label= gsub("GOBP_|GOMF_|GOCC_|HP_", "", pathway)) %>%
+  arrange(padj)
+
+p2_paDMSO_go_simplified$theme <- pathway_theme_map(p2_paDMSO_go_simplified$pathway)
+```
+
+```{r, fig.width=10}
+ggplot(p2_paDMSO_go_simplified,
+       aes(x=label, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  facet_grid(vars(ONTOLOGY), scales = 'free', space='free')+
+  theme_bw()
 ```
 
 ### KEGG {.tabset}
@@ -240,9 +503,33 @@ p2_ncpac_kegg <- fgsea(pathways = kegg_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_ncpac_kegg)
+```
+
+```{r}
+sigPathways <- p2_ncpac_kegg[padj < 0.05]$pathway
+sigRes <- p2_ncpac_kegg[p2_ncpac_kegg$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_ncPAC,
+                                           pathways = kegg_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_ncpac_kegg_simplified <- p2_ncpac_kegg[p2_ncpac_kegg$pathway %in% main_pathways, ]
+
+create_dt(p2_ncpac_kegg_simplified)
+
+p2_ncpac_kegg_simplified$theme <- pathway_theme_map(p2_ncpac_kegg_simplified$pathway)
+```
+
+```{r, fig.width=10}
+ggplot(p2_ncpac_kegg_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 #### paPAC-paDMSO
@@ -253,9 +540,33 @@ p2_papac_kegg <- fgsea(pathways = kegg_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_papac_kegg)
+```
+
+```{r}
+sigPathways <- p2_papac_kegg[padj < 0.05]$pathway
+sigRes <- p2_papac_kegg[p2_papac_kegg$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_paPAC,
+                                           pathways = kegg_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_papac_kegg_simplified <- p2_papac_kegg[p2_papac_kegg$pathway %in% main_pathways, ]
+
+create_dt(p2_papac_kegg_simplified)
+
+p2_papac_kegg_simplified$theme <- pathway_theme_map(p2_papac_kegg_simplified$pathway)
+```
+
+```{r, fig.width=10, fig.height=3}
+ggplot(p2_papac_kegg_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 #### longPAC
@@ -266,9 +577,33 @@ p2_longPAC_kegg <- fgsea(pathways = kegg_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_longPAC_kegg)
+```
+
+```{r}
+sigPathways <- p2_longPAC_kegg[padj < 0.05]$pathway
+sigRes <- p2_longPAC_kegg[p2_longPAC_kegg$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_longPAC,
+                                           pathways = kegg_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_longPAC_kegg_simplified <- p2_longPAC_kegg[p2_longPAC_kegg$pathway %in% main_pathways, ]
+
+create_dt(p2_longPAC_kegg_simplified)
+
+p2_longPAC_kegg_simplified$theme <- pathway_theme_map(p2_longPAC_kegg_simplified$pathway)
+```
+
+```{r, fig.width=10, fig.height=3}
+ggplot(p2_longPAC_kegg_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 #### paDMSO-ncDMSO
@@ -279,9 +614,33 @@ p2_paDMSO_kegg <- fgsea(pathways = kegg_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_paDMSO_kegg)
+```
+
+```{r}
+sigPathways <- p2_paDMSO_kegg[padj < 0.05]$pathway
+sigRes <- p2_paDMSO_kegg[p2_paDMSO_kegg$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_paDMSO,
+                                           pathways = kegg_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_paDMSO_kegg_simplified <- p2_paDMSO_kegg[p2_paDMSO_kegg$pathway %in% main_pathways, ]
+
+create_dt(p2_paDMSO_kegg_simplified)
+
+p2_paDMSO_kegg_simplified$theme <- pathway_theme_map(p2_paDMSO_kegg_simplified$pathway)
+```
+
+```{r, fig.width=20}
+ggplot(p2_paDMSO_kegg_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 ### Reactome {.tabset}
@@ -294,9 +653,33 @@ p2_ncpac_reactome <- fgsea(pathways = reactome_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_ncpac_reactome)
+```
+
+```{r}
+sigPathways <- p2_ncpac_reactome[padj < 0.05]$pathway
+sigRes <- p2_ncpac_reactome[p2_ncpac_reactome$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_ncPAC,
+                                           pathways = reactome_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_ncpac_reactome_simplified <- p2_ncpac_reactome[p2_ncpac_reactome$pathway %in% main_pathways, ]
+
+create_dt(p2_ncpac_reactome_simplified)
+```
+
+```{r, fig.width=15}
+p2_ncpac_reactome_simplified$theme <- pathway_theme_map(p2_ncpac_reactome_simplified$pathway)
+
+ggplot(p2_ncpac_reactome_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 #### paPAC-paDMSO
@@ -307,10 +690,36 @@ p2_papac_reactome <- fgsea(pathways = reactome_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_papac_reactome)
 ```
+
+```{r}
+sigPathways <- p2_papac_reactome[padj < 0.05]$pathway
+sigRes <- p2_papac_reactome[p2_papac_reactome$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_paPAC,
+                                           pathways = reactome_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_papac_reactome_simplified <- p2_papac_reactome[p2_papac_reactome$pathway %in% main_pathways, ]
+
+create_dt(p2_papac_reactome_simplified)
+```
+
+```{r, fig.width=15}
+# p2_papac_reactome_simplified$theme <- pathway_theme_map(p2_papac_reactome_simplified$pathway)
+# 
+# ggplot(p2_papac_reactome_simplified,
+#        aes(x=pathway, y= NES, fill=theme)) +
+#   geom_bar(stat='identity') +
+#   coord_flip()+
+#   theme_bw()
+```
+
+*No pathways pass multiple testing for simplified analysis*
 
 #### longPAC
 
@@ -320,10 +729,36 @@ p2_longPAC_reactome <- fgsea(pathways = reactome_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_longPAC_reactome)
 ```
+
+```{r}
+sigPathways <- p2_longPAC_reactome[padj < 0.05]$pathway
+sigRes <- p2_longPAC_reactome[p2_longPAC_reactome$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_longPAC,
+                                           pathways = reactome_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_longPAC_reactome_simplified <- p2_longPAC_reactome[p2_longPAC_reactome$pathway %in% main_pathways, ]
+
+create_dt(p2_longPAC_reactome_simplified)
+```
+
+```{r, fig.width=15}
+# p2_longPAC_reactome_simplified$theme <- pathway_theme_map(p2_longPAC_reactome_simplified$pathway)
+# 
+# ggplot(p2_longPAC_reactome_simplified,
+#        aes(x=pathway, y= NES, fill=theme)) +
+#   geom_bar(stat='identity') +
+#   coord_flip()+
+#   theme_bw()
+```
+
+*No pathways pass multiple testing for simplified analysis*
 
 #### paDMSO-ncDMSO
 
@@ -333,9 +768,33 @@ p2_paDMSO_reactome <- fgsea(pathways = reactome_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p2_paDMSO_reactome)
+```
+
+```{r}
+sigPathways <- p2_paDMSO_reactome[padj < 0.05]$pathway
+sigRes <- p2_paDMSO_reactome[p2_paDMSO_reactome$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p2_paDMSO,
+                                           pathways = reactome_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p2_paDMSO_reactome_simplified <- p2_paDMSO_reactome[p2_paDMSO_reactome$pathway %in% main_pathways, ]
+
+create_dt(p2_paDMSO_reactome_simplified)
+```
+
+```{r, fig.width=15}
+p2_paDMSO_reactome_simplified$theme <- pathway_theme_map(p2_paDMSO_reactome_simplified$pathway)
+
+ggplot(p2_paDMSO_reactome_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 ## Plate 3 {.tabset}
@@ -396,10 +855,46 @@ p3_ncpac_go <- fgsea(pathways = go_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_ncpac_go)
 ```
+
+```{r}
+sigPathways <- p3_ncpac_go[padj < 0.05]$pathway
+sigRes <- p3_ncpac_go[p3_ncpac_go$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_ncPAC,
+                                           pathways = go_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_ncpac_go_simplified <- p3_ncpac_go[p3_ncpac_go$pathway %in% main_pathways, ]
+
+create_dt(p3_ncpac_go_simplified)
+
+### format dataframe
+p3_ncpac_go_simplified$ONTOLOGY <- p3_ncpac_go_simplified$pathway
+  
+p3_ncpac_go_simplified <- p3_ncpac_go_simplified %>%
+  mutate(ONTOLOGY = gsub('GO', '', p3_ncpac_go_simplified$ONTOLOGY)) %>%
+  mutate(ONTOLOGY = substr(ONTOLOGY, 1,2)) %>%
+  mutate(label= gsub("GOBP_|GOMF_|GOCC_|HP_", "", pathway)) %>%
+  arrange(padj)
+
+p3_ncpac_go_simplified$theme <- pathway_theme_map(p3_ncpac_go_simplified$pathway)
+```
+
+```{r, fig.width=10}
+# ggplot(p3_ncpac_go_simplified,
+#        aes(x=label, y= NES, fill=theme)) +
+#   geom_bar(stat='identity') +
+#   coord_flip()+
+#   facet_grid(vars(ONTOLOGY), scales = 'free', space='free')+
+#   theme_bw()
+```
+
+*No pathways pass multiple testing for simplified analysis*
 
 #### paPAC-paDMSO
 
@@ -409,9 +904,45 @@ p3_papac_go <- fgsea(pathways = go_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_papac_go)
+```
+
+```{r}
+sigPathways <- p3_papac_go[padj < 0.05]$pathway
+sigRes <- p3_papac_go[p3_papac_go$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_paPAC,
+                                           pathways = go_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_papac_go_simplified <- p3_papac_go[p3_papac_go$pathway %in% main_pathways, ]
+
+create_dt(p3_papac_go_simplified)
+
+### format dataframe
+p3_papac_go_simplified$ONTOLOGY <- p3_papac_go_simplified$pathway
+  
+p3_papac_go_simplified <- p3_papac_go_simplified %>%
+  mutate(ONTOLOGY = gsub('GO', '', p3_papac_go_simplified$ONTOLOGY)) %>%
+  mutate(ONTOLOGY = substr(ONTOLOGY, 1,2)) %>%
+  mutate(label= gsub("GOBP_|GOMF_|GOCC_|HP_", "", pathway)) %>%
+  arrange(padj)
+
+p3_papac_go_simplified$theme <- pathway_theme_map(p3_papac_go_simplified$pathway)
+```
+
+*No pathways pass multiple testing for simplified analysis*
+
+```{r, fig.width=10}
+# ggplot(p3_papac_go_simplified,
+#        aes(x=label, y= NES, fill=theme)) +
+#   geom_bar(stat='identity') +
+#   coord_flip()+
+#   facet_grid(vars(ONTOLOGY), scales = 'free', space='free')+
+#   theme_bw()
 ```
 
 #### longPAC
@@ -422,9 +953,44 @@ p3_longPAC_go <- fgsea(pathways = go_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_longPAC_go)
+```
+
+```{r}
+sigPathways <- p3_longPAC_go[padj < 0.05]$pathway
+sigRes <- p3_longPAC_go[p3_longPAC_go$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_longPAC,
+                                           pathways = go_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_longPAC_go_simplified <- p3_longPAC_go[p3_longPAC_go$pathway %in% main_pathways, ]
+
+create_dt(p3_longPAC_go_simplified)
+
+### format dataframe
+p3_longPAC_go_simplified$ONTOLOGY <- p3_longPAC_go_simplified$pathway
+  
+p3_longPAC_go_simplified <- p3_longPAC_go_simplified %>%
+  mutate(ONTOLOGY = gsub('GO', '', p3_longPAC_go_simplified$ONTOLOGY)) %>%
+  mutate(ONTOLOGY = substr(ONTOLOGY, 1,2)) %>%
+  mutate(label= gsub("GOBP_|GOMF_|GOCC_|HP_", "", pathway)) %>%
+  arrange(padj)
+
+p3_longPAC_go_simplified$theme <- pathway_theme_map(p3_longPAC_go_simplified$pathway)
+```
+*No pathways pass multiple testing for simplified analysis*
+
+```{r, fig.width=10}
+# ggplot(p3_longPAC_go_simplified,
+#        aes(x=label, y= NES, fill=theme)) +
+#   geom_bar(stat='identity') +
+#   coord_flip()+
+#   facet_grid(vars(ONTOLOGY), scales = 'free', space='free')+
+#   theme_bw()
 ```
 
 #### paDMSO-ncDMSO
@@ -435,9 +1001,43 @@ p3_paDMSO_go <- fgsea(pathways = go_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_paDMSO_go)
+```
+
+```{r}
+sigPathways <- p3_paDMSO_go[padj < 0.05]$pathway
+sigRes <- p3_paDMSO_go[p3_paDMSO_go$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_paDMSO,
+                                           pathways = go_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_paDMSO_go_simplified <- p3_paDMSO_go[p3_paDMSO_go$pathway %in% main_pathways, ]
+
+create_dt(p3_paDMSO_go_simplified)
+
+### format dataframe
+p3_paDMSO_go_simplified$ONTOLOGY <- p3_paDMSO_go_simplified$pathway
+  
+p3_paDMSO_go_simplified <- p3_paDMSO_go_simplified %>%
+  mutate(ONTOLOGY = gsub('GO', '', p3_paDMSO_go_simplified$ONTOLOGY)) %>%
+  mutate(ONTOLOGY = substr(ONTOLOGY, 1,2)) %>%
+  mutate(label= gsub("GOBP_|GOMF_|GOCC_|HP_", "", pathway)) %>%
+  arrange(padj)
+
+p3_paDMSO_go_simplified$theme <- pathway_theme_map(p3_paDMSO_go_simplified$pathway)
+```
+
+```{r, fig.width=20}
+ggplot(p3_paDMSO_go_simplified,
+       aes(x=label, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  facet_grid(vars(ONTOLOGY), scales = 'free', space='free')+
+  theme_bw()
 ```
 
 ### KEGG {.tabset}
@@ -450,9 +1050,34 @@ p3_ncpac_kegg <- fgsea(pathways = kegg_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_ncpac_kegg)
+```
+
+```{r}
+sigPathways <- p3_ncpac_kegg[padj < 0.05]$pathway
+sigRes <- p3_ncpac_kegg[p3_ncpac_kegg$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_ncPAC,
+                                           pathways = kegg_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_ncpac_kegg_simplified <- p3_ncpac_kegg[p3_ncpac_kegg$pathway %in% main_pathways, ]
+
+create_dt(p3_ncpac_kegg_simplified)
+
+p3_ncpac_kegg_simplified$theme <- pathway_theme_map(p3_ncpac_kegg_simplified$pathway)
+```
+*No pathways pass multiple testing for simplified analysis*
+
+```{r, fig.width=20}
+# ggplot(p3_ncpac_kegg_simplified,
+#        aes(x=pathway, y= NES, fill=theme)) +
+#   geom_bar(stat='identity') +
+#   coord_flip()+
+#   theme_bw()
 ```
 
 #### paPAC-paDMSO
@@ -463,9 +1088,34 @@ p3_papac_kegg <- fgsea(pathways = kegg_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_papac_kegg)
+```
+
+```{r}
+sigPathways <- p3_papac_kegg[padj < 0.05]$pathway
+sigRes <- p3_papac_kegg[p3_papac_kegg$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_paPAC,
+                                           pathways = kegg_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_papac_kegg_simplified <- p3_papac_kegg[p3_papac_kegg$pathway %in% main_pathways, ]
+
+create_dt(p3_papac_kegg_simplified)
+
+p3_papac_kegg_simplified$theme <- pathway_theme_map(p3_papac_kegg_simplified$pathway)
+```
+*No pathways pass multiple testing for simplified analysis*
+
+```{r, fig.width=20}
+# ggplot(p3_papac_kegg_simplified,
+#        aes(x=pathway, y= NES, fill=theme)) +
+#   geom_bar(stat='identity') +
+#   coord_flip()+
+#   theme_bw()
 ```
 
 #### longPAC
@@ -476,9 +1126,35 @@ p3_longPAC_kegg <- fgsea(pathways = kegg_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_longPAC_kegg)
+```
+
+```{r}
+sigPathways <- p3_longPAC_kegg[padj < 0.05]$pathway
+sigRes <- p3_longPAC_kegg[p3_longPAC_kegg$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_longPAC,
+                                           pathways = kegg_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_longPAC_kegg_simplified <- p3_longPAC_kegg[p3_longPAC_kegg$pathway %in% main_pathways, ]
+
+create_dt(p3_longPAC_kegg_simplified)
+
+p3_longPAC_kegg_simplified$theme <- pathway_theme_map(p3_longPAC_kegg_simplified$pathway)
+```
+
+*No pathways pass multiple testing for simplified analysis*
+
+```{r, fig.width=20}
+# ggplot(p3_longPAC_kegg_simplified,
+#        aes(x=pathway, y= NES, fill=theme)) +
+#   geom_bar(stat='identity') +
+#   coord_flip()+
+#   theme_bw()
 ```
 
 #### paDMSO-ncDMSO
@@ -489,9 +1165,33 @@ p3_paDMSO_kegg <- fgsea(pathways = kegg_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_paDMSO_kegg)
+```
+
+```{r}
+sigPathways <- p3_paDMSO_kegg[padj < 0.05]$pathway
+sigRes <- p3_paDMSO_kegg[p3_paDMSO_kegg$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_paDMSO,
+                                           pathways = kegg_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_paDMSO_kegg_simplified <- p3_paDMSO_kegg[p3_paDMSO_kegg$pathway %in% main_pathways, ]
+
+create_dt(p3_paDMSO_kegg_simplified)
+
+p3_paDMSO_kegg_simplified$theme <- pathway_theme_map(p3_paDMSO_kegg_simplified$pathway)
+```
+
+```{r, fig.width=20}
+ggplot(p3_paDMSO_kegg_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
 
 ### Reactome {.tabset}
@@ -504,9 +1204,35 @@ p3_ncpac_reactome <- fgsea(pathways = reactome_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_ncpac_reactome)
+```
+
+```{r}
+sigPathways <- p3_ncpac_reactome[padj < 0.05]$pathway
+sigRes <- p3_ncpac_reactome[p3_ncpac_reactome$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_ncPAC,
+                                           pathways = reactome_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_ncpac_reactome_simplified <- p3_ncpac_reactome[p3_ncpac_reactome$pathway %in% main_pathways, ]
+
+create_dt(p3_ncpac_reactome_simplified)
+```
+
+*No pathways pass multiple testing for simplified analysis*
+
+```{r, fig.width=15}
+# p3_ncpac_reactome_simplified$theme <- pathway_theme_map(p3_ncpac_reactome_simplified$pathway)
+# 
+# ggplot(p3_ncpac_reactome_simplified,
+#        aes(x=pathway, y= NES, fill=theme)) +
+#   geom_bar(stat='identity') +
+#   coord_flip()+
+#   theme_bw()
 ```
 
 #### paPAC-paDMSO
@@ -517,9 +1243,34 @@ p3_papac_reactome <- fgsea(pathways = reactome_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_papac_reactome)
+```
+
+```{r}
+sigPathways <- p3_papac_reactome[padj < 0.05]$pathway
+sigRes <- p3_papac_reactome[p3_papac_reactome$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_paPAC,
+                                           pathways = reactome_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_papac_reactome_simplified <- p3_papac_reactome[p3_papac_reactome$pathway %in% main_pathways, ]
+
+create_dt(p3_papac_reactome_simplified)
+```
+*No pathways pass multiple testing for simplified analysis*
+
+```{r, fig.width=15}
+# p3_papac_reactome_simplified$theme <- pathway_theme_map(p3_papac_reactome_simplified$pathway)
+# 
+# ggplot(p3_papac_reactome_simplified,
+#        aes(x=pathway, y= NES, fill=theme)) +
+#   geom_bar(stat='identity') +
+#   coord_flip()+
+#   theme_bw()
 ```
 
 #### longPAC
@@ -530,9 +1281,34 @@ p3_longPAC_reactome <- fgsea(pathways = reactome_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_longPAC_reactome)
+```
+
+```{r}
+sigPathways <- p3_longPAC_reactome[padj < 0.05]$pathway
+sigRes <- p3_longPAC_reactome[p3_longPAC_reactome$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_longPAC,
+                                           pathways = reactome_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_longPAC_reactome_simplified <- p3_longPAC_reactome[p3_longPAC_reactome$pathway %in% main_pathways, ]
+
+create_dt(p3_longPAC_reactome_simplified)
+```
+*No pathways pass multiple testing for simplified analysis*
+
+```{r, fig.width=15}
+# p3_longPAC_reactome_simplified$theme <- pathway_theme_map(p3_longPAC_reactome_simplified$pathway)
+# 
+# ggplot(p3_longPAC_reactome_simplified,
+#        aes(x=pathway, y= NES, fill=theme)) +
+#   geom_bar(stat='identity') +
+#   coord_flip()+
+#   theme_bw()
 ```
 
 #### paDMSO-ncDMSO
@@ -543,7 +1319,31 @@ p3_paDMSO_reactome <- fgsea(pathways = reactome_df,
                  scoreType = 'std',
                  minSize = 10,
                  maxSize = 500,
-                 nproc = 1)
+                 nproc = 0)
 
 create_dt(p3_paDMSO_reactome)
+```
+
+```{r}
+sigPathways <- p3_paDMSO_reactome[padj < 0.05]$pathway
+sigRes <- p3_paDMSO_reactome[p3_paDMSO_reactome$pathway %in% sigPathways, ]
+
+main_pathways <- collapsePathways(sigRes,
+                                           stats = p3_paDMSO,
+                                           pathways = reactome_df)
+
+main_pathways <- main_pathways[["mainPathways"]]
+p3_paDMSO_reactome_simplified <- p3_paDMSO_reactome[p3_paDMSO_reactome$pathway %in% main_pathways, ]
+
+create_dt(p3_paDMSO_reactome_simplified)
+```
+
+```{r, fig.width=15}
+p3_paDMSO_reactome_simplified$theme <- pathway_theme_map(p3_paDMSO_reactome_simplified$pathway)
+
+ggplot(p3_paDMSO_reactome_simplified,
+       aes(x=pathway, y= NES, fill=theme)) +
+  geom_bar(stat='identity') +
+  coord_flip()+
+  theme_bw()
 ```
